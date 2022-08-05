@@ -23,7 +23,7 @@ class RenameWindow(QtWidgets.QDialog):
     def __init__(self, parent = maya_main_window()):
         super(RenameWindow, self).__init__(parent)
 
-        self.setWindowTitle(u'重命名工具')
+        self.setWindowTitle(u'重命名工具_V1.1')
         if mc.about(ntOS = True):#判断系统类型
             self.setWindowFlags(self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint)#删除窗口上的帮助按钮
         elif mc.about(macOS = True):
@@ -136,12 +136,37 @@ class RenameWindow(QtWidgets.QDialog):
         '''
         sel_lis = mc.ls(sl = True)
         ren_lis = copy.copy(sel_lis)
+        repeat_lis = []
         
         dup_lis = copy.copy(sel_lis)
-        for i in range(len(sel_lis)):
+        for n in range(len(dup_lis)):#将复制出来的列表只留最后一个名称
+            if '|' in dup_lis[n]:
+                name = dup_lis[n]
+                dup_lis[n] = name.replace(name, name.split('|')[-1])
+        
+        for i in range(len(sel_lis)):#获取所有重名的对象
             dup_lis.remove(dup_lis[0])
-            if sel_lis[i] in dup_lis:
+            if sel_lis[i].split('|')[-1] in dup_lis:
                 log.warning('选择对象中的{}重复，请先清理选中对象中的重命名。'.format(sel_lis[i]))
+                for obj in sel_lis:
+                    if sel_lis[i].split('|')[-1] in obj.split('|')[-1]:
+                        repeat_lis.append(obj)
+        
+        if repeat_lis:
+            t = mc.confirmDialog(t = '内容重复报错：', m = '选择对象中的：\n{}\n名称重复，强行使其重命名会导致名称依然重复。是否调过这些重名对象？'.format(repeat_lis),
+            button = ['即便重复命名依然改名', '选中它们', '跳过它们', '取消'], cb = '取消', ds = '取消')
+            if t == u'即便重复命名依然改名':
+                for inf in range(len(ren_lis)):
+                    ren_lis[inf] = ren_lis[inf].split('|')[-1]
+            elif t == u'选中它们':
+                mc.select(repeat_lis)
+                return False
+            elif t == u'跳过它们':
+                for dup in repeat_lis:
+                    sel_lis.remove(dup)
+                    ren_lis.remove(dup)
+            else:
+                return False
         
         if self.front_line.text():
             ren_lis = self.front_ren(ren_lis)
@@ -154,8 +179,10 @@ class RenameWindow(QtWidgets.QDialog):
         if self.start_line.text():
             ren_lis = self.number_ren(ren_lis)
         
+        for i in range(len(sel_lis)):
+            sel_lis[i] = mc.ls(sel_lis[i], uid = True)[0]
         for n in range(len(sel_lis)):
-            mc.rename(sel_lis[n], ren_lis[n])
+            mc.rename(mc.ls(sel_lis[n])[0], ren_lis[n])
     
     def front_ren(self, sel):
         front = self.front_line.text()

@@ -58,9 +58,8 @@ def get_jnt_trs():
     if len(obj) != 1:
         log.error('应选择1个对象，实际为{}个。'.format(len(obj)))
     else:
-        pos = mc.xform(obj[0], ws = True, q = True, t = True)
         jnt = mc.joint()
-        mc.xform(jnt, t = pos, ws = True)
+        mc.matchTransform(jnt, obj[0], pos = True)
         log.info('已创建{}到{}中心。'.format(jnt, obj[0]))
 
 def get_jnt_core():
@@ -69,7 +68,6 @@ def get_jnt_core():
     '''
     obj_lis = mc.ls(sl = 1, fl = 1)
     pos_lis = [0, 0, 0]
-    
     if len(obj_lis) == 0:
         log.error('没有选择对象。')
     else:
@@ -92,10 +90,22 @@ def get_trm_rot():
     '''
     创建定位器到选择对象的中心并匹配旋转
     '''
-    obj = mc.ls(sl = 1)
+    obj = mc.ls(sl = True)
     if obj.__len__() == 1:
-        pos = mc.xform(obj[0], q = True, ws = True, t = True)
-        rot = mc.xform(obj[0], q = True, ws = True, ro = True)
-        mc.xform(mc.spaceLocator(), ws = True, t = pos, ro = rot)
+        mc.matchTransform(mc.spaceLocator(), obj[0], pos = True, rot = True)
     else:
         log.warning('已在{}位置上创建定位器并匹配'.format(obj.__len__()))
+
+def match_transform():
+    '''
+    将选择列表中所有对象的位移旋转缩放匹配到最后一个选择对象。
+    '''
+    sel_lis = mc.ls(sl = True)
+    if len(sel_lis) < 2 :
+        log.error('选择对象应不少于2个，实际为{}个。'.format(len(sel_lis)))
+        return False
+    else:
+        obj_target = sel_lis[-1]
+        for i in range(0, len(sel_lis) - 1):
+            mc.matchTransform(sel_lis[i], obj_target)
+            log.info('已将{}匹配到{}。'.format(sel_lis[i], obj_target))

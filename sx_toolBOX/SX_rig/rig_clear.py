@@ -219,5 +219,10 @@ def clear_key():
     '''
     删除场景内所有关键帧
     '''
-    mel.eval('doClearKeyArgList 3 { "1","0:10","keys","none","0","1","0","1","animationList","0","noOptions","0","0" };')
-    log.info('已删除场景中所有关键帧。')
+    sel = mc.ls(sl = True)
+    if len(sel) == 0:
+        log.error('删除所有关键帧要求至少选择一个对象，实际没有选择对象。')
+        return False
+    else:
+        mel.eval('doClearKeyArgList 3 { "1","0:10","keys","none","0","1","0","1","animationList","0","noOptions","0","0" };')
+        log.info('已删除场景中所有关键帧。')

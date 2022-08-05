@@ -1,3 +1,18 @@
+	setAttr -s 9 ".iog[0].og";
+	setAttr ".iog[0].og[0].gcl" -type "componentList" 1 "cv[34:40]";
+	setAttr ".iog[0].og[1].gcl" -type "componentList" 1 "cv[*]";
+	setAttr ".iog[0].og[2].gcl" -type "componentList" 2 "cv[0:4]" "cv[46:47]";
+	setAttr ".iog[0].og[3].gcl" -type "componentList" 1 "cv[10:16]";
+	setAttr ".iog[0].og[4].gcl" -type "componentList" 1 "cv[22:28]";
+	setAttr ".iog[0].og[5].gcl" -type "componentList" 2 "cv[41]" "cv[45]";
+	setAttr ".iog[0].og[6].gcl" -type "componentList" 2 "cv[29]" "cv[33]";
+	setAttr ".iog[0].og[7].gcl" -type "componentList" 2 "cv[17]" "cv[21]";
+	setAttr ".iog[0].og[8].gcl" -type "componentList" 2 "cv[5]" "cv[9]";
+	setAttr ".cc" -type "nurbsCurve" 
+		3 48 2 no 3
+		53 -2 -1 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25
+		 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50
+		51
 		3.7973296968110623e-017 0.42056080847759897 -0.27871758502658478
 		5.302123946358799e-017 0.22669105378468196 0
 		1.6174876907388429e-016 0.42056080847759897 0.27871758502658478
@@ -49,3 +64,4 @@
 		3.7973296968110623e-017 0.42056080847759897 -0.27871758502658478
 		5.302123946358799e-017 0.22669105378468196 0
 		1.6174876907388429e-016 0.42056080847759897 0.27871758502658478
+		;
