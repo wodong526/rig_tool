@@ -9,6 +9,7 @@ import maya.mel as mel
 import maya.OpenMayaUI as omui
 
 import os
+import math
 import functools
 import logging
 
@@ -130,11 +131,9 @@ class create_ctl(QtWidgets.QDialog):#使该窗口为控件
         main_layout.addLayout(grp_layout)
         main_layout.addLayout(lable_layout)
         main_layout.addWidget(self.add_maya_widget(main_layout.objectName()))
-        for h in range(len(self.button_lis) / 6 + 1):
+        for h in range(int(math.ceil(len(self.button_lis) / 6.0))):
             h_layout = QtWidgets.QHBoxLayout()
             for v in range(6):
-                if h * 6 + v > 64:
-                    break
                 h_layout.addWidget(self.button_lis[h * 6 + v])
                 h_layout.addStretch()
             main_layout.addLayout(h_layout)   
@@ -161,18 +160,20 @@ class create_ctl(QtWidgets.QDialog):#使该窗口为控件
         sel_cv = self.if_cv()
         if type(sel_cv) == unicode:
             cv_shape = mc.listRelatives(sel_cv, s = True)[0]
-            mc.setAttr('{}.overrideEnabled'.format(cv_shape), 1)
-            mc.setAttr('{}.overrideRGBColors'.format(cv_shape), 1)
+            if type(color) == list:
+                mc.setAttr('{}.overrideEnabled'.format(cv_shape), 1)
+                mc.setAttr('{}.overrideRGBColors'.format(cv_shape), 1)
+                mc.setAttr('{}.overrideColorRGB'.format(cv_shape), color[0], color[1], color[2])
+                mc.colorSliderGrp(self.sliderGrp, rgb = color, e = True)
+            elif type(color) == unicode:
+                ctl_rgb = mc.colorSliderGrp(self.sliderGrp, q = True, rgb = True)
+                mc.setAttr('{}.overrideEnabled'.format(cv_shape), 1)
+                mc.setAttr('{}.overrideRGBColors'.format(cv_shape), 1)
+                mc.setAttr('{}.overrideColorRGB'.format(cv_shape), ctl_rgb[0], ctl_rgb[1], ctl_rgb[2])
+            else:
+                pass
         else:
-            return False
-
-
-        if color:
-            mc.setAttr('{}.overrideColorRGB'.format(cv_shape), color[0], color[1], color[2])
-            mc.colorSliderGrp(self.sliderGrp, rgb = color, e = True)
-        else:
-            ctl_rgb = mc.colorSliderGrp(self.sliderGrp, q = True, rgb = True)
-            mc.setAttr('{}.overrideColorRGB'.format(cv_shape), 0.0, 0.001, 0.117)
+            pass
     
     def get_ctl_bmp(self):
         self.ctl_path = mc.internalVar(uad = True) + mc.about(v = True) + "/scripts/sx_toolBOX/SX_rig/data/ControllerFiles/"
@@ -189,7 +190,7 @@ class create_ctl(QtWidgets.QDialog):#使该窗口为控件
         mc.createNode('nurbsCurve', p = trs)
         mel.eval(con)
         mc.select(mc.listRelatives(mc.ls(sl = True), p = True))
-        self.set_ctl_color(None)
+        self.set_ctl_color('dong')
     
     def create_grp(self):
         sel_cv = self.if_cv()
@@ -199,8 +200,8 @@ class create_ctl(QtWidgets.QDialog):#使该窗口为控件
             scl = mc.xform(sel_cv, s = True, q = True, ws = True)
             name = self.grp_lin.text()
             ctl_name = mc.rename(sel_cv, 'ctl_{}_001'.format(name))
-            grp = mc.group(em = True, n = 'grp_{}_001'.format(name))
-            grpOffset = mc.group(em = True, p = grp, n = 'grp_{}_Offset_001'.format(name))
+            grp = mc.group(em = True, n = 'zero_{}_001'.format(name))
+            grpOffset = mc.group(em = True, p = grp, n = 'Offset_{}_001'.format(name))
             mc.xform(grp, t = pos, ro = rot, s = scl, ws = True)
             mc.parent(ctl_name, grpOffset)
             mc.select(grp)
@@ -224,7 +225,7 @@ class create_ctl(QtWidgets.QDialog):#使该窗口为控件
                 log.error('选择对象应为曲线。')
                 return False
         else:
-            log.warning('应选择1个对象，实际选择{}。'.format(len(sel_cv)))
+            log.error('应选择1个对象，实际选择{}。'.format(len(sel_cv)))
             return False
     
     def mirror_ctl(self):
