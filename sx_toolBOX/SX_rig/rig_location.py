@@ -43,24 +43,8 @@ def create_joint():
     if len(sel_lis) == 1:
         mc.parent(mc.joint(), w = True)
         log.info('已创建关节到{}中心并匹配旋转。'.format(sel_lis[0]))
-    elif len(sel_lis) == 0:
-        mc.joint(p = [0, 0, 0])
-        log.info('已在原点创建关节。')
     else:
         log.error('应选择1个对象，实际为{}个。'.format(len(sel_lis)))
-
-def get_jnt_trs():
-    '''
-    在选择对象上创建关节
-    '''
-    obj = mc.ls(sl = True)
-    mc.select(cl = True)
-    if len(obj) != 1:
-        log.error('应选择1个对象，实际为{}个。'.format(len(obj)))
-    else:
-        jnt = mc.joint()
-        mc.matchTransform(jnt, obj[0], pos = True)
-        log.info('已创建{}到{}中心。'.format(jnt, obj[0]))
 
 def get_jnt_core():
     '''
@@ -69,7 +53,8 @@ def get_jnt_core():
     obj_lis = mc.ls(sl = 1, fl = 1)
     pos_lis = [0, 0, 0]
     if len(obj_lis) == 0:
-        log.error('没有选择对象。')
+        mc.joint(p = [0, 0, 0])
+        log.info('已在原点创建关节。')
     else:
         for obj in obj_lis:
             pos = mc.xform(obj, ws = 1, t = 1, q = 1)
@@ -80,10 +65,12 @@ def get_jnt_core():
         obj_pos = [pos_lis[0] / len(obj_lis),
                    pos_lis[1] / len(obj_lis),
                    pos_lis[2] / len(obj_lis)]
-        loc = mc.joint()
-        mc.xform(loc, ws = 1, t = obj_pos)
+        
+        
+        jnt = mc.parent(mc.joint(), w = True)
+        mc.xform(jnt, ws = 1, t = obj_pos)
 
-        log.info('已在选择对象的中心创建关节{}'.format(loc))
+        log.info('已在选择对象的中心创建关节{}'.format(jnt))
 
 
 def get_trm_rot():

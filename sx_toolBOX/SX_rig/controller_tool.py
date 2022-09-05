@@ -131,9 +131,13 @@ class create_ctl(QtWidgets.QDialog):#使该窗口为控件
         main_layout.addLayout(grp_layout)
         main_layout.addLayout(lable_layout)
         main_layout.addWidget(self.add_maya_widget(main_layout.objectName()))
+        print len(self.button_lis)
+        print int(math.ceil(len(self.button_lis) / 6.0))
         for h in range(int(math.ceil(len(self.button_lis) / 6.0))):
             h_layout = QtWidgets.QHBoxLayout()
             for v in range(6):
+                if h * 6 + v == 67:
+                    break
                 h_layout.addWidget(self.button_lis[h * 6 + v])
                 h_layout.addStretch()
             main_layout.addLayout(h_layout)   

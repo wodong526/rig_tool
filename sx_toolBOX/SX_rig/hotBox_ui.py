@@ -77,14 +77,14 @@ class SX_RotBox(object):
         
         jnt_menu = mc.menuItem(p = menu, l = '关节', rp = 'E', sm = 1)
         mc.menuItem(p = jnt_menu, l = '创建关节工具', rp = 'N', c = 'mc.JointTool()')
-        mc.menuItem(p = jnt_menu, l = '创建关节到选择位', rp = 'E', c = 'from sx_toolBOX.SX_rig import rig_location;'
-                                                                       'reload(rig_location);'
-                                                                       'rig_location.get_jnt_trs()')
+        # mc.menuItem(p = jnt_menu, l = '创建关节到选择位', rp = 'E', c = 'from sx_toolBOX.SX_rig import rig_location;'
+        #                                                                'reload(rig_location);'
+        #                                                                'rig_location.get_jnt_trs()')
         mc.menuItem(p = jnt_menu, l = '创建关节并匹配旋转', rp = 'NE', c = 'from sx_toolBOX.SX_rig import rig_location;'
                                                                           'reload(rig_location);'
                                                                           'rig_location.create_joint()')
-        mc.menuItem(p = jnt_menu, l = '创建关节到选择对象的中心', rp = 'NE', c = 'from sx_toolBOX.SX_rig import rig_location;'
-                                                                               'reload(rig_location);'
-                                                                               'rig_location.get_jnt_core()')
+        mc.menuItem(p = jnt_menu, l = '创建关节到选择对象的中心', rp = 'E', c = 'from sx_toolBOX.SX_rig import rig_location;'
+                                                                                'reload(rig_location);'
+                                                                                'rig_location.get_jnt_core()')
         
         mc.menuItem(p = menu, l = '刷新热盒', c = rebuild_rotBox)

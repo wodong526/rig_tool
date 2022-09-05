@@ -55,6 +55,10 @@ class SX_Menu(object):
             pm.menuItem(d = 1, dl = u'工具', p = menu_rig)
             pm.menuItem(to = True, p = menu_rig, l = u'控制器生成器', i = 'ctl_tool.png', c = 'from sx_toolBOX.SX_rig import controller_tool;'
                                                                                               'reload(controller_tool);')
+            pm.menuItem(to = True, p = menu_rig, l = u'跨文件传递材质', i = 'moveShelfDown.png', c = 'from sx_toolBOX.SX_rig import material_transform;'
+                                                                                                    'reload(material_transform);')
+            pm.menuItem(to = True, p = menu_rig, l = u'meta头部变换', i = 'meta_trsform_head.png', c = 'from sx_toolBOX.SX_rig import metaHuman_transformation_head;'
+                                                                                                       'reload(metaHuman_transformation_head);')
 
             pm.menuItem(d = 1, dl = u'场景清理', p = menu_rig)
             rig_clear = pm.menuItem(to = True, p = menu_rig, l = u'模型清理', i = 'polyCleanup.png', sm = True)
