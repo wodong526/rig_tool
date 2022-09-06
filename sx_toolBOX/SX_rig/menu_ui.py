@@ -57,6 +57,8 @@ class SX_Menu(object):
                                                                                               'reload(controller_tool);')
             pm.menuItem(to = True, p = menu_rig, l = u'跨文件传递材质', i = 'moveShelfDown.png', c = 'from sx_toolBOX.SX_rig import material_transform;'
                                                                                                     'reload(material_transform);')
+            pm.menuItem(to = True, p = menu_rig, l = u'meta一键扣头', i = 'meta_trsform_head.png', c = 'from sx_toolBOX.SX_rig import meta_extract_head;'
+                                                                                                       'reload(meta_extract_head);')
             pm.menuItem(to = True, p = menu_rig, l = u'meta头部变换', i = 'meta_trsform_head.png', c = 'from sx_toolBOX.SX_rig import metaHuman_transformation_head;'
                                                                                                        'reload(metaHuman_transformation_head);')
 

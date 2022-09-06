@@ -7,7 +7,6 @@ from shiboken2 import wrapInstance
 import maya.cmds as mc
 import maya.OpenMayaUI as omui
 
-from shutil import copyfile
 import os
 import logging
 
@@ -39,14 +38,17 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
 
     def create_widgets(self):
         self.getMod_but = QtWidgets.QPushButton(u'获取其下所有模型')
+        self.getMod_but.setToolTip(u'将选中对象及其子级对象中的所有模型获取')
 
         self.Mod_cbx = QtWidgets.QCheckBox()
         self.Mod_cbx.setEnabled(False)
 
         self.crat_but = QtWidgets.QPushButton(u'生成目标')
         self.crat_but.setEnabled(False)
+        self.crat_but.setToolTip(u'生成头部模型目标，调控目标到合适位置')
         self.mach_but = QtWidgets.QPushButton(u'匹配目标')
         self.mach_but.setEnabled(False)
+        self.mach_but.setToolTip(u'将权重关节等匹配到目标变换')
 
     def create_layout(self):
         getMod_layout = QtWidgets.QHBoxLayout()
@@ -67,8 +69,10 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
         self.mach_but.clicked.connect(self.match_transformation)
 
     def run_transformation(self):
+        mc.undoInfo(ock = True)
         self.save_scene()#保存场景并复制出备用蒙皮场景
         self.set_transformation()
+        mc.undoInfo(cck = True)
 
     def get_mod(self):
         sel_lis = mc.ls(sl=True)
@@ -105,18 +109,11 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
         return lis
 
     def save_scene(self):
-        ref_path = mc.internalVar(uad = True) + mc.about(v = True)
-        ret = mc.confirmDialog(title ='保存警告：', message = '该操作将保存当前场景，是否确定保存？',
-                               button = ['保存', '不保存继续', '取消'], defaultButton = '保存',
-                               dismissString = 'No', icn = 'warning')
-        if ret == u'保存':
-            mc.file(s = True)
-        elif ret == u'不保存继续':
-            pass
-        else:
-            return False
-        new_path = mc.file(q=True, exn=True)
-        copyfile(new_path, self.target_path)
+        mc.select(self.modAll_lis)
+        mc.select('spine_04', add = True)
+        mc.file(self.target_path, f = True, es = True, typ = 'mayaBinary', op = 'v = 1', pr = True)
+        # new_path = mc.file(q=True, exn=True)
+        # copyfile(new_path, self.target_path)
         # mc.file(rn = self.target_path)
         # mc.file(f = True, s = True, typ = 'mayaBinary')
 
@@ -129,6 +126,8 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
             box = mc.xform(res_mod, q = True, bb = True)
             self.t = [(box[0] + box[3])/2, (box[1] + box[4])/2, box[5]]
             mc.spaceLocator(n = 'reference_target', p = self.t)
+            mc.setAttr('reference_target.rotateY', l = True)
+            mc.setAttr('reference_target.rotateZ', l = True)
             mc.xform('reference_target', piv = self.t)
             mc.parent(res_mod, 'reference_target')
             mc.select('reference_target')
@@ -192,20 +191,20 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
 
     def rot_mod(self, pos, rot, scl):
         #使模型回到原位
-        mc.group(n = 'grp_moveMod_001', w = True, em = True)
-        for obj in self.modAll_lis:
-            mc.parent(obj, 'grp_moveMod_001')
-            for aix in ['X', 'Y', 'Z']:
-                mc.setAttr('{}.translate{}'.format(obj, aix), l=False)
-                mc.setAttr('{}.rotate{}'.format(obj, aix), l=False)
-                mc.setAttr('{}.scale{}'.format(obj, aix), l=False)
-        mc.setAttr('grp_moveMod_001.rotateX', -90)
-        mc.makeIdentity('grp_moveMod_001', a = True, r = True, n = False, pn = True)
+        # mc.group(n = 'grp_moveMod_001', w = True, em = True)
+        # for obj in self.modAll_lis:
+        #     mc.parent(obj, 'grp_moveMod_001')
+        #     for aix in ['X', 'Y', 'Z']:
+        #         mc.setAttr('{}.translate{}'.format(obj, aix), l=False)
+        #         mc.setAttr('{}.rotate{}'.format(obj, aix), l=False)
+        #         mc.setAttr('{}.scale{}'.format(obj, aix), l=False)
+        # mc.setAttr('grp_moveMod_001.rotateX', -90)
+        # mc.makeIdentity('grp_moveMod_001', a = True, r = True, n = False, pn = True)
 
-        #将模型都p出来
-        for obj in self.modAll_lis:
-            mc.parent(obj, w = True)
-        mc.delete('grp_moveMod_001')
+        # #将模型都p出来
+        # for obj in self.modAll_lis:
+        #     mc.parent(obj, w = True)
+        # mc.delete('grp_moveMod_001')
 
         #生成新的组对模型进行变换
         mc.group(n = 'grp_moveMod_001', w = True, em = True)
@@ -213,6 +212,10 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
         mc.makeIdentity('grp_moveMod_001', a = True, t = True, n = False, pn = True)
         for obj in self.modAll_lis:
             mc.parent(obj, 'grp_moveMod_001')
+            for aix in ['X', 'Y', 'Z']:
+                mc.setAttr('{}.translate{}'.format(obj, aix), l=False)
+                mc.setAttr('{}.rotate{}'.format(obj, aix), l=False)
+                mc.setAttr('{}.scale{}'.format(obj, aix), l=False)
         mc.xform('grp_moveMod_001', t = pos, ro = rot, s = scl)
         mc.makeIdentity('grp_moveMod_001', a = True, t = True, r = True, s = True, n = False, pn = True)
 
@@ -239,16 +242,16 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
         mc.xform('grp_moveDrvJnt_001', t = pos, ro = rot, s = scl)
 
     def create_skin(self, cls_dir, cls_name_dir):
-        for cls in cls_dir:
+        for clst in cls_dir:
             jnt_lis = []
-            for jnt in cls_dir[cls]:
+            for jnt in cls_dir[clst]:
                 jnt_lis.append(jnt)
-            jnt_lis.append(cls)
-            mc.skinCluster(jnt_lis, tsb = True, n = cls_name_dir[cls])
+            jnt_lis.append(clst)
+            mc.skinCluster(jnt_lis, tsb = True, n = cls_name_dir[clst])
 
     def connect_jnt(self, cls_dir):
-        for cls in cls_dir:
-            for jnt in cls_dir[cls]:
+        for clst in cls_dir:
+            for jnt in cls_dir[clst]:
                 mc.parentConstraint('drv_{}'.format(jnt), jnt)
 
     def reference_target(self, pos, rot, scl):
