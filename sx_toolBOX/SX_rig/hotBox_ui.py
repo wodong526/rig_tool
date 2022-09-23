@@ -87,4 +87,13 @@ class SX_RotBox(object):
                                                                                 'reload(rig_location);'
                                                                                 'rig_location.get_jnt_core()')
         
+        get_menu = mc.menuItem(p = menu, l = u'获取', rp = 'SW', sm = 1)
+        mc.menuItem(p = get_menu, l = u'获取选中对象的蒙皮关节', rp = 'W', c = 'from sx_toolBOX.SX_rig import rig_tool;'
+                                                                              'reload(rig_tool);'
+                                                                              'rig_tool.select_skinJoint()')
+        mc.menuItem(p = get_menu, l = u'选中个数与对象', rp = 'NW', c = 'from sx_toolBOX.SX_rig import rig_tool;'
+                                                                              'reload(rig_tool);'
+                                                                              'rig_tool.get_length()')
+        
+        
         mc.menuItem(p = menu, l = '刷新热盒', c = rebuild_rotBox)

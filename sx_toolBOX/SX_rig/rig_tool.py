@@ -36,3 +36,25 @@ def freeze_rotation():
             obj.jointOrient.set(newRotation)
             log.info('{}的旋转已冻结。'.format(obj))
             continue
+
+def select_skinJoint():
+    sel_lis = mc.ls(sl = 1)
+    jnt_lis = []
+    for mod in sel_lis:
+        for obj in mc.listHistory(mod, af=True):
+            if mc.nodeType(obj) == 'skinCluster':
+                for jnt in mc.skinCluster(obj, inf=1, q=1):
+                    if jnt not in jnt_lis:
+                        jnt_lis.append(jnt)
+    if jnt_lis:
+        mc.select(jnt_lis)
+        log.info('已选中蒙皮关节。')
+    else:
+        log.error('选中对象没有蒙皮关节。')
+        
+def get_length():
+    obj = mc.ls(sl=True, fl=True)
+    n = len(obj)
+    log.info('选中对象共有：{}个。对象为：{}。'.format(n, obj))
+        
+        

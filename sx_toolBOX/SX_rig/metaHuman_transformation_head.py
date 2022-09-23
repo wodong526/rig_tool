@@ -69,10 +69,8 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
         self.mach_but.clicked.connect(self.match_transformation)
 
     def run_transformation(self):
-        mc.undoInfo(ock = True)
         self.save_scene()#保存场景并复制出备用蒙皮场景
         self.set_transformation()
-        mc.undoInfo(cck = True)
 
     def get_mod(self):
         sel_lis = mc.ls(sl=True)
@@ -250,9 +248,23 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
             mc.skinCluster(jnt_lis, tsb = True, n = cls_name_dir[clst])
 
     def connect_jnt(self, cls_dir):
+        if mc.objExists('xform'):
+            if mc.objExists('connects'):
+                pass
+            else:
+                mc.group(n = 'connects', p = 'xform', em = True)
+        else:
+            mc.group(n = 'xform', em = True, w = True)
+            mc.group(n = 'connects', p = 'xform', em = True)
+        
+        conn_lis = []
         for clst in cls_dir:
             for jnt in cls_dir[clst]:
-                mc.parentConstraint('drv_{}'.format(jnt), jnt)
+                if jnt not in conn_lis:
+                    conn_lis.append(jnt)
+        for jnt in conn_lis:
+            par_con = mc.parentConstraint('drv_{}'.format(jnt), jnt)
+            mc.parent(par_con, 'connects')
 
     def reference_target(self, pos, rot, scl):
         mc.file(self.target_path, r = True, typ = 'mayaBinary', ns = 'tst')
@@ -278,6 +290,7 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
 
         mc.file(self.target_path, rr = True)
         mc.delete('grp_refJnt_001')
+        log.info('转换完毕。')
 
     def closeEvent(self, event):
         '''
