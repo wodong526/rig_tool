@@ -44,9 +44,9 @@ class SX_Menu(object):
             pm.menuItem(d=1, dl='break', p=master_menu, )
             menu_rig = pm.menuItem(to=True, p=master_menu, l=u'绑定', i='kinJoint.png', sm=True)
             pm.menuItem(d=1, dl='break', p=master_menu, )
-            menu_aim = pm.menuItem(to=True, p=master_menu, l=u'动画', i='polyCube.png')
+            menu_aim = pm.menuItem(to=True, p=master_menu, l=u'动画', i='setKeyframe.png')
             pm.menuItem(d=1, dl='break', p=master_menu, )
-            menu_mod = pm.menuItem(to=True, p=master_menu, l=u'建模', i='setKeyframe.png', sm=True)
+            menu_mod = pm.menuItem(to=True, p=master_menu, l=u'建模', i='polyCube.png', sm=True)
             pm.menuItem(d=1, dl='break', p=master_menu, )
             menu_clr = pm.menuItem(to=True, p=master_menu, l=u'清理报错', i='error.png', sm=True)
             ##########################################################
@@ -75,6 +75,9 @@ class SX_Menu(object):
                           'reload(metaHuman_transformation_head);')
             pm.menuItem(to=True, p=menu_rig, l=u'打铆钉', i='meta_trsform_head.png',
                         c="mel.eval('source \"C:/Users/Administrator/Documents/maya/2018/scripts/sx_toolBOX/SX_rig/check.mel\";')")
+            pm.menuItem(to=True, p=menu_rig, l=u'履带生成器', i='meta_trsform_head.png',
+                        c='from sx_toolBOX.SX_rig import trackTool;'
+                          'reload(trackTool);')
 
             pm.menuItem(d=1, dl=u'场景清理', p=menu_rig)
             rig_clear = pm.menuItem(to=True, p=menu_rig, l=u'模型清理', i='polyCleanup.png', sm=True)

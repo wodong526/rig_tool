@@ -134,7 +134,7 @@ class create_ctl(QtWidgets.QDialog):#使该窗口为控件
         for h in range(int(math.ceil(len(self.button_lis) / 6.0))):
             h_layout = QtWidgets.QHBoxLayout()
             for v in range(6):
-                if h * 6 + v == 67:
+                if h * 6 + v == 68:
                     break
                 h_layout.addWidget(self.button_lis[h * 6 + v])
                 h_layout.addStretch()
@@ -202,6 +202,7 @@ class create_ctl(QtWidgets.QDialog):#使该窗口为控件
             scl = mc.xform(sel_cv, s = True, q = True, ws = True)
             name = self.grp_lin.text()
             ctl_name = mc.rename(sel_cv, 'ctl_{}_001'.format(name))
+            mc.rename(mc.listRelatives(ctl_name, s=True)[0], 'ctl_{}_001Shape'.format(name))
             grp = mc.group(em = True, n = 'zero_{}_001'.format(name))
             grpOffset = mc.group(em = True, p = grp, n = 'Offset_{}_001'.format(name))
             mc.xform(grp, t = pos, ro = rot, s = scl, ws = True)
