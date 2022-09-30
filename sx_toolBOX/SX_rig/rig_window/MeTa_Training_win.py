@@ -44,6 +44,12 @@ class TrainingApparatus(QtWidgets.QDialog):
         self.lin_assetsName.setValidator(QtGui.QRegExpValidator(QtCore.QRegExp('[a-zA-Z0-9_]{16}')))
         self.but_createLink = QtWidgets.QPushButton(u'创建链接')
 
+        self.but_hand_transform = QtWidgets.QPushButton(u'头部变换')
+
+        self.line_h_a = QtWidgets.QFrame()
+        self.line_h_a.setFrameShape(QtWidgets.QFrame.HLine)
+        self.line_h_b = QtWidgets.QFrame()
+        self.line_h_b.setFrameShape(QtWidgets.QFrame.HLine)
 
     def create_layout(self):
         extract_layout = QtWidgets.QHBoxLayout()
@@ -59,7 +65,10 @@ class TrainingApparatus(QtWidgets.QDialog):
         main_layout = QtWidgets.QVBoxLayout(self)
         main_layout.addWidget(self.lab_extract)
         main_layout.addLayout(extract_layout)
+        main_layout.addWidget(self.line_h_a)
         main_layout.addLayout(link_layout)
+        main_layout.addWidget(self.line_h_b)
+        main_layout.addWidget(self.but_hand_transform)
 
     def create_connections(self):
         self.but_extract_head.clicked.connect(self.extract_head)
@@ -67,13 +76,15 @@ class TrainingApparatus(QtWidgets.QDialog):
         self.but_createBied.clicked.connect(self.set_bied)
         self.but_matchJoint.clicked.connect(self.match_joint)
         self.but_createLink.clicked.connect(self.set_link)
+        self.but_hand_transform.clicked.connect(self.set_hand)
 
     def extract_head(self):
-        from sx_toolBOX.SX_rig import extract_meta_head
+        from sx_toolBOX.SX_rig.Meta import extract_meta_head
         reload(extract_meta_head)
+        extract_meta_head.EXTRACT_META()
 
     def extract_body(self):
-        from sx_toolBOX.SX_rig import extract_meta_body
+        from sx_toolBOX.SX_rig.Meta import extract_meta_body
         reload(extract_meta_body)
         extract_meta_body.Extract_Body()
 
@@ -83,7 +94,7 @@ class TrainingApparatus(QtWidgets.QDialog):
         adv_to_meta.CreatBied()
 
     def match_joint(self):
-        from sx_toolBOX.SX_rig import adv_to_meta
+        from sx_toolBOX.SX_rig.Meta import adv_to_meta
         reload(adv_to_meta)
         adv_to_meta.MatchJoint()
 
@@ -101,6 +112,10 @@ class TrainingApparatus(QtWidgets.QDialog):
         else:
             log.error('未输入资产名。')
             return False
+
+    def set_hand(self):
+        from sx_toolBOX.SX_rig.Meta import metaHuman_transformation_head
+        reload(metaHuman_transformation_head)
 
 
 

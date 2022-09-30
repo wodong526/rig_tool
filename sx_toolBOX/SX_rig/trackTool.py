@@ -210,7 +210,7 @@ class CREATE_TRACK(QtWidgets.QDialog):
             self.xform_grp = 'grp_xform_D'
 
         if not mc.objExists('grp_surface_{}'.format(self.nam)):
-            self.surface_grp = mc.group(n = 'grp_surface_{}'.format(self.nam), em = True)
+            self.surface_grp = mc.group(n = 'grp_surface_{}'.format(self.nam), em = True, p=self.xform_grp)
         else:
             self.surface_grp = 'grp_surface_{}'.format(self.nam)
 
@@ -524,7 +524,7 @@ class CREATE_TRACK(QtWidgets.QDialog):
             mc.parent(grp, ctl_grp)
 
             for aix in ['X', 'Y', 'Z']:
-                mc.setAttr('{}.rotate{}'.format(ctl, aix), k=False, l=False, cb=False)
+                mc.setAttr('{}.scale{}'.format(ctl, aix), k=False, l=True, cb=False)
             log.info('控制器{}创建完成。'.format(ctl))
         sclt = mc.skinCluster(jnt_lis, self.loft_suf)[0]
         for i in range(mc.getAttr('{}.spansU'.format(self.loft_suf))):

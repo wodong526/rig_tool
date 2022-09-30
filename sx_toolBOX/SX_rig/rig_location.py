@@ -41,8 +41,12 @@ def create_joint():
     '''
     sel_lis = mc.ls(sl = True)
     if len(sel_lis) == 1:
-        mc.parent(mc.joint(), w = True)
-        log.info('已创建关节到{}中心并匹配旋转。'.format(sel_lis[0]))
+        pos = mc.xform(sel_lis[0], ws=True, q=True, t=True)
+        rot = mc.xform(sel_lis[0], ws=True, q=True, ro=True)
+        mc.select(cl=True)
+        jnt = mc.joint()
+        mc.xform(jnt, ws=True, t=pos, ro=rot)
+        log.info('已创建关节{}到{}中心并匹配旋转。'.format(jnt, sel_lis[0]))
     else:
         log.error('应选择1个对象，实际为{}个。'.format(len(sel_lis)))
 
@@ -66,8 +70,8 @@ def get_jnt_core():
                    pos_lis[1] / len(obj_lis),
                    pos_lis[2] / len(obj_lis)]
         
-        
-        jnt = mc.parent(mc.joint(), w = True)
+        mc.select(cl=True)
+        jnt = mc.joint()
         mc.xform(jnt, ws = 1, t = obj_pos)
 
         log.info('已在选择对象的中心创建关节{}'.format(jnt))
