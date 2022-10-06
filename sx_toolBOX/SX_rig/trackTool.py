@@ -407,10 +407,8 @@ class CREATE_TRACK(QtWidgets.QDialog):
             jnt = mc.joint(n='jnt_{}_{}'.format(self.nam, str(i + 1).rjust(3, '0')))
             mc.parent(jnt, self.jnt_grp)
 
-            #mc.makeIdentity(mod, a=True, r=True, s=True, n=False, pn=True)
             mc.xform(jnt, t=pos, ro=rot)
             mc.xform(mod, t=pos, ro=rot)
-            
             mc.makeIdentity(jnt, a=True, t=True, r=True, n=False, pn=True)
             mc.makeIdentity(mod, a=True, t=True, r=True, n=False, pn=True)
             mc.skinCluster(mod, jnt)
@@ -445,7 +443,7 @@ class CREATE_TRACK(QtWidgets.QDialog):
                 add_node = mc.createNode('addDoubleLinear', n='add_rotX_{}_{}'.format(self.nam, i_str))
                 self.transvs.append(add_node)
 
-                mc.setAttr('{}.input2'.format(add_node), 90)
+                mc.setAttr('{}.input2'.format(add_node), 180)
                 mc.connectAttr('{}.constraintRotateX'.format(aim), '{}.input1'.format(add_node))
                 mc.connectAttr('{}.output'.format(add_node), '{}.rotateX'.format(jnt), f=True)
             log.info('履带x轴方向已旋转90度。')
