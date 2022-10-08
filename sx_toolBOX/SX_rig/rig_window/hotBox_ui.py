@@ -1,5 +1,6 @@
 # -*- coding:GBK -*- 
 import maya.cmds as mc
+import maya.mel as mm
 import logging
 logging.basicConfig()
 log = logging.getLogger(__name__)
@@ -77,9 +78,7 @@ class SX_RotBox(object):
         
         jnt_menu = mc.menuItem(p = menu, l = '关节', rp = 'E', sm = 1)
         mc.menuItem(p = jnt_menu, l = '创建关节工具', rp = 'N', c = 'mc.JointTool()')
-        # mc.menuItem(p = jnt_menu, l = '创建关节到选择位', rp = 'E', c = 'from sx_toolBOX.SX_rig import rig_location;'
-        #                                                                'reload(rig_location);'
-        #                                                                'rig_location.get_jnt_trs()')
+        mc.menuItem(p = jnt_menu, l = '关节显示大小', rp = 'S', c = 'mm.eval("jdsWin;")')
         mc.menuItem(p = jnt_menu, l = '创建关节并匹配旋转', rp = 'NE', c = 'from sx_toolBOX.SX_rig import rig_location;'
                                                                           'reload(rig_location);'
                                                                           'rig_location.create_joint()')

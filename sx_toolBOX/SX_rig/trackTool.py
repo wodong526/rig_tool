@@ -62,7 +62,7 @@ class CREATE_TRACK(QtWidgets.QDialog):
         self.ctl_lin.setEnabled(False)
         self.ctl_lin.setToolTip(u'点击按钮加载履带控制器')
 
-        self.create_track_but = QtWidgets.QPushButton(u'生成履带')
+        self.create_track_but = QtWidgets.QPushButton(u'生成履带参考')
         self.trackQuantity_sp = QtWidgets.QSpinBox()
         self.trackQuantity_sp.setValue(30)
         self.trackQuantity_sp.setMinimum(1)
@@ -72,11 +72,11 @@ class CREATE_TRACK(QtWidgets.QDialog):
         self.conn_but = QtWidgets.QPushButton(u'生成链接')
         self.conn_but.setEnabled(False)
 
-        self.transverse_rvs_but = QtWidgets.QPushButton(u'履带横向反转')
+        self.transverse_rvs_but = QtWidgets.QPushButton(u'履带正反翻转')
         self.transverse_rvs_but.setEnabled(False)
-        self.vertical_rvs_but = QtWidgets.QPushButton(u'履带竖向反转')
+        self.vertical_rvs_but = QtWidgets.QPushButton(u'履带朝向翻转')
         self.vertical_rvs_but.setEnabled(False)
-        self.portrait_rvs_but = QtWidgets.QPushButton(u'履带纵向反转')
+        self.portrait_rvs_but = QtWidgets.QPushButton(u'履带指向调整')
         self.portrait_rvs_but.setEnabled(False)
         self.create_ctl_but = QtWidgets.QPushButton(u'生成控制器')
         self.create_ctl_but.setEnabled(False)
@@ -369,6 +369,8 @@ class CREATE_TRACK(QtWidgets.QDialog):
             aim_nod = mc.createNode('aimConstraint', n='aim_{}_{}'.format(self.nam, i_str))
             mc.parent(aim_nod, self.link_grp)
             self.aim_lis.append(aim_nod)
+            mc.setAttr('{}.aimVectorZ'.format(aim_nod), 1)#一般履带单片都是z轴向前，所以要把默认朝向改一下
+            mc.setAttr('{}.aimVectorX'.format(aim_nod), 0)#不改也可以后期用其它按钮改
             mc.connectAttr('{}.normal'.format(sufInfo_node), '{}.worldUpVector'.format(aim_nod))
             for aix in ['X', 'Y', 'Z']:
                 mc.connectAttr('{}.constraintRotate{}'.format(aim_nod, aix), '{}.rotate{}'.format(loc, aix))
@@ -389,6 +391,9 @@ class CREATE_TRACK(QtWidgets.QDialog):
             mc.connectAttr('{}.output3D'.format(plus_aix_nod), '{}.target[0].targetTranslate'.format(self.aim_lis[inf]))
             log.info('{}方向约束已生成。'.format(self.loc_lis[inf]))
 
+        self.create_track_but.setEnabled(False)
+        self.undoTrack_but.setEnabled(False)
+        self.conn_but.setEnabled(False)
         self.create_lvDai(mod_lis)
 
     def create_lvDai(self, mod_lis):
@@ -422,65 +427,40 @@ class CREATE_TRACK(QtWidgets.QDialog):
 
     def transverse_rvs(self):
         '''
-        在模型与上游的目标约束节点之间添加加减节点，用以将方向加180度，在第一次使用时会因为需要生成节点而花更多的时间
+        改变目标约束节点的向上轴（y轴）的正负来达到上下翻转效果
         :return:
         '''
-        if hasattr(self, 'transvs'):
-            for node in self.transvs:
-                if mc.getAttr('{}.input2'.format(node)) == 180:
-                    mc.setAttr('{}.input2'.format(node), 0)
-                elif mc.getAttr('{}.input2'.format(node)) == 0:
-                    mc.setAttr('{}.input2'.format(node), 180)
-                else:
-                    log.warning('节点{}参数修改错误。'.format(node))
-            log.info('履带x轴方向已旋转180度。')
-
-        else:
-            self.transvs = []
-            i = 0
-            for aim, jnt in zip(self.aim_lis, self.loc_lis):
-                i = i+1
-                i_str = str(i).rjust(3, '0')
-                add_node = mc.createNode('addDoubleLinear', n='add_rotX_{}_{}'.format(self.nam, i_str))
-                self.transvs.append(add_node)
-
-                mc.setAttr('{}.input2'.format(add_node), 180)
-                mc.connectAttr('{}.constraintRotateX'.format(aim), '{}.input1'.format(add_node))
-                mc.connectAttr('{}.output'.format(add_node), '{}.rotateX'.format(jnt), f=True)
-            log.info('履带x轴方向已旋转180度。')
+        for aim in self.aim_lis:
+            old_aix = mc.getAttr('{}.upVectorY'.format(aim))
+            mc.setAttr('{}.upVectorY'.format(aim), old_aix*-1)
+        log.info('履带向上轴已反向。')
 
     def vertical_rvs(self):
-        if hasattr(self, 'vertical'):
-            for node in self.vertical:
-                if mc.getAttr('{}.input2'.format(node)) == 180:
-                    mc.setAttr('{}.input2'.format(node), 0)
-                elif mc.getAttr('{}.input2'.format(node)) == 0:
-                    mc.setAttr('{}.input2'.format(node), 180)
-                else:
-                    log.warning('节点{}参数修改错误。'.format(node))
-            log.info('履带z轴方向已旋转180度。')
-
-        else:
-            self.vertical = []
-            i = 0
-            for aim, jnt in zip(self.aim_lis, self.loc_lis):
-                i = i + 1
-                i_str = str(i).rjust(3, '0')
-                add_node = mc.createNode('addDoubleLinear', n='add_rotY_{}_{}'.format(self.nam, i_str))
-                self.vertical.append(add_node)
-
-                mc.setAttr('{}.input2'.format(add_node), 180)
-                mc.connectAttr('{}.constraintRotateY'.format(aim), '{}.input1'.format(add_node))
-                mc.connectAttr('{}.output'.format(add_node), '{}.rotateY'.format(jnt), f=True)
-            log.info('履带y轴方向已旋转180度。')
+        '''
+        检测有值的那个朝向，并将朝向乘负一来转向
+        :return:
+        '''
+        for aim in self.aim_lis:
+            aix = self.getAix(aim, 'aimVector')
+            old_aix = mc.getAttr('{}.aimVector{}'.format(aim, aix))
+            mc.setAttr('{}.aimVector{}'.format(aim, aix), old_aix * -1)
+        log.info('履带朝向已反向。')
 
     def portrait_rvs(self):
         '''
-        将曲面反向就可以直接做到将路径反转的效果，但会导致模型的位置也跟着反转
+        检测有值的那个朝向，将其归零，将其的值给到另一个轴，由于y轴永远都是用于向上轴，所以这里只考虑x和z轴
         :return:
         '''
-        mc.reverseSurface(self.loft_suf, ch=False, d=0, rpo=True)
-        log.info('履带z轴方向已旋转180度。')
+        for aim in self.aim_lis:
+            aix = self.getAix(aim, 'aimVector')
+            old_aix = mc.getAttr('{}.aimVector{}'.format(aim, aix))
+            if aix == 'X':
+                mc.setAttr('{}.aimVectorZ'.format(aim), old_aix)
+                mc.setAttr('{}.aimVector{}'.format(aim, aix), 0)
+            elif aix == 'Z':
+                mc.setAttr('{}.aimVectorX'.format(aim), old_aix)
+                mc.setAttr('{}.aimVector{}'.format(aim, aix), 0)
+        log.info('履带朝向已更换。')
 
     def create_controller(self):
         '''
@@ -530,6 +510,21 @@ class CREATE_TRACK(QtWidgets.QDialog):
         for i in range(mc.getAttr('{}.spansU'.format(self.loft_suf))):
             mc.skinPercent(sclt, '{}.cv[{}][:]'.format(self.loft_suf, i), tv=[('{}'.format(jnt_lis[i]), 1)])
         log.info('控制器效果已完成。')
+
+    def getAix(self, obj, typ):
+        '''
+        通过传入对象名和属性名检测哪个轴向有值
+        :return: 返回有值的那个轴向
+        '''
+        val = []
+        for aix in ['X', 'Y', 'Z']:
+            if mc.getAttr('{}.{}{}'.format(obj, typ, aix)) != 0:
+                val.append(aix)
+
+        if len(val) == 1:
+            return val[0]
+        else:
+            log.error('{}的{}属性竟然有不止一个值。'.format(obj, typ))
 
     def ctl_point(self):
         '''

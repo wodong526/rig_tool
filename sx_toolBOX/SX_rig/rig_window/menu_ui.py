@@ -38,7 +38,7 @@ class SX_Menu(object):
             master_menu = pm.menu(self.menu_n, to=True, l=u'É½÷ÌÓ³»­', p=mainWindow)
 
             pm.menuItem(to=True, p=master_menu, l=u'Ë¢ÐÂ²Ëµ¥', i='refresh.png',
-                        c='from sx_toolBOX.SX_rig import menu_ui;'
+                        c='from sx_toolBOX.SX_rig.rig_window import menu_ui;'
                           'reload(menu_ui);'
                           'menu_ui.reload_menu()')
             pm.menuItem(d=1, dl='break', p=master_menu, )
