@@ -67,6 +67,8 @@ class SX_RotBox(object):
         mc.menuItem(p = except_menu, l = u'清理场景关键帧', rp = 'E', c = 'from sx_toolBOX.SX_rig import rig_clear;'
                                                                          'reload(rig_clear);'
                                                                          'rig_clear.clear_key()')
+        mc.menuItem(p = except_menu, l = u'清理场景动画层', rp = 'SE', c = 'from sx_toolBOX.SX_rig import rig_clear;'
+                                                                          'rig_clear.clear_animLayer()')
         
         subMenu = mc.menuItem(p = menu, l = '定位器', rp = 'W', subMenu = 1)
         mc.menuItem(p = subMenu, l = u'创建定位器到中心', rp = 'W', c = 'from sx_toolBOX.SX_rig import rig_location;'
@@ -78,7 +80,7 @@ class SX_RotBox(object):
         
         jnt_menu = mc.menuItem(p = menu, l = '关节', rp = 'E', sm = 1)
         mc.menuItem(p = jnt_menu, l = '创建关节工具', rp = 'N', c = 'mc.JointTool()')
-        mc.menuItem(p = jnt_menu, l = '关节显示大小', rp = 'S', c = 'mm.eval("jdsWin;")')
+        mc.menuItem(p = jnt_menu, l = '关节显示大小', rp = 'S', c = lambda _ : mm.eval("jdsWin;"))
         mc.menuItem(p = jnt_menu, l = '创建关节并匹配旋转', rp = 'NE', c = 'from sx_toolBOX.SX_rig import rig_location;'
                                                                           'reload(rig_location);'
                                                                           'rig_location.create_joint()')
