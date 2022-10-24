@@ -71,18 +71,23 @@ def clear_boundary():
     查询选中对象的边界边。
     """
     error_lis = []
-    for inf in mc.ls(sl=True):
-        if mc.listRelatives(inf, s=True):
-            mc.select(inf, r=True)
-            mc.SelectEdgeMask()
-            mc.SelectAll()
-            mc.ConvertSelectionToShellBorder()
-            if mc.ls(sl=True):
-                for e in mc.ls(sl=True):
-                    error_lis.append(e)
-            mel.eval("maintainActiveChangeSelectMode {} 1;".format(inf))
-            continue
-        log.warning("{}不是多边形模型。".format(inf))
+    if mc.ls(sl=True):
+        for inf in mc.ls(sl=True):
+            if mc.listRelatives(inf, s=True):
+                if mc.nodeType(mc.listRelatives(inf, s=True)[0]) == 'mesh':
+                    mc.select(inf)
+                    mel.eval('ConvertSelectionToEdgePerimeter;')
+                    for edge in mc.ls(sl=True):
+                        error_lis.append(edge)
+                else:
+                    log.warning("{}不是多边形模型，已跳过。".format(inf))
+                    continue
+            else:
+                log.warning("{}不是多边形模型，已跳过。".format(inf))
+                continue
+    else:
+        log.error('没有选中对象。')
+        return False
     mc.select(error_lis)
     if error_lis:
         log.info("边界边有{}".format(error_lis))
@@ -226,3 +231,14 @@ def clear_key():
     else:
         mel.eval('doClearKeyArgList 3 { "1","0:10","keys","none","0","1","0","1","animationList","0","noOptions","0","0" };')
         log.info('已删除场景中所有关键帧。')
+
+def clear_animLayer():
+    '''
+    删除场景内所有动画层
+    '''
+    for ani in mc.ls(type='animLayer'):
+        try:
+            mc.delete(ani)
+            log.info('已删除动画层{}。'.format(ani))
+        except:
+            log.warning('动画层{}删除失败，可能是因为它是其它层的子级，所以在删除父层时自动删除了子级层。'.format(ani))

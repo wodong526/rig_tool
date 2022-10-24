@@ -225,7 +225,7 @@ class CREATE_TRACK(QtWidgets.QDialog):
             self.jnt_grp = 'grp_jnt_{}'.format(self.nam)
 
         if not mc.objExists('grp_loc_{}'.format(self.nam)):
-            self.loc_grp = mc.group(n = 'grp_loc_{}'.format(self.nam), em = True)
+            self.loc_grp = mc.group(n = 'grp_loc_{}'.format(self.nam), em = True, p=self.xform_grp)
         else:
             self.loc_grp = 'grp_loc_{}'.format(self.nam)
 

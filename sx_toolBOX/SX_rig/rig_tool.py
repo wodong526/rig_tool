@@ -1,6 +1,13 @@
 # -*- coding:GBK -*- 
 import maya.cmds as mc
 import pymel.core as pm
+import maya.OpenMayaUI as omui
+
+from PySide2 import QtCore
+from PySide2 import QtWidgets
+from PySide2 import QtGui
+from shiboken2 import wrapInstance
+
 import logging
 logging.basicConfig()
 log = logging.getLogger(__name__)
@@ -57,4 +64,61 @@ def get_length():
     n = len(obj)
     log.info('选中对象共有：{}个。对象为：{}。'.format(n, obj))
         
+def maya_main_window():
+    main_window_ptr = omui.MQtUtil.mainWindow()
+    return wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
+
+class SameName(QtWidgets.QDialog):
+    def __init__(self, parent = maya_main_window()):
+        super(SameName, self).__init__(parent)
+
+        self.setWindowTitle(u'选择同名节点')
+        if mc.about(ntOS = True):#判断系统类型
+            self.setWindowFlags(self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint)#删除窗口上的帮助按钮
+        elif mc.about(macOS = True):
+            self.setWindowFlags(QtCore.Qt.Tool)
+
+        self.create_widgets()
+        self.create_layout()
+        self.create_connections()
+    
+    def create_widgets(self):
+        self.lin_name = QtWidgets.QLineEdit()
+        self.lin_name.setAlignment(QtCore.Qt.AlignCenter)
+        self.lin_name.setPlaceholderText(u'填入需要选择的对象名')
         
+        validator = QtGui.QRegExpValidator(self)
+        validator.setRegExp(QtCore.QRegExp('[a-zA-Z][a-zA-Z0-9_]+'))
+        self.lin_name.setValidator(validator)
+    
+    def create_layout(self):
+        main_layout = QtWidgets.QVBoxLayout(self)
+        main_layout.addWidget(self.lin_name)
+    
+    def create_connections(self):
+        self.lin_name.returnPressed.connect(self.select_same)
+    
+    def select_same(self):
+        sel_lis = mc.ls(l=True)
+        same_lis = []
+        for obj in sel_lis:
+            obj_lis = obj.split('|')
+            if obj_lis[-1] == self.lin_name.text():
+                same_lis.append(obj)
+        mc.select(same_lis)
+        log.info('已选择同名节点{}。'.format(same_lis))
+        self.close()
+    
+    def closeEvent(self, event):
+        self.close()
+        self.deleteLater()
+
+def showWindow():
+    try:
+        my_window.close()
+        my_window.deleteLater()
+    except:
+        pass
+    finally:
+        my_window = SameName()
+        my_window.show()
