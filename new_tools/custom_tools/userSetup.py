@@ -25,7 +25,7 @@ class SX_Widget(object):
             self.create_menu()
             self.create_hotBox()
         else:
-            log.error('找不到服务器插件路径，请检查是否已链接到服务器端。')
+            log.error('找不到服务器插件路径，请检查您的网络是否已链接到服务器端。')
 
     def create_IconPath(self):
         os.environ['XBMLANGPATH'] = str(os.environ['XBMLANGPATH']) + ';' + r'Z:\Library\rig_plug_in\maya_plug\data\icon'
