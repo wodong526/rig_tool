@@ -1,0 +1,196 @@
+if(`window -q -ex AA_HUV_win`)
+{
+deleteUI AA_HUV_win;
+};
+window 
+	   -wh 180 290
+	   -t "(づ′▽`)づPoly点添加毛囊工具"
+	   AA_HUV_win;
+columnLayout -adj 1 -rs 5 ;
+text -l "(づ′▽`)づpoly点添加毛囊工具";
+separator;
+checkBox -al "left" -l "添加骨骼点" AA_HUV_AddJoint_check;
+button -h 30 -l "(づ′▽`)づ添加毛囊" -c AA_HUV_proc;
+button -h 30 -l "(づ′▽`)づ选择所有毛囊节点" -c AA_HUV_Select_Follicle;
+button -h 30 -l "(づ′▽`)づ隐藏选择毛囊节点" -c "AA_HUV_Vis_Sel_Foll \"0\"" ;
+button -h 30 -l "(づ′▽`)づ显示选择毛囊节点" -c "AA_HUV_Vis_Sel_Foll \"1\"" ;
+separator;
+text -l "帮助";
+text -l "选择POLY上要添加毛囊的点，\n点击\"添加毛囊\"按钮";
+separator;
+text -l "选择模型上的两条边：创建的铆钉在两条边之间.";
+			text -l "对于“NURBS”，选择“曲面点”.";
+button -h 20 -l "执行" -align "center" -c "callRivet" applyBtn;
+showWindow AA_HUV_win;
+
+window -e
+	   -wh 280 350
+	   AA_HUV_win;
+
+global proc AA_HUV_proc()
+{
+string $AA_Hair_UV[] = `ls -sl -fl`;
+if(!`objExists AA_HUV_Follicle_Group`)
+{
+group -n AA_HUV_Follicle_Group -em;
+};
+for($AA_i = 0;$AA_i<size($AA_Hair_UV);$AA_i++)
+{
+//float $AA_HUV_point_postion[] = `pointPosition -w $AA_Hair_UV[$AA_i]`;	
+string $AA_HUV_tok[];
+string $AA_HUV_poly_name;
+string $AA_HUV_name = `tokenize $AA_Hair_UV[$AA_i] "." $AA_HUV_tok`;	
+$AA_HUV_poly_name = $AA_HUV_tok[0];	
+string $AA_HUV_poly_name_two[] = `listRelatives -s $AA_HUV_poly_name`;
+$AA_HUV_poly_name = $AA_HUV_poly_name_two[0];
+string $AA_HUV_returna[] = `polyListComponentConversion -fv -tuv $AA_Hair_UV[$AA_i]`;
+//print ($AA_HUV_returna[0]+ "\n");
+float $AA_HUV_fl[] = `polyEditUV -q $AA_HUV_returna[0]`;	
+//print ($AA_HUV_fl[0] + "\n" + $AA_HUV_fl[1] + "\n");	
+
+string $AA_HUV_follicle = `createNode "follicle" -n "AA_Poly_Follicle_#"`;
+string $AA_HUV_par[] = `listRelatives -p $AA_HUV_follicle`;
+string $AA_HUV_pv = $AA_HUV_par[0];
+string $AA_HUV_p = `rename $AA_HUV_pv "AA_Poly_Follicle_T_#"`;
+//print $AA_HUV_follicle;
+connectAttr ($AA_HUV_poly_name + ".worldMatrix[0]") ($AA_HUV_follicle + ".inputWorldMatrix");
+connectAttr ($AA_HUV_poly_name + ".outMesh") ($AA_HUV_follicle + ".inputMesh");
+
+connectAttr -f ($AA_HUV_follicle + ".outTranslate") ($AA_HUV_p + ".translate");
+connectAttr -f ($AA_HUV_follicle + ".outRotate") ($AA_HUV_p + ".rotate");
+
+setAttr ($AA_HUV_follicle + ".parameterU") $AA_HUV_fl[0];
+setAttr ($AA_HUV_follicle + ".parameterV") $AA_HUV_fl[1];
+
+parent $AA_HUV_p AA_HUV_Follicle_Group;
+
+//int $AA_HUV_po_int = `checkBox -q -v AA_HUV_AddJoint_check`;
+if(`checkBox -q -v AA_HUV_AddJoint_check`)
+{
+float $AA_HUV_point_postion[] = `pointPosition -w $AA_Hair_UV[$AA_i]`;		
+joint -p $AA_HUV_point_postion[0] $AA_HUV_point_postion[1] $AA_HUV_point_postion[2];
+select -cl;
+};
+
+
+
+};
+};
+
+
+
+global proc AA_HUV_Select_Follicle()
+{
+
+//select -r `listTransforms "-type follicle"`;
+
+select -r `ls -type follicle`;
+};
+
+
+global proc AA_HUV_Vis_Sel_Foll(int $AA_HUV_Vis_Int)
+{
+string $AA_HUV_HSF[] = `ls -sl -dag -type "follicle"`;
+string $AA_HUV_HSF_For;
+for($AA_HUV_HSF_For in $AA_HUV_HSF)
+{
+
+setAttr ($AA_HUV_HSF_For + ".visibility") $AA_HUV_Vis_Int;	
+};
+
+
+}; 
+global proc string callRivet ()
+{
+	string $nameObject;
+	string $namePOSI;
+
+	string $parts[];
+	string $list[] = `filterExpand -sm 32`;
+	int $size = size($list);
+	if ($size > 0)
+	{
+		if ($size != 2)
+			error("No two selected edges");
+
+		tokenize($list[0],".",$parts);
+		$nameObject = $parts[0];
+		tokenize($list[0],"[]",$parts);
+		float $e1 = $parts[1];
+		tokenize($list[1],"[]",$parts);
+		float $e2 = $parts[1];
+
+		string $nameCFME1 = `createNode curveFromMeshEdge -n "rivetCurveFromMeshEdge1"`;
+			setAttr ".ihi" 1;
+			setAttr ".ei[0]"  $e1;
+		string $nameCFME2 = `createNode curveFromMeshEdge -n "rivetCurveFromMeshEdge2"`;
+			setAttr ".ihi" 1;
+			setAttr ".ei[0]"  $e2;
+		string $nameLoft = `createNode loft -n "rivetLoft1"`;
+			setAttr -s 2 ".ic";
+			setAttr ".u" yes;
+			setAttr ".rsn" yes;
+
+		$namePOSI = `createNode pointOnSurfaceInfo -n "rivetPointOnSurfaceInfo1"`;
+			setAttr ".turnOnPercentage" 1;
+			setAttr ".parameterU" 0.5;
+			setAttr ".parameterV" 0.5;
+
+		connectAttr -f ($nameLoft + ".os") ($namePOSI + ".is");
+		connectAttr ($nameCFME1 + ".oc") ($nameLoft + ".ic[0]");
+		connectAttr ($nameCFME2 + ".oc") ($nameLoft + ".ic[1]");
+		connectAttr ($nameObject + ".w") ($nameCFME1 + ".im");
+		connectAttr ($nameObject + ".w") ($nameCFME2 + ".im");
+	}
+	else
+	{	$list = `filterExpand -sm 41`;
+		$size = size($list);
+
+		if ($size > 0)
+		{
+			if ($size != 1)
+				error("No one point selected");
+			
+			tokenize($list[0],".",$parts);
+			$nameObject = $parts[0];
+			tokenize($list[0],"[]",$parts);
+			float $u = $parts[1];
+			float $v = $parts[2];
+			$namePOSI = `createNode pointOnSurfaceInfo -n "rivetPointOnSurfaceInfo1"`;
+					setAttr ".turnOnPercentage" 0;
+					setAttr ".parameterU" $u;
+					setAttr ".parameterV" $v;
+			connectAttr -f ($nameObject + ".ws") ($namePOSI + ".is");
+		}
+		else
+			error("No edges or point selected");
+	}
+
+	string $nameLocator = `createNode transform -n "rivet1"`;
+	createNode locator -n ($nameLocator + "Shape") -p $nameLocator;
+
+	string $nameAC = `createNode aimConstraint -p $nameLocator -n ($nameLocator + "_rivetAimConstraint1")`;
+		setAttr ".tg[0].tw" 1;
+		setAttr ".a" -type "double3" 0 1 0;
+		setAttr ".u" -type "double3" 0 0 1;
+		setAttr -k off ".v";
+		setAttr -k off ".tx";
+		setAttr -k off ".ty";
+		setAttr -k off ".tz";
+		setAttr -k off ".rx";
+		setAttr -k off ".ry";
+		setAttr -k off ".rz";
+		setAttr -k off ".sx";
+		setAttr -k off ".sy";
+		setAttr -k off ".sz";
+
+	connectAttr ($namePOSI + ".position") ($nameLocator + ".translate");
+	connectAttr ($namePOSI + ".n") ($nameAC + ".tg[0].tt");
+	connectAttr ($namePOSI + ".tv") ($nameAC + ".wu");
+	connectAttr ($nameAC + ".crx") ($nameLocator + ".rx");
+	connectAttr ($nameAC + ".cry") ($nameLocator + ".ry");
+	connectAttr ($nameAC + ".crz") ($nameLocator + ".rz");
+
+	select -r $nameLocator;
+	return ($nameLocator);
+}
