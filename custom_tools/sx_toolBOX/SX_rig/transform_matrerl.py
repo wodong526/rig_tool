@@ -116,6 +116,10 @@ class TransformMaterial(QtWidgets.QDialog):
         all_mat.remove('particleCloud1')
         self.set_json(all_mat)
 
+    def get_mat_color(self, mat):
+        return mc.getAttr('{}.color'.format(mat))[0]
+
+
     def set_json(self, mat_lis):
         '''
         通过给定的材质球列表获取其对应的材质模型
@@ -133,8 +137,11 @@ class TransformMaterial(QtWidgets.QDialog):
             mc.hyperShade(o=mat)#将材质球的赋予对象选中
             f_lis = mc.ls(sl=True)
             if f_lis:
+                color = self.get_mat_color(mat)
+
                 f_lis.insert(0, mc.nodeType(mat))
                 f_lis.insert(1, sg_node)
+                f_lis.insert(2, color)
                 mat_dir[mat] = f_lis
             else:
                 self.display_remind('材质球{}没有赋予任何对象，遂跳过。'.format(mat), 0)
@@ -174,24 +181,25 @@ class TransformMaterial(QtWidgets.QDialog):
                     if sg_node != mat_f[1]:
                         mc.rename(sg_node, mat_f[1])
                         self.display_remind('材质球{}的shadingEngine节点与原材质节点名不同，已改为{}。'.format(mat, mat_f[1]), 0)
-                    for obj_f in mat_f[2:]:
+                    for obj_f in mat_f[3:]:
                         if mc.objExists(obj_f):
                             mc.sets(obj_f, e=True, fe=mat_f[1])
                         else:
                             self.display_remind('材质球的{}赋予对象{}不存在，已跳过。'.format(mat, obj_f), 1)
                             continue
+                
             elif mc.objExists(mat) == False:
                 mat_node = mc.shadingNode(mat_f[0], asShader=True, n=mat)
                 mat_SG = mc.sets(r=True, nss=True, em=True, n=mat_f[1])
                 mc.connectAttr('{}.outColor'.format(mat_node), '{}.surfaceShader'.format(mat_SG))
 
-                for obj_f in mat_f[2:]:
+                for obj_f in mat_f[3:]:
                     if mc.objExists(obj_f):
                         mc.sets(obj_f, e=True, fe=mat_f[1])
                     else:
                         self.display_remind('材质球的{}赋予对象{}不存在，已跳过。'.format(mat, obj_f), 1)
                         continue
-
+            mc.setAttr('{}.color'.format(mat), mat_f[2][0], mat_f[2][1], mat_f[2][2])
             log.info('材质球{}已传递完成。'.format(mat))
 
     def delete_unusedNode(self):
