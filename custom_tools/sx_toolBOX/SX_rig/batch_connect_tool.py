@@ -40,7 +40,7 @@ class ConnectType_Window(QtWidgets.QDialog):
         self.lst_out_node.setMaximumHeight(200)
         self.lst_inp_node = QtWidgets.QListWidget()
         self.lst_inp_node.setMaximumHeight(200)
-        self.lst_inp_node.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
+        self.lst_inp_node.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
 
         self.but_out_load = QtWidgets.QPushButton(u'加载输入节点')#加载节点按钮
         self.but_inp_load = QtWidgets.QPushButton(u'加载输入节点')
