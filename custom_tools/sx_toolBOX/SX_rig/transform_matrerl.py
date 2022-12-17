@@ -94,7 +94,7 @@ class TransformMaterial(QtWidgets.QDialog):
         :return:
         '''
         sel_lis = mc.ls(sl=True)
-        all_matType = mc.listNodeTypes('shader')#获取场景里所有材质节点类型，加载了第三方材质的也会被查询到
+        all_matType = mc.listNodeTypes('shader')  #获取场景里所有材质节点类型，加载了第三方材质的也会被查询到
         mat_lis = []
         for obj in sel_lis:
             if mc.nodeType(obj) in all_matType:
@@ -117,8 +117,17 @@ class TransformMaterial(QtWidgets.QDialog):
         self.set_json(all_mat)
 
     def get_mat_color(self, mat):
-        return mc.getAttr('{}.color'.format(mat))[0]
-
+        try:
+            node_lis = mc.listConnections(mat, d=False)
+            if node_lis:
+                for inf in node_lis:
+                    if mc.nodeType(inf) == 'file':
+                        img_path = mc.getAttr('{}.fileTextureName'.format(inf))
+                        return ['file', inf, img_path]
+            return ['color', mc.getAttr('{}.color'.format(mat))[0]]
+        except:
+            self.display_remind('材质球{}似乎没有颜色输出属性，或者输出有误。无法导出颜色。'.format(mat), 0)
+            return None
 
     def set_json(self, mat_lis):
         '''
@@ -131,17 +140,20 @@ class TransformMaterial(QtWidgets.QDialog):
         for mat in mat_lis:
             if mat == 'lambert1':
                 sg_node = mc.listConnections('{}.outColor'.format(mat), s=False, t='shadingEngine', et=True)[1]
+            elif mc.nodeType(mat) == 'dx11Shader':
+                self.display_remind('材质球{}的类型不能是dx11，请更换成其它Maya自带的材质球类型。'.format(mat), 1)
+                return None
             else:
                 sg_node = mc.listConnections('{}.outColor'.format(mat), s=False, t='shadingEngine', et=True)[0]
 
-            mc.hyperShade(o=mat)#将材质球的赋予对象选中
+            mc.hyperShade(o=mat)  #将材质球的赋予对象选中
             f_lis = mc.ls(sl=True)
             if f_lis:
                 color = self.get_mat_color(mat)
 
-                f_lis.insert(0, mc.nodeType(mat))
-                f_lis.insert(1, sg_node)
-                f_lis.insert(2, color)
+                f_lis.insert(0, mc.nodeType(mat))#第一位是材质球类型
+                f_lis.insert(1, sg_node)#第二位是着色组名字
+                f_lis.insert(2, color)#第三位是颜色
                 mat_dir[mat] = f_lis
             else:
                 self.display_remind('材质球{}没有赋予任何对象，遂跳过。'.format(mat), 0)
@@ -151,7 +163,7 @@ class TransformMaterial(QtWidgets.QDialog):
             os.remove('{}.json'.format(file_path))
             self.display_remind('当前文件路径下材质文件已存在，已删除该文件并重新生成。', 0)
         with open('{}.json'.format(file_path), 'w') as f:
-            json.dump(mat_dir, f)
+            json.dump(mat_dir, f, indent=4)
 
     def get_json_path(self):
         '''
@@ -166,41 +178,70 @@ class TransformMaterial(QtWidgets.QDialog):
             self.display_remind('没有选择有效文件。', 1)
             return False
 
-        for mat in result:
-            mat_f = result[mat]
+        for mat in result:#mat是材质球名
+            mat_f = result[mat]#mat_f是key对应的内容
             if mc.objExists(mat):
                 if mat == 'lambert1':
                     sg_node = mc.listConnections('{}.outColor'.format(mat), s=False, t='shadingEngine', et=True)[1]
                 else:
                     sg_node = mc.listConnections('{}.outColor'.format(mat), s=False, t='shadingEngine', et=True)[0]
 
-                if mc.nodeType(mat) != mat_f[0]:
-                    self.display_remind('材质球{}存在且与原场景内的材质球类型不匹配，已跳过。', 1)
+                if mc.nodeType(mat) != mat_f[0]:#材质球命相同 但材质球类型不同，跳过赋予材质。
+                    self.display_remind('材质球{}存在且与原场景内的材质球类型不匹配，已跳过。'.format(mat), 1)
                     continue
                 else:
-                    if sg_node != mat_f[1]:
+                    if sg_node != mat_f[1]:#材质球名相同，但着色组名字不同，强制改为相同着色组
                         mc.rename(sg_node, mat_f[1])
-                        self.display_remind('材质球{}的shadingEngine节点与原材质节点名不同，已改为{}。'.format(mat, mat_f[1]), 0)
-                    for obj_f in mat_f[3:]:
-                        if mc.objExists(obj_f):
+                        self.display_remind('材质球{}的着色组节点与原材质节点名不同，已改为{}。'.format(mat, mat_f[1]), 0)
+                    for obj_f in mat_f[3:]:#赋予材质
+                        if mc.objExists(obj_f):#模型对象存在时，赋予，不存在时警告
                             mc.sets(obj_f, e=True, fe=mat_f[1])
                         else:
                             self.display_remind('材质球的{}赋予对象{}不存在，已跳过。'.format(mat, obj_f), 1)
                             continue
-                
-            elif mc.objExists(mat) == False:
-                mat_node = mc.shadingNode(mat_f[0], asShader=True, n=mat)
-                mat_SG = mc.sets(r=True, nss=True, em=True, n=mat_f[1])
-                mc.connectAttr('{}.outColor'.format(mat_node), '{}.surfaceShader'.format(mat_SG))
 
-                for obj_f in mat_f[3:]:
+            elif mc.objExists(mat) == False:#如果材质球不存在就新建材质球
+                mat_node = mc.shadingNode(mat_f[0], asShader=True, n=mat)
+                if mc.objExists(mat_f[1]):#如果材质球对应的着色组存在就直接使用这个着色组
+                    mc.connectAttr('{}.outColor'.format(mat_node), '{}.surfaceShader'.format(mat_f[1]), f=True)
+                else:#如果着色组不存在就新建
+                    mat_SG = mc.sets(r=True, nss=True, em=True, n=mat_f[1])
+                    mc.connectAttr('{}.outColor'.format(mat_node), '{}.surfaceShader'.format(mat_SG))
+
+                for obj_f in mat_f[3:]:#赋予材质
                     if mc.objExists(obj_f):
                         mc.sets(obj_f, e=True, fe=mat_f[1])
                     else:
                         self.display_remind('材质球的{}赋予对象{}不存在，已跳过。'.format(mat, obj_f), 1)
                         continue
-            mc.setAttr('{}.color'.format(mat), mat_f[2][0], mat_f[2][1], mat_f[2][2])
+
+            self.set_color(mat, mat_f)#设置颜色
             log.info('材质球{}已传递完成。'.format(mat))
+
+    def set_color(self, nam, mat_f):
+        if mat_f[2] == None:#如果有些材质球没有颜色属性，跳过
+            self.display_remind('材质球{}没有携带颜色，注意查看原文件的该材质球是否有颜色。'.format(nam), 0)
+        elif mat_f[2][0] == 'color':#当有颜色属性，且没有上级贴图文件时，直接赋予材质颜色
+            mc.setAttr('{}.color'.format(nam), mat_f[2][1][0], mat_f[2][1][1], mat_f[2][1][2])
+        elif mat_f[2][0] == 'file':#当材质球上级有贴图文件时，创建贴图文件并加载贴图路径
+            mc.delete(mc.listConnections(nam, d=False))
+            if mc.objExists(mat_f[2][1]):
+                mc.delete(mat_f[2][1])
+            fil = mc.shadingNode('file', at=True, icm=True, n=mat_f[2][1])
+            plac_tex = mc.shadingNode('place2dTexture', au=True)
+            fil_lis = ['coverage', 'translateFrame', 'rotateFrame', 'mirrorU', 'mirrorV', 'stagger', 'wrapU', 'wrapV',
+                       'repeatUV', 'offset', 'rotateUV', 'noiseUV', 'vertexUvOne', 'vertexUvTwo', 'vertexUvThree',
+                       'vertexCameraOne', 'uv', 'uvFilterSize']
+            plac_lis = ['coverage', 'translateFrame', 'rotateFrame', 'mirrorU', 'mirrorV', 'stagger', 'wrapU', 'wrapV',
+                        'repeatUV','offset', 'rotateUV', 'noiseUV', 'vertexUvOne', 'vertexUvTwo', 'vertexUvThree',
+                        'vertexCameraOne', 'outUV', 'outUvFilterSize']
+            for inf in zip(plac_lis, fil_lis):
+                mc.connectAttr('{}.{}'.format(plac_tex, inf[0]), '{}.{}'.format(fil, inf[1]))
+            mc.setAttr('{}.fileTextureName'.format(fil), mat_f[2][2], typ='string')
+            mc.connectAttr('{}.outColor'.format(fil), '{}.color'.format(nam))
+            log.info('已创建贴图文件节点{}，贴图路径为{}。'.format(fil, mat_f[2][2]))
+        else:
+            self.display_remind('材质球{}有问题。'.format(nam), 1)
 
     def delete_unusedNode(self):
         mm.eval('hyperShadePanelMenuCommand("hyperShadePanel1", "deleteUnusedNodes");')
@@ -217,9 +258,8 @@ class TransformMaterial(QtWidgets.QDialog):
             mc.inViewMessage(amg='<font color="yellow">{}</font>'.format(tex), pos='midCenter', f=True)
             log.warning(tex)
         elif t == 1:
-            mc.inViewMessage(amg = '<font color="red">{}</font>'.format(tex), pos='midCenter', f=True)
+            mc.inViewMessage(amg='<font color="red">{}</font>'.format(tex), pos='midCenter', f=True)
             log.error(tex)
-
 
 
 try:
