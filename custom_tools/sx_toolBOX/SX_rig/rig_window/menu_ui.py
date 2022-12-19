@@ -1,4 +1,4 @@
-# -*- coding:GBK -*- 
+# -*- coding:GBK -*-
 import maya.cmds as mc
 import pymel.core as pm
 import maya.mel as mel
@@ -75,7 +75,7 @@ class SX_Menu(object):
                         c='from sx_toolBOX.SX_rig.rig_window import MeTa_Training_win;'
                           'reload(MeTa_Training_win);')
             pm.menuItem(to=True, p=menu_rig, l=u'打铆钉', i='meta_trsform_head.png',
-                        c="mel.eval('source \"Z:/Library/rig_plug_in/maya_plug/custom_tools/sx_toolBOX/SX_rig/check.mel\";')")
+                        c='from sx_toolBOX.SX_rig import rivet_tool; reload(rivet_tool);')
             pm.menuItem(to=True, p=menu_rig, l=u'履带生成器', i='meta_trsform_head.png', c='from sx_toolBOX.SX_rig import trackTool;'
                                                                                            'reload(trackTool);')
             pm.menuItem(to=True, p=menu_rig, l=u'批量链接', i='link_tool.png', c='from sx_toolBOX.SX_rig import batch_connect_tool;'
