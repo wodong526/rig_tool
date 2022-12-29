@@ -138,19 +138,20 @@ def exportSelectToFbx():
     sel_lis = mc.ls(sl=1)
     if sel_lis:
 
-    	#先检查模型里有没有毛发模型
-    	obj_lis = []
-    	hair_lis = []
-    	for obj in sel_lis:
-    		for inf in mc.listRelatives(obj, ad=True):
-    			obj_lis.append(inf)
-    	if obj_lis:
-    		for obj in obj_lis:
-    			if 'Hair' in obj or 'hair' in obj:
-    				hair_lis.append(obj)
-    	if hair_lis:
-    		mc.confirmDialog( title='警告：', message='{}\n可能是毛发模型，应该删除。'.format(hair_lis), button=['确定'])
-    		return None
+        #先检查模型里有没有毛发模型
+        obj_lis = []
+        hair_lis = []
+        for obj in sel_lis:
+            for inf in mc.listRelatives(obj, ad=True):
+                obj_lis.append(inf)
+        if obj_lis:
+            for obj in obj_lis:
+                if 'Hair' in obj or 'hair' in obj:
+                    if not mc.nodeType(obj) == 'joint':
+                        hair_lis.append(obj)
+        if hair_lis:
+            mc.confirmDialog(title='警告：', message='{}\n可能是毛发模型，应该删除。'.format(hair_lis), button=['确定'])
+            return None
 
         file_path = mc.file(exn=True, q=True)
         file_nam = file_path.split('/')[-1].split('.')[0]
@@ -159,12 +160,12 @@ def exportSelectToFbx():
             fbx_nam = fbx_nam + '_' + nam
         file_path = QtWidgets.QFileDialog.getSaveFileName(maya_main_window(), u'选择fbx文件',
                                                           file_path.replace(file_path.split('/')[-1], fbx_nam),
-                                                          '(*.fbx)')#获取导出fbx路径
-        
+                                                          '(*.fbx)')  #获取导出fbx路径
+
         if file_path[0]:
             node_lis = []
             pert_dir = {}
-            for inf in sel_lis:#断开选择对象的父级以避免导出多于对象
+            for inf in sel_lis:  #断开选择对象的父级以避免导出多于对象
                 if mc.listRelatives(inf, p=True):
                     pert_dir[inf] = mc.listRelatives(inf, p=True)[0]
                     mc.parent(inf, w=True)
@@ -176,12 +177,12 @@ def exportSelectToFbx():
                     for n in range(len(node_lis) / 2):
                         mc.disconnectAttr(node_lis[n * 2 + 1], node_lis[n * 2])
                         log.info('已断开{}。'.format(node_lis[n * 2 + 1]))
-            
+
             mc.select(sel_lis)
             mc.file(file_path[0], f=True, typ='FBX export', pr=True, es=True)
             log.info('已导出{}。'.format(sel_lis))
 
-            for n in range(len(node_lis) / 2):#重新链接上游节点
+            for n in range(len(node_lis) / 2):  #重新链接上游节点
                 mc.connectAttr(node_lis[n * 2 + 1], node_lis[n * 2])
                 log.info('已链接{}。'.format(node_lis[n * 2 + 1]))
             for inf in pert_dir:  # 重新p回父级
@@ -189,6 +190,7 @@ def exportSelectToFbx():
 
         else:
             log.error('没有选择有效路径。')
+
     else:
         log.error('没有选择有效对象。')
 

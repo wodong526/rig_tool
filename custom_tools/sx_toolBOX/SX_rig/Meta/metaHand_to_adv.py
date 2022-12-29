@@ -14,7 +14,8 @@ def metaHead_to_adv():
     '''
     hide_lis = ['FKOffsetJaw_M', 'FKAimEye_R', 'FKAimEye_L', 'Eye_R', 'Eye_L', 'Jaw_M']
     for grp in hide_lis:#隐藏adv上无用的控制器
-        mc.setAttr('{}.visibility'.format(grp), False)
+        if mc.objExists(grp):
+            mc.setAttr('{}.visibility'.format(grp), False)
 
     if mc.objExists('NeckPart2_M') or not mc.objExists('NeckPart1_M'):
         log.error('只有当adv的颈椎关节链的twist关节为1个时，该脚本才能使用。')

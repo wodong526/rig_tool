@@ -28,7 +28,7 @@ class EXTRACT_META(object):
         self.rot_headMode()
         self.set_skinCluster(cls_dir, cls_name_dir)
         self.copy_weights(cls_name_dir)
-        self.transform_neck_weight()
+        #self.transform_neck_weight()
         self.clear_scene()
         mc.undoInfo(cck=True)
 
