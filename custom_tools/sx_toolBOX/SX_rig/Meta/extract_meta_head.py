@@ -28,7 +28,7 @@ class EXTRACT_META(object):
         self.rot_headMode()
         self.set_skinCluster(cls_dir, cls_name_dir)
         self.copy_weights(cls_name_dir)
-        #self.transform_neck_weight()
+        #self.transform_neck_weight()#废弃的函数，会导致读取文件时节点读不到关节而无法驱动关节
         self.clear_scene()
         mc.undoInfo(cck=True)
 
@@ -78,7 +78,7 @@ class EXTRACT_META(object):
 
     def save_scene(self):
         # 另存场景，并保存一份target文件用于后面拷贝权重
-        mc.SaveSceneAs()
+        mc.SaveSceneAs()    
 
         self.mod_lis = mc.listRelatives('head_lod0_grp')
         mc.select(self.mod_lis)
@@ -172,7 +172,7 @@ class EXTRACT_META(object):
         log.info('脖子关节权重转换完成。')
 
     def clear_scene(self):
-        # 将显示贴图和灯光、显示阴影关掉，将无用材质节点删除
+        # 将显示贴图和灯光、显示阴影关掉，将无用材质节点删除 
         mc.modelEditor('modelPanel4', e=True, sdw=False)
         mel.eval('hyperShadePanelMenuCommand("hyperShadePanel1", "deleteUnusedNodes")')
         mc.DisplayShaded()

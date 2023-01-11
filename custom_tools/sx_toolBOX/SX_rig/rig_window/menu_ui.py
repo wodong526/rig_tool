@@ -39,7 +39,7 @@ class SX_Menu(object):
             pass
         finally:
             mainWindow = pm.language.melGlobals['gMainWindow']
-            master_menu = pm.menu(self.menu_n, to=True, l=u'山魈映画', p=mainWindow)
+            master_menu = pm.menu(self.menu_n, to=True, l=u'山魈动画', p=mainWindow)
 
             pm.menuItem(to=True, p=master_menu, l=u'刷新菜单', i='refresh.png',
                         c='from sx_toolBOX.SX_rig.rig_window import menu_ui;'

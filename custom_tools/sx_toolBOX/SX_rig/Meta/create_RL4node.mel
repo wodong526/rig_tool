@@ -1,0 +1,13 @@
+global proc MHCreateRL4node(string $dna, string $n){
+    string $jn;
+    if(`namespace -ex "DHIhead"`){
+        $jn = "DHIhead:<objName>.<attrName>";
+    }
+    else{
+        $jn = "<objName>.<attrName>";
+    }
+    string $amn = "FRM_WMmultipliers.<objName>_<attrName>";
+    string $bsn = "<objName>_blendShapes.<attrName>";
+    string $cn = "<objName>.<attrName>";
+    createEmbeddedNodeRL4 -dfp $dna -amn $amn -bsn $bsn -cn $cn -jn $jn -n $n;
+}

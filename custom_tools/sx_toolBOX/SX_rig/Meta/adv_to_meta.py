@@ -81,7 +81,7 @@ class CreatBied(object):
                     log.info('已重新链接{}控制器。'.format(nam))
 
     def import_biped(self):
-        bid_path = 'D:/adv/AdvancedSkeleton5Files/fitSkeletons/biped.ma'
+        bid_path = 'Z:/Library/rig_plug_in\maya_plug/data/ADV/AdvancedSkeleton5Files/fitSkeletons/biped.ma'
         mc.file(bid_path, i=True, typ='mayaAscii', iv=True, ra=True, op='v=0', pr=True, itr='combine', ns='adv')
 
         del_lis = ['Eye', 'Jaw']
@@ -89,7 +89,7 @@ class CreatBied(object):
             mc.delete('adv:{}'.format(jnt))
             log.info('已删除{}关节。'.format(jnt))
         mc.namespace(rm='adv', mnr=True, f=True)
-        mel.eval('source \"D:/adv/AdvancedSkeleton5.mel\";AdvancedSkeleton5;')
+        mel.eval('source "Z:/Library/rig_plug_in/maya_plug/data/ADV/AdvancedSkeleton5.mel";AdvancedSkeleton5;')
 
         set_dir = {'Root':'inbetweenJoints', 'Spine1':'inbetweenJoints', 'Neck':'inbetweenJoints',
                    'Shoulder':'twistJoints', 'Elbow':'twistJoints', 'Hip':'twistJoints'}
