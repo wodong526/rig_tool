@@ -14,6 +14,7 @@ logging.basicConfig()
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
+
 def maya_main_window():
     main_window_ptr = omui.MQtUtil.mainWindow()
     return wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
@@ -33,7 +34,7 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
         self.create_layout()
         self.create_connections()
 
-        now_path = mc.internalVar(uad = True) + mc.about(v = True)
+        now_path = mc.internalVar(uad=True) + mc.about(v=True)
         self.target_path = '{}/target.mb'.format(now_path)
 
     def create_widgets(self):
@@ -69,21 +70,21 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
         self.mach_but.clicked.connect(self.match_transformation)
 
     def run_transformation(self):
-        self.save_scene()#保存场景并复制出备用蒙皮场景
+        self.save_scene()  #保存场景并复制出备用蒙皮场景
         self.set_transformation()
 
     def get_mod(self):
         sel_lis = mc.ls(sl=True)
         mod_lis = []
-        self.modAll_lis = []#所有模型对象
+        self.modAll_lis = []  #所有模型对象
         for obj in sel_lis:
-            if mc.nodeType(mc.listRelatives(obj, s = True)) == 'mesh':
+            if mc.nodeType(mc.listRelatives(obj, s=True)) == 'mesh':
                 mod_lis.append(obj)
             self.modAll_lis = self.modAll_lis + self.get_subMod(obj, mod_lis)
 
-        self.mod_parent = {}#模型名：模型父级名
+        self.mod_parent = {}  #模型名：模型父级名
         for obj in self.modAll_lis:
-            p = mc.listRelatives(obj, p = True)
+            p = mc.listRelatives(obj, p=True)
             self.mod_parent[obj] = p[0]
 
         if self.modAll_lis:
@@ -98,7 +99,7 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
     def get_subMod(self, trs, lis):
         trs_lis = mc.listRelatives(trs)
         for obj in trs_lis:
-            shp = mc.listRelatives(obj, s = True)
+            shp = mc.listRelatives(obj, s=True)
             if shp:
                 if mc.nodeType(shp[0]) == 'mesh':
                     lis.append(obj)
@@ -108,8 +109,8 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
 
     def save_scene(self):
         mc.select(self.modAll_lis)
-        mc.select('spine_04', add = True)
-        mc.file(self.target_path, f = True, es = True, typ = 'mayaBinary', op = 'v = 1', pr = True)
+        mc.select('spine_04', add=True)
+        mc.file(self.target_path, f=True, es=True, typ='mayaBinary', op='v = 1', pr=True)
         # new_path = mc.file(q=True, exn=True)
         # copyfile(new_path, self.target_path)
         # mc.file(rn = self.target_path)
@@ -118,15 +119,16 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
     def set_transformation(self):
         for obj in self.modAll_lis:
             if 'head' in obj:
-                res_mod = mc.duplicate(obj, n = 'reference_head')
-                mc.parent(res_mod, w = True)
+                self.head_mod = obj#头部模型的名字
+                res_mod = mc.duplicate(obj, n='reference_head')
+                mc.parent(res_mod, w=True)
         if res_mod:
-            box = mc.xform(res_mod, q = True, bb = True)
-            self.t = [(box[0] + box[3])/2, (box[1] + box[4])/2, box[5]]
-            mc.spaceLocator(n = 'reference_target', p = self.t)
-            mc.setAttr('reference_target.rotateY', l = True)
-            mc.setAttr('reference_target.rotateZ', l = True)
-            mc.xform('reference_target', piv = self.t)
+            box = mc.xform(res_mod, q=True, bb=True)
+            self.t = [(box[0] + box[3]) / 2, (box[1] + box[4]) / 2, box[5]]
+            mc.spaceLocator(n='reference_target', p=self.t)
+            mc.setAttr('reference_target.rotateY', l=True)
+            mc.setAttr('reference_target.rotateZ', l=True)
+            mc.xform('reference_target', piv=self.t)
             mc.parent(res_mod, 'reference_target')
             mc.select('reference_target')
 
@@ -141,9 +143,12 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
         for clst in cls_name_dir:
             mc.delete(cls_name_dir[clst])
 
-        pos = mc.xform('reference_target', t = True, q = True)
-        rot = mc.xform('reference_target', ro = True, q = True)
-        scl = mc.xform('reference_target', s = True, q = True)
+        pos = mc.xform('reference_target', t=True, q=True)
+        rot = mc.xform('reference_target', ro=True, q=True)
+        scl = mc.xform('reference_target', s=True, q=True)
+
+        self.create_attr(pos, rot, scl)
+
         self.rot_mod(pos, rot, scl)
         self.trs_joint(pos, rot, scl)
         self.trs_drvJoint(pos, rot, scl)
@@ -173,7 +178,7 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
 
         for jnt in jnt_chain:
             mc.rename(jnt, 'drv_{}'.format(jnt))
-            new_jnt = mc.duplicate('drv_{}'.format(jnt), n = jnt, po = True)[0]
+            new_jnt = mc.duplicate('drv_{}'.format(jnt), n=jnt, po=True)[0]
             if jnt == 'spine_04':
                 continue
             essence_jnt = mc.listRelatives('drv_{}'.format(jnt), p=True)[0]
@@ -205,17 +210,17 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
         # mc.delete('grp_moveMod_001')
 
         #生成新的组对模型进行变换
-        mc.group(n = 'grp_moveMod_001', w = True, em = True)
-        mc.xform('grp_moveMod_001', ws = True, t = self.t)
-        mc.makeIdentity('grp_moveMod_001', a = True, t = True, n = False, pn = True)
+        mc.group(n='grp_moveMod_001', w=True, em=True)
+        mc.xform('grp_moveMod_001', ws=True, t=self.t)
+        mc.makeIdentity('grp_moveMod_001', a=True, t=True, n=False, pn=True)
         for obj in self.modAll_lis:
             mc.parent(obj, 'grp_moveMod_001')
             for aix in ['X', 'Y', 'Z']:
                 mc.setAttr('{}.translate{}'.format(obj, aix), l=False)
                 mc.setAttr('{}.rotate{}'.format(obj, aix), l=False)
                 mc.setAttr('{}.scale{}'.format(obj, aix), l=False)
-        mc.xform('grp_moveMod_001', t = pos, ro = rot, s = scl)
-        mc.makeIdentity('grp_moveMod_001', a = True, t = True, r = True, s = True, n = False, pn = True)
+        mc.xform('grp_moveMod_001', t=pos, ro=rot, s=scl)
+        mc.makeIdentity('grp_moveMod_001', a=True, t=True, r=True, s=True, n=False, pn=True)
 
         #将模型p出来并删除原来的组
         for obj in self.mod_parent:
@@ -223,21 +228,21 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
         mc.delete('grp_moveMod_001')
 
     def trs_joint(self, pos, rot, scl):
-        mc.group(n = 'grp_moveJnt_001', w = True, em = True)
-        mc.xform('grp_moveJnt_001', ws = True, t = self.t)
-        mc.makeIdentity('grp_moveJnt_001', a = True, t = True, n = False, pn = True)
+        mc.group(n='grp_moveJnt_001', w=True, em=True)
+        mc.xform('grp_moveJnt_001', ws=True, t=self.t)
+        mc.makeIdentity('grp_moveJnt_001', a=True, t=True, n=False, pn=True)
         mc.parent('spine_04', 'grp_moveJnt_001')
-        mc.xform('grp_moveJnt_001', t = pos, ro = rot, s = scl)
-        mc.makeIdentity('grp_moveJnt_001', a = True, s = True, n = False, pn = True)
-        mc.parent('spine_04', w = True)
+        mc.xform('grp_moveJnt_001', t=pos, ro=rot, s=scl)
+        mc.makeIdentity('grp_moveJnt_001', a=True, s=True, n=False, pn=True)
+        mc.parent('spine_04', w=True)
         mc.delete('grp_moveJnt_001')
 
     def trs_drvJoint(self, pos, rot, scl):
-        mc.group(n = 'grp_moveDrvJnt_001', w = True, em = True)
-        mc.xform('grp_moveDrvJnt_001', ws = True, t = self.t)
-        mc.makeIdentity('grp_moveDrvJnt_001', a = True, t = True, n = False, pn = True)
+        mc.group(n='grp_moveDrvJnt_001', w=True, em=True)
+        mc.xform('grp_moveDrvJnt_001', ws=True, t=self.t)
+        mc.makeIdentity('grp_moveDrvJnt_001', a=True, t=True, n=False, pn=True)
         mc.parent('drv_spine_04', 'grp_moveDrvJnt_001')
-        mc.xform('grp_moveDrvJnt_001', t = pos, ro = rot, s = scl)
+        mc.xform('grp_moveDrvJnt_001', t=pos, ro=rot, s=scl)
 
     def create_skin(self, cls_dir, cls_name_dir):
         for clst in cls_dir:
@@ -245,18 +250,18 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
             for jnt in cls_dir[clst]:
                 jnt_lis.append(jnt)
             jnt_lis.append(clst)
-            mc.skinCluster(jnt_lis, tsb = True, n = cls_name_dir[clst])
+            mc.skinCluster(jnt_lis, tsb=True, n=cls_name_dir[clst])
 
     def connect_jnt(self, cls_dir):
         if mc.objExists('xform'):
             if mc.objExists('connects'):
                 pass
             else:
-                mc.group(n = 'connects', p = 'xform', em = True)
+                mc.group(n='connects', p='xform', em=True)
         else:
-            mc.group(n = 'xform', em = True, w = True)
-            mc.group(n = 'connects', p = 'xform', em = True)
-        
+            mc.group(n='xform', em=True, w=True)
+            mc.group(n='connects', p='xform', em=True)
+
         conn_lis = []
         for clst in cls_dir:
             for jnt in cls_dir[clst]:
@@ -267,18 +272,18 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
             mc.parent(par_con, 'connects')
 
     def reference_target(self, pos, rot, scl):
-        mc.file(self.target_path, r = True, typ = 'mayaBinary', ns = 'tst')
+        mc.file(self.target_path, r=True, typ='mayaBinary', ns='tst')
 
-        mc.group(n = 'grp_refJnt_001', w = True, em = True)
-        mc.xform('grp_refJnt_001', ws = True, t = self.t)
+        mc.group(n='grp_refJnt_001', w=True, em=True)
+        mc.xform('grp_refJnt_001', ws=True, t=self.t)
         mc.makeIdentity('grp_refJnt_001', a=True, t=True, n=False, pn=True)
         mc.parent('tst:spine_04', 'grp_refJnt_001')
-        mc.xform('grp_refJnt_001', t = pos, ro = rot, s = scl)
+        mc.xform('grp_refJnt_001', t=pos, ro=rot, s=scl)
 
     def copy_weigths(self, clst_lis):
         for obj in clst_lis:
-            mc.copySkinWeights(ss = 'tst:{}'.format(clst_lis[obj]), ds = clst_lis[obj], nm = True, sa = 'closestPoint',
-                               ia = 'closestJoint')
+            mc.copySkinWeights(ss='tst:{}'.format(clst_lis[obj]), ds=clst_lis[obj], nm=True, sa='closestPoint',
+                               ia='closestJoint')
 
     def clear_scene(self):
         mc.delete('reference_target')
@@ -288,9 +293,28 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
             mc.setAttr('{}.visibility'.format(obj), True)
         mc.setAttr('spine_04.visibility', True)
 
-        mc.file(self.target_path, rr = True)
+        mc.file(self.target_path, rr=True)
         mc.delete('grp_refJnt_001')
         log.info('转换完毕。')
+
+    def create_attr(self, pos, rot, scl):
+        attr_dir = {'head_translate':'位移', 'head_rotate':'旋转', 'head_scale':'缩放'}
+        aix_lis = ['X', 'Y', 'Z']
+        if mc.objExists('{}.head_translate'.format(self.head_mod)):
+            for attr in attr_dir:
+                mc.deleteAttr('{}.{}'.format(self.head_mod, attr))
+        else:
+            for attr in attr_dir:
+                mc.addAttr(self.head_mod, ln=attr, nn=attr_dir[attr], at='double3', k=False)
+                for aix in aix_lis:
+                    mc.addAttr(self.head_mod, ln='{}_{}'.format(attr, aix), nn='{}_{}'.format(attr_dir[attr], aix), at='double', p=attr, k=False)
+
+        for i in range(3):
+            mc.setAttr('{}.head_translate_{}'.format(self.head_mod, aix_lis[i]), pos[i], cb=True)
+            mc.setAttr('{}.head_rotate_{}'.format(self.head_mod, aix_lis[i]), rot[i], cb=True)
+            mc.setAttr('{}.head_scale_{}'.format(self.head_mod, aix_lis[i]), scl[i], cb=True)
+
+
 
     def closeEvent(self, event):
         '''
