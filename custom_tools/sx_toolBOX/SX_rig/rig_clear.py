@@ -1,6 +1,7 @@
-# -*- coding:GBK -*- 
+# -*- coding:GBK -*-
 import maya.cmds as mc
 import maya.mel as mel
+import maya.OpenMaya as om
 import copy
 import logging
 
@@ -231,3 +232,33 @@ def clear_hik():
             log.info('已删除HIK{}。'.format(hik))
     else:
         log.info('场景里没有HIK。')
+
+def clear_nameSpace():
+    '''
+    删除场景内所有空间名
+    '''
+    nsLs = mc.namespaceInfo(lon=True)
+    defaultNs = ["UI", "shared", "mod"]
+    pool = [item for item in nsLs if item not in defaultNs]
+    for ns in pool:
+        mc.namespace(rm=ns, mnr=1, f=1)
+        log.info('已删除空间名{}。'.format(ns))
+
+    nsLs = mc.namespaceInfo(lon=True)
+    defaultNs = ["UI", "shared", "mod"]
+    pool = [item for item in nsLs if item not in defaultNs]
+    if pool:
+        om.MGlobal.displayError('还剩余空间名{}，尝试重新删除。'.format(pool))
+        for ns in pool:
+            mc.namespace(rm=ns, mnr=1, f=1)
+            log.info('已删除空间名{}。'.format(ns))
+
+        nsLs = mc.namespaceInfo(lon=True)
+        defaultNs = ["UI", "shared", "mod"]
+        pool = [item for item in nsLs if item not in defaultNs]
+        if pool:
+            om.MGlobal.displayError('再次删除剩余空间名失败，请手动检查。')
+        else:
+            log.info('已清理场景内所有空间名。')
+    else:
+        log.info('已清理场景内所有空间名。')

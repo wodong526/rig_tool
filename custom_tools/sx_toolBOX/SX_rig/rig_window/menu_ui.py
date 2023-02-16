@@ -47,12 +47,13 @@ class SX_Menu(object):
                           'menu_ui.reload_menu()')
             pm.menuItem(d=1, dl='break', p=master_menu, )
             menu_rig = pm.menuItem(to=True, p=master_menu, l=u'绑定', i='kinJoint.png', sm=True)
-            menu_aim = pm.menuItem(to=True, p=master_menu, l=u'动画', i='setKeyframe.png')
+            menu_aim = pm.menuItem(to=True, p=master_menu, l=u'动画', i='setKeyframe.png', sm=True)
             menu_mod = pm.menuItem(to=True, p=master_menu, l=u'建模', i='polyCube.png')
             pm.menuItem(d=1, dl='break', p=master_menu, )
             menu_clr = pm.menuItem(to=True, p=master_menu, l=u'清理报错', i='error.png', sm=True)
             ##########################################################
             self.rig_menu(menu_rig)
+            self.aim_menu(menu_aim)
             self.scene_clear(menu_clr)
 
     def rig_menu(self, p_menu):
@@ -111,6 +112,11 @@ class SX_Menu(object):
         pm.menuItem(to=True, p=p_menu, l=u'查询选中对象的最低点', c='from sx_toolBOX.SX_rig import rig_clear;'
                                                                        'reload(rig_clear);'
                                                                        'rig_clear.clear_minimum()')
+
+    def aim_menu(self, p_menu):
+        pm.menuItem(to=True, p=p_menu, i='studio_library.png', l='打开studio_library', 
+                    c='from sx_toolBOX.SX_aim import run_studio_library;'
+                      'reload(run_studio_library)')
 
     def scene_clear(self, p_menu):
         pm.menuItem(to=True, p=p_menu, l=u'找不到过程“look”', c='from sx_toolBOX.SX_tool import clear_errors;'
