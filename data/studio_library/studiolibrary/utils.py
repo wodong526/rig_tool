@@ -318,7 +318,7 @@ def resolveModule(name):
         try:
             found = getattr(found, n)
         except AttributeError:
-            #__import__(used)
+            __import__(used)
             found = getattr(found, n)
     return found
 

@@ -19,14 +19,13 @@ def prepare_scene():
     '''
     将meta的头的需要将权重传到adv的关节的权重传到adv的骨架上，并将无用的关节删除、将约束控制重新做好
     '''
-    hide_lis = ['FKOffsetJaw_M', 'FKAimEye_R', 'FKAimEye_L', 'Eye_R', 'Eye_L', 'Jaw_M']
+    hide_lis = ['FKOffsetJaw_M', 'FKAimEye_R', 'FKAimEye_L', 'Eye_R', 'Eye_L', 'Jaw_M', 'drv_head']
     for grp in hide_lis:#隐藏adv上无用的控制器
         if mc.objExists(grp):
             mc.setAttr('{}.visibility'.format(grp), False)
 
     if mc.objExists('NeckPart2_M') or not mc.objExists('NeckPart1_M'):
-        log.error('只有当adv的颈椎关节链的twist关节为1个时，该脚本才能使用。')
-        return None
+        raise RuntimeError('只有当adv的颈椎关节链的twist关节为1个时，该脚本才能使用。')
 
 def set_joint_pos():
     #获取meta上的关节位置（由于meta脖子只有两个关节，所以这里只考虑adv的脖子上为两个关节）
@@ -61,7 +60,7 @@ def transform_skin():
     for jnt in mc.skinCluster('head_lod0_mesh_skinCluster', inf='', q=True):#将所有关节的权重都锁住
         mc.setAttr('{}.liw'.format(jnt), True)
 
-    mc.parent('head', mc.listRelatives('Head_M', p=True)[0])#将meta头的蒙皮关节链p到adv的脖子末端关节链中
+    #mc.parent('head', mc.listRelatives('Head_M', p=True)[0])#将meta头的蒙皮关节链p到adv的脖子末端关节链中
 
     mc.select('head_lod0_mesh')#skinPercent需要选中模型或在蒙皮节点后加入模型trs名才能正常使用
     for adv_jnt, meta_jnt_lis in add_joint_dir.items():
@@ -79,34 +78,22 @@ def transform_neck_weight():
     '''
     neck_2_subJoint = mc.listRelatives('FACIAL_C_Neck2Root')  # 获取FACIAL_C_Neck2Root下的所有关节
     neck_1_subJoint = mc.listRelatives('FACIAL_C_Neck1Root')  # 获取FACIAL_C_Neck1Root下的所有关节
-    mc.skinCluster('head_lod0_mesh_skinCluster', e=True, lw=True, wt=0, ai='neck_01')  # 将neck_01加入到模型的蒙皮里
-    mc.skinCluster('head_lod0_mesh_skinCluster', e=True, lw=True, wt=0, ai='neck_02')  # 将neck_02加入到模型的蒙皮里
-    for jnt in mc.skinCluster('head_lod0_mesh_skinCluster', inf=True, q=1):  # 全锁所有关节
-        mc.setAttr('{}.liw'.format(jnt), True)
+    add_skinJnt('head_lod0_mesh_skinCluster', 'neck_01') # 将neck_01加入到模型的蒙皮里
+    add_skinJnt('head_lod0_mesh_skinCluster', 'neck_02') # 将neck_02加入到模型的蒙皮里
 
-    mc.setAttr('neck_01.liw', False)  # 单开脖子关节
-    skin_jnt_lis = mc.skinCluster('head_lod0_mesh_skinCluster', inf=True, q=True)  #获取所有该蒙皮节点影响的关节
-    mc.select('head_lod0_mesh')  #传递关节权重需要指定实际对象，选择或者在skinPercent的蒙皮节点名后加上模型的trs名也行
-    for jnt in neck_1_subJoint:  # 将每个关节的权重都反向给到脖子关节
-        if jnt in skin_jnt_lis:
-            mc.setAttr('{}.liw'.format(jnt), False)
-            mc.skinPercent('head_lod0_mesh_skinCluster', tv=[(jnt, 0)])
-            mc.skinCluster('head_lod0_mesh_skinCluster', e=True, ri=jnt)
-        else:
-            log.warning('{}不在蒙皮中。'.format(jnt))
-        mc.delete(jnt)
-    mc.setAttr('neck_01.liw', True)
+    transform_jnt_skin(neck_1_subJoint, 'neck_01', 'head_lod0_mesh_skinCluster', 'head_lod0_mesh', True)
+    transform_jnt_skin(neck_2_subJoint, 'neck_02', 'head_lod0_mesh_skinCluster', 'head_lod0_mesh', True)
 
-    mc.setAttr('neck_02.liw', False)
-    for jnt in neck_2_subJoint:  # 将每个关节的权重都反向给到脖子关节
-        if jnt in skin_jnt_lis:
-            mc.setAttr('{}.liw'.format(jnt), False)
-            mc.skinPercent('head_lod0_mesh_skinCluster', tv=[(jnt, 0)])
-            mc.skinCluster('head_lod0_mesh_skinCluster', e=True, ri=jnt)
-        else:
-            log.warning('{}不在蒙皮中。'.format(jnt))
-        mc.delete(jnt)
-    mc.setAttr('neck_02.liw', True)
+    #将眼睑、泪腺、眼罩子和头在head关节上的蒙皮放到Head_M上
+    add_skinJnt('head_lod0_mesh_skinCluster', 'Head_M')
+    transform_jnt_skin(['head'], 'Head_M', 'head_lod0_mesh_skinCluster', 'head_lod0_mesh')
+    add_skinJnt('eyeEdge_lod0_mesh_skinCluster', 'Head_M')
+    transform_jnt_skin(['head'], 'Head_M', 'eyeEdge_lod0_mesh_skinCluster', 'eyeEdge_lod0_mesh')
+    add_skinJnt('cartilage_lod0_mesh_skinCluster', 'Head_M')
+    transform_jnt_skin(['head'], 'Head_M', 'cartilage_lod0_mesh_skinCluster', 'cartilage_lod0_mesh')
+    add_skinJnt('eyeshell_lod0_mesh_skinCluster', 'Head_M')
+    transform_jnt_skin(['head'], 'Head_M', 'eyeshell_lod0_mesh_skinCluster', 'eyeshell_lod0_mesh')
+    mc.parent(mc.listRelatives('head'), 'Head_M')
 
     mc.delete('FACIAL_C_Neck2Root', 'FACIAL_C_Neck1Root')
     log.info('脖子关节权重转换完成。')
@@ -114,6 +101,34 @@ def transform_neck_weight():
 def arrangement_scence():
     if mc.objExists('drv_spine_04'):
         mc.parent('drv_head', 'grp_moveDrvJnt_001')
-        mc.delete('drv_spine_04')
-    mc.delete('spine_04')
+    mc.delete('spine_04', 'drv_spine_04')
     log.info('转换完成。')
+
+def transform_jnt_skin(outSkin_lis, obtain_jnt, cluster, mod, delete=False):
+    '''
+    outSkin_lis:要输出权重的关节列表
+    obtain_jnt：要获取权重的关节列表
+    cluster：要改变权重的蒙皮节点
+    mod_lis：要改变权重的模型
+    '''
+    mc.select(mod)#传递关节权重需要指定实际对象，选择或者在skinPercent的蒙皮节点名后加上模型的trs名也行
+    infJnt_lis = mc.skinCluster(cluster, inf=True, q=True)#获取所有该蒙皮节点影响的关节
+    for jnt in infJnt_lis:
+        mc.setAttr('{}.liw'.format(jnt), True)
+    mc.setAttr('{}.liw'.format(obtain_jnt), False)
+    for jnt in outSkin_lis:  # 将每个关节的权重都反向给到脖子关节
+        if jnt in infJnt_lis:
+            mc.setAttr('{}.liw'.format(jnt), False)
+            mc.skinPercent(cluster, tv=[(jnt, 0)])
+            mc.skinCluster(cluster, e=True, ri=jnt)
+        else:
+            log.warning('{}不在蒙皮中。'.format(jnt))
+        if delete:
+            mc.delete(jnt)
+    mc.setAttr('{}.liw'.format(obtain_jnt), True)
+
+def add_skinJnt(clster, *joints):
+    infJnt_lis = mc.skinCluster(clster, inf=True, q=True)
+    for jnt in joints:
+        if jnt not in infJnt_lis:
+            mc.skinCluster(clster, e=True, lw=True, wt=0, ai=jnt)

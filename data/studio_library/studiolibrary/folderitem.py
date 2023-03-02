@@ -25,8 +25,8 @@ import studiolibrary.widgets
 
 class FolderItem(studiolibrary.LibraryItem):
 
-    NAME = u"Folder"
-    TYPE = u"Folder"
+    NAME = u"Œƒº˛º–"
+    TYPE = "Folder"
 
     MENU_ORDER = 0  # Show at the top of the menu
     SYNC_ORDER = 100  # Last item to run when syncing
@@ -140,7 +140,7 @@ class FolderItem(studiolibrary.LibraryItem):
         """
         super(FolderItem, self).contextEditMenu(menu, items=items)
 
-        action = QtWidgets.QAction("Show in Preview", menu)
+        action = QtWidgets.QAction(u"‘⁄‘§¿¿÷–œ‘ æ", menu)
 
         action.triggered.connect(self._showPreviewFromMenu)
         menu.addAction(action)
@@ -281,37 +281,37 @@ class FolderItem(studiolibrary.LibraryItem):
 
         return [
             {
-                "name": "infoGroup",
-                "title": "Info",
+                "name": u"–≈œ¢◊È",
+                "title": u"–≈œ¢",
                 "value": True,
                 "type": "group",
                 "persistent": True,
                 "persistentKey": "BaseItem",
             },
             {
-                "name": "name",
+                "name": u"√˚≥∆",
                 "value": self.name()
             },
             {
-                "name": "path",
+                "name": u"¬∑æ∂",
                 "value": self.path()
             },
             {
-                "name": "created",
+                "name": u"¥¥Ω®",
                 "value":  created,
             },
             {
-                "name": "modified",
+                "name": u"µ˜’˚",
                 "value": modified,
             },
             {
-                "name": "optionsGroup",
-                "title": "Options",
+                "name": u"—°œÓ◊È",
+                "title": u"—°œÓ",
                 "type": "group",
             },
 
             {
-                "name": "color",
+                "name": u"—’…´",
                 "type": "color",
                 "value": self.iconColor(),
                 "layout": "vertical",
@@ -320,7 +320,7 @@ class FolderItem(studiolibrary.LibraryItem):
             },
 
             {
-                "name": "icon",
+                "name": u"Õº∆¨",
                 "type": "iconPicker",
                 "value": iconName,
                 "layout": "vertical",
@@ -340,8 +340,8 @@ class FolderItem(studiolibrary.LibraryItem):
 
         name, button = studiolibrary.widgets.MessageBox.input(
             libraryWindow,
-            u"ÂàõÂª∫Êñá‰ª∂Â§π",
-            u"‰ΩøÁî®ÂêçÁß∞ÂàõÂª∫Êñ∞Êñá‰ª∂Â§π:",
+            "Create folder",
+            "Create a new folder with the name:",
         )
 
         name = name.strip()

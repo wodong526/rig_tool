@@ -240,25 +240,14 @@ def clear_nameSpace():
     nsLs = mc.namespaceInfo(lon=True)
     defaultNs = ["UI", "shared", "mod"]
     pool = [item for item in nsLs if item not in defaultNs]
-    for ns in pool:
-        mc.namespace(rm=ns, mnr=1, f=1)
-        log.info('已删除空间名{}。'.format(ns))
-
-    nsLs = mc.namespaceInfo(lon=True)
-    defaultNs = ["UI", "shared", "mod"]
-    pool = [item for item in nsLs if item not in defaultNs]
     if pool:
-        om.MGlobal.displayError('还剩余空间名{}，尝试重新删除。'.format(pool))
         for ns in pool:
-            mc.namespace(rm=ns, mnr=1, f=1)
-            log.info('已删除空间名{}。'.format(ns))
-
-        nsLs = mc.namespaceInfo(lon=True)
-        defaultNs = ["UI", "shared", "mod"]
-        pool = [item for item in nsLs if item not in defaultNs]
-        if pool:
-            om.MGlobal.displayError('再次删除剩余空间名失败，请手动检查。')
-        else:
-            log.info('已清理场景内所有空间名。')
+            try:
+                mc.namespace(rm=ns, mnr=1, f=1)
+                log.info('已删除空间名{}。'.format(ns))
+            except:
+                om.MGlobal.displayError('余空间名{}，删除失败。'.format(ns))
+                return None
+        clear_nameSpace()
     else:
         log.info('已清理场景内所有空间名。')

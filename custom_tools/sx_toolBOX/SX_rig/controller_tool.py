@@ -257,20 +257,7 @@ class create_ctl(QtWidgets.QDialog):  # 使该窗口为控件
     def mirror_ctl(self):
         spa = self.spa_comb.currentIndex()
         aix = self.aix_comb.currentIndex()
-        if spa == 0:
-            if aix == 0:
-                self.for_mir(0, 0)
-            elif aix == 1:
-                self.for_mir(0, 1)
-            elif aix == 2:
-                self.for_mir(0, 2)
-        elif spa == 1:
-            if aix == 0:
-                self.for_mir(1, 0)
-            elif aix == 1:
-                self.for_mir(1, 1)
-            elif aix == 2:
-                self.for_mir(1, 2)
+        self.for_mir(spa, aix)
 
     def for_mir(self, t, i):
         ctl_cv = self.if_cv()

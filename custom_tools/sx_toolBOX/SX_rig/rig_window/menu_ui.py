@@ -3,6 +3,7 @@ import maya.cmds as mc
 import pymel.core as pm
 import maya.mel as mel
 import sys
+import os
 import logging
 
 logging.basicConfig()
@@ -39,22 +40,22 @@ class SX_Menu(object):
             pass
         finally:
             mainWindow = pm.language.melGlobals['gMainWindow']
-            master_menu = pm.menu(self.menu_n, to=True, l=u'山魈动画', p=mainWindow)
+            master_menu = pm.menu(self.menu_n, to=True, l=u'山魈动画', p=mainWindow, c=last_fu)
 
-            pm.menuItem(to=True, p=master_menu, l=u'刷新菜单', i='refresh.png',
-                        c='from sx_toolBOX.SX_rig.rig_window import menu_ui;'
-                          'reload(menu_ui);'
-                          'menu_ui.reload_menu()')
-            pm.menuItem(d=1, dl='break', p=master_menu, )
-            menu_rig = pm.menuItem(to=True, p=master_menu, l=u'绑定', i='kinJoint.png', sm=True)
-            menu_aim = pm.menuItem(to=True, p=master_menu, l=u'动画', i='setKeyframe.png', sm=True)
-            menu_mod = pm.menuItem(to=True, p=master_menu, l=u'建模', i='polyCube.png')
-            pm.menuItem(d=1, dl='break', p=master_menu, )
-            menu_clr = pm.menuItem(to=True, p=master_menu, l=u'清理报错', i='error.png', sm=True)
-            ##########################################################
-            self.rig_menu(menu_rig)
-            self.aim_menu(menu_aim)
-            self.scene_clear(menu_clr)
+            # pm.menuItem(to=True, p=master_menu, l=u'刷新菜单', i='refresh.png',
+            #             c='from sx_toolBOX.SX_rig.rig_window import menu_ui;'
+            #               'reload(menu_ui);'
+            #               'menu_ui.reload_menu()')
+            # pm.menuItem(d=1, dl='break', p=master_menu, )
+            # menu_rig = pm.menuItem(to=True, p=master_menu, l=u'绑定', i='kinJoint.png', sm=True)
+            # menu_aim = pm.menuItem(to=True, p=master_menu, l=u'动画', i='setKeyframe.png', sm=True)
+            # menu_mod = pm.menuItem(to=True, p=master_menu, l=u'建模', i='polyCube.png')
+            # pm.menuItem(d=1, dl='break', p=master_menu, )
+            # menu_clr = pm.menuItem(to=True, p=master_menu, l=u'清理报错', i='error.png', sm=True)
+            # ##########################################################
+            # self.rig_menu(menu_rig)
+            # self.aim_menu(menu_aim)
+            # self.scene_clear(menu_clr)
 
     def rig_menu(self, p_menu):
         rig_adv = pm.menuItem(to=True, p=p_menu, l='ADV', sm=True)
@@ -126,3 +127,11 @@ class SX_Menu(object):
                     c='from sx_toolBOX.SX_tool import clear_errors;'
                       'reload(clear_errors);'
                       'clear_errors.clear_onModelChange()')
+
+    def last_fu(self):
+        rest = mc.confirmDialog(title='无法打开窗口',
+                                message='本工具架已经弃用\n使用新的工具架请点击“打开工具架安装包路径”后，将自己岗位对应的安装包文件拖放到Maya的3d视窗内。',
+                                button=['知道了', '打开工具架安装包路径'], defaultButton='Yes', cancelButton='No',
+                                dismissString='No')
+        if rest == u'打开工具架安装包路径':
+            os.system('explorer /select, Z:\Library\\rig_plug_in\Maya_openTools\Rig_install.py')

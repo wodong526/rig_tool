@@ -24,9 +24,9 @@ class SX_Widget(object):
 
     def __init__(self):
         if os.path.exists('Z:/Library/rig_plug_in/maya_plug'):
-            self.create_IconPath()
+            #self.create_IconPath()
             self.create_menu()
-            self.create_hotBox()
+            #self.create_hotBox()
             self.add_metaToMata_plug()
         else:
             log.error('找不到服务器插件路径，请检查是否已链接到服务器端。')
