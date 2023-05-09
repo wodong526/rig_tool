@@ -12,7 +12,7 @@
 
 import unittest
 
-import utils.animation
+import dutils.animation
 
 
 class TestUtils(unittest.TestCase):

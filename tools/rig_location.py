@@ -1,10 +1,7 @@
 # -*- coding:GBK -*-
 import maya.cmds as mc
-import logging
 
-logging.basicConfig()
-log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
+from feedback_tool import Feedback_info as fb_print, LIN as lin
 
 
 def get_core():
@@ -15,7 +12,7 @@ def get_core():
 
     if len(obj_lis) == 0:
         loc = mc.spaceLocator()[0]
-        log.info('已在原点创建定位器{}'.format(loc))
+        fb_print('已在原点创建定位器{}'.format(loc), info=True)
     else:
         pos_lis = []
         for obj in obj_lis:
@@ -27,7 +24,8 @@ def get_core():
         mc.matchTransform(loc, clst)
         mc.delete(crv, clst)
 
-        log.info('已在选择对象的中心创建定位器{}'.format(loc))
+        fb_print('已在选择对象的中心创建定位器{}'.format(loc), info=True)
+        return loc
 
 
 def create_joint():
@@ -40,9 +38,9 @@ def create_joint():
         mc.select(cl=True)
         jnt = mc.joint()
         mc.matchTransform(jnt, sel_lis[0], pos=True, rot=True)
-        log.info('已创建关节{}到{}中心并匹配旋转。'.format(jnt, sel_lis[0]))
+        fb_print('已创建关节{}到{}中心并匹配旋转。'.format(jnt, sel_lis[0]), info=True)
     else:
-        log.error('应选择1个对象，实际为{}个。'.format(len(sel_lis)))
+        fb_print('应选择1个对象，实际为{}个。'.format(len(sel_lis)), error=True)
 
 
 def get_jnt_core():
@@ -52,7 +50,7 @@ def get_jnt_core():
     obj_lis = mc.ls(sl=1, fl=1)
     if len(obj_lis) == 0:
         mc.joint(p=[0, 0, 0])
-        log.info('已在原点创建关节。')
+        fb_print('已在原点创建关节。', info=True)
     else:
         pos_lis = []
         for obj in obj_lis:
@@ -65,7 +63,7 @@ def get_jnt_core():
         mc.matchTransform(jnt, clst)
         mc.delete(crv, clst)
 
-        log.info('已在选择对象的中心创建关节{}'.format(jnt))
+        fb_print('已在选择对象的中心创建关节{}'.format(jnt), info=True)
 
 
 def get_trm_rot():
@@ -75,21 +73,45 @@ def get_trm_rot():
     obj = mc.ls(sl=True)
     if obj.__len__() == 1:
         mc.matchTransform(mc.spaceLocator(), obj[0], pos=True, rot=True)
-        log.info('已在{}位置上创建定位器并匹配'.format(obj[0]))
+        fb_print('已在{}位置上创建定位器并匹配'.format(obj[0]), info=True)
     else:
-        log.error('应选择1个对象，实际选择{}个对象。'.format(obj.__len__()))
+        fb_print('应选择1个对象，实际选择{}个对象。'.format(obj.__len__()), error=True)
 
 
-def match_transform():
+def allMatchOne():
     '''
     将选择列表中所有对象的位移旋转缩放匹配到最后一个选择对象。
     '''
-    sel_lis = mc.ls(sl=True)
+    sel_lis = mc.ls(sl=True, fl=1)
     if len(sel_lis) < 2:
-        log.error('选择对象应不少于2个，实际为{}个。'.format(len(sel_lis)))
+        fb_print('选择对象应不少于2个，实际为{}个。'.format(len(sel_lis)), error=True)
         return False
     else:
         obj_target = sel_lis[-1]
         for i in range(0, len(sel_lis) - 1):
             mc.matchTransform(sel_lis[i], obj_target)
-            log.info('已将{}匹配到{}。'.format(sel_lis[i], obj_target))
+            fb_print('已将{}匹配到{}。'.format(sel_lis[i], obj_target), info=True)
+
+
+def oneMatchAll(*args, set_attr=False):
+    '''
+    将选择列表中所有对象的位移旋转缩放匹配到第一个选择对象。
+    '''
+    if args:
+        sel_lis = args
+    else:
+        sel_lis = mc.ls(sl=True, fl=1)
+
+    if len(sel_lis) < 2:
+        fb_print('选择对象应不少于2个，实际为{}个。'.format(len(sel_lis)), error=True)
+    else:
+        tag_obj = sel_lis[-1]
+        pos_obj = sel_lis[:-1]
+        mc.select(pos_obj)
+        loc = get_core()
+        mc.matchTransform(tag_obj, loc)
+        mc.delete(loc)
+        fb_print('已将{}匹配到对象。'.format(tag_obj), info=True)
+
+    if set_attr:
+        pass

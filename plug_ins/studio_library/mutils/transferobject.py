@@ -35,7 +35,7 @@ import logging
 
 from studiovendor import six
 
-import utils
+import mutils
 
 try:
     import maya.cmds

@@ -19,7 +19,7 @@ import unittest
 
 import maya.cmds
 
-import utils
+import dutils
 import test_base
 
 

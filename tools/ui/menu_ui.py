@@ -16,6 +16,7 @@ if sys.version_info.major == 3:
 def reload_menu():
     try:
         from ui import menu_ui
+        reload(menu_ui)
         menu_ui.Rig_Menu()
         fb_print('菜单刷新成功', info=True, viewMes=True)
     except:
@@ -144,7 +145,10 @@ class Rig_Menu(object):
             svn_tool.svn_upData()
         def edition_info(*args):
             svn_tool.svn_info()
+        def get_logs(*args):
+            svn_tool.svn_logs()
 
         pm.menuItem(to=True, p=p_menu, l=u'同步工具架', i='svn_synchronization.png', c=upData_rigMenu)
         pm.menuItem(to=True, p=p_menu, l=u'打印本地工具架版本信息', i='svn_info.png', c=edition_info)
+        pm.menuItem(to=True, p=p_menu, l=u'打印服务器提交日志', i='svn_log.png', c=get_logs)
 

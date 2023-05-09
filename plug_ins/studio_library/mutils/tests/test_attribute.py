@@ -20,7 +20,7 @@ import unittest
 
 import maya.cmds
 
-import utils
+import dutils
 
 
 class TestAttribute(unittest.TestCase):

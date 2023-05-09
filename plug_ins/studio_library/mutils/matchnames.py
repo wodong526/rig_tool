@@ -12,7 +12,7 @@
 
 import logging
 
-import utils
+import mutils
 
 __all__ = [
     "matchNames",

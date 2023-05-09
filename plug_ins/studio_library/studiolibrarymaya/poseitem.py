@@ -22,11 +22,11 @@ from studiovendor.Qt import QtWidgets
 from studiolibrarymaya import baseitem
 from studiolibrarymaya import baseloadwidget
 
-try:
-    import utils
-    import maya.cmds
-except ImportError as error:
-    print(error)
+#try:
+import mutils
+import maya.cmds
+#except ImportError as error:
+#    print(error)
 
 
 logger = logging.getLogger(__name__)

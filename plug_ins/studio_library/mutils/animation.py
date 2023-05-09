@@ -17,8 +17,8 @@ import logging
 
 from studiovendor.Qt import QtWidgets
 
-import utils
-import utils.gui
+import mutils
+import mutils.gui
 
 try:
     import maya.cmds

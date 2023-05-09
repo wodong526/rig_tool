@@ -12,7 +12,7 @@
 
 import unittest
 
-from utils.mirrortable import MirrorTable
+from dutils.mirrortable import MirrorTable
 
 
 class TestMirrorTable(unittest.TestCase):

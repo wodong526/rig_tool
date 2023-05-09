@@ -23,8 +23,8 @@ from studiolibrarymaya import basesavewidget
 from studiolibrarymaya import baseloadwidget
 
 try:
-    import utils
-    import utils.gui
+    import mutils
+    import mutils.gui
     import maya.cmds
 except ImportError as error:
     print(error)

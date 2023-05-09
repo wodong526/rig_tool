@@ -11,12 +11,10 @@ import maya.OpenMayaUI as omui
 import os
 import math
 import functools
-import logging
 
-logging.basicConfig()
-log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
+from feedback_tool import Feedback_info as fb_print, LIN as lin
 
+FILE_PATH = __file__
 
 def maya_main_window():
     main_window_ptr = omui.MQtUtil.mainWindow()
@@ -46,7 +44,7 @@ class create_ctl(QtWidgets.QDialog):  # 使该窗口为控件
             self.setWindowFlags(QtCore.Qt.Tool)
 
         self.setWindowFlags(QtCore.Qt.WindowType.Window)
-        self.setMaximumSize(800, 670)
+        self.setMaximumWidth(670)
         self.setMinimumHeight(660)
 
         self.create_widgets()
@@ -114,7 +112,7 @@ class create_ctl(QtWidgets.QDialog):  # 使该窗口为控件
         ind = 1
         for i in range(3):
             h_lab_layout = QtWidgets.QHBoxLayout()
-            for n in range(11):
+            for n in range(13):
                 if ind == 32:
                     h_lab_layout.addWidget(self.all_color_but)
                     break
@@ -218,7 +216,7 @@ class create_ctl(QtWidgets.QDialog):  # 使该窗口为控件
             ctl_name = mc.rename(sel_cv, 'ctl_{}_001'.format(name))
             mc.rename(mc.listRelatives(ctl_name, s=True)[0], 'ctl_{}_001Shape'.format(name))
             grp = mc.group(em=True, n='zero_{}_001'.format(name))
-            grpOffset = mc.group(em=True, p=grp, n='Offset_{}_001'.format(name))
+            grpOffset = mc.group(em=True, p=grp, n='grpOffset_{}_001'.format(name))
             mc.xform(grp, t=pos, ro=rot, s=scl, ws=True)
             mc.parent(ctl_name, grpOffset)
             mc.select(grp)
@@ -239,15 +237,15 @@ class create_ctl(QtWidgets.QDialog):  # 使该窗口为控件
             for obj in sel_cv:
                 cv_shape = mc.listRelatives(obj, s=True)
                 if cv_shape == None:
-                    log.error('选择对象没有shape节点,已跳过。')
+                    fb_print('选择对象没有shape节点,已跳过。', warning=True)
                     continue
                 elif mc.nodeType(cv_shape[0]) == 'nurbsCurve':
                     cv_lis.append(obj)
                 else:
-                    log.error('{}不是曲线，已跳过。'.format(obj))
+                    fb_print('{}不是曲线，已跳过。'.format(obj), warning=True)
                     continue
         else:
-            log.error('没有选择对象。')
+            fb_print('没有选择对象。', error=True, path=FILE_PATH, line=lin())
             return False
         if bol == True:
             return cv_lis
@@ -284,23 +282,23 @@ class create_ctl(QtWidgets.QDialog):  # 使该窗口为控件
             self.ctl_lin.setText(ctl_cv)
 
     def past_shape(self):
-        ctl_cv = self.if_cv()
-        if type(ctl_cv) == unicode:
+        ctl_cv = self.if_cv(True)
+        for i in range(len(ctl_cv)):
             if self.ctl_lin.text():
                 ctl = self.ctl_lin.text()
-                dup_cv = mc.duplicateCurve(ctl, ch=False, n='dup_cv')[0]
-                old_name = mc.listRelatives(ctl_cv, s=True)
+                dup_cv = mc.duplicate(ctl, n='dup_cv')[0]
+                old_name = mc.listRelatives(ctl_cv[i], s=True)
                 mc.delete(old_name)
-                new_name = mc.rename(mc.listRelatives(dup_cv, s=True), old_name)
-                mc.parent(new_name, ctl_cv, s=True, r=True)
+                new_name = mc.rename(mc.listRelatives(dup_cv, s=True, f=1)[0], old_name)
+                mc.parent(new_name, ctl_cv[i], s=True, r=True)
                 mc.delete(dup_cv)
 
                 if mc.objExists('Sets'):
                     if 'AllSet' in mc.listConnections('Sets', d=False):
                         mc.sets(old_name, e=True, fe='AllSet')
-                log.info('已copy控制器形态到{}。'.format(ctl_cv))
+                fb_print('已copy控制器形态到{}。'.format(ctl_cv), info=True)
             else:
-                log.error('未复制任何控制形态。')
+                fb_print('未复制任何控制形态。', warning=True)
                 return False
 
 

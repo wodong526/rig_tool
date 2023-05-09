@@ -68,7 +68,7 @@ def run():
     """
     Call from within Maya to run all valid tests.
     """
-    import utils.animation
+    import dutils.animation
     mutils.animation.FIX_SAVE_ANIM_REFERENCE_LOCKED_ERROR = True
 
     tests = unittest.TextTestRunner()

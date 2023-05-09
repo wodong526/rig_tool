@@ -891,7 +891,7 @@ def saveJson(path, data):
     :rtype: None
     """
     path = normPath(path)
-    print data.items()
+    print(data.items())
     data = collections.OrderedDict(sorted(data.items(), key=lambda t: t[0]))
     data = json.dumps(data, indent=4)
     write(path, data)

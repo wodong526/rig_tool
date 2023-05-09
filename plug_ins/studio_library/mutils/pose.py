@@ -56,7 +56,7 @@ pose.load(objects=["Character1:Hand_L", "Character1:Finger_L"])
 """
 import logging
 
-import utils
+import mutils
 
 try:
     import maya.cmds

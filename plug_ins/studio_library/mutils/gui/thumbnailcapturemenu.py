@@ -19,7 +19,7 @@ from studiovendor.Qt import QtGui
 from studiovendor.Qt import QtCore
 from studiovendor.Qt import QtWidgets
 
-import utils.gui
+import mutils.gui
 
 import studiolibrary.widgets
 

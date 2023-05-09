@@ -9,30 +9,21 @@ from PySide2 import QtWidgets
 from PySide2 import QtGui
 from shiboken2 import wrapInstance
 
-import logging
-import sys
+import traceback
+
 from feedback_tool import Feedback_info as fb_print
-LINE = sys._getframe()
+
 FILE_PATH = __file__
 
-logging.basicConfig()
-log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
+
+def LIN():
+    line_number = traceback.extract_stack()[-2][1]
+    return line_number
 
 
 def maya_main_window():
     main_window_ptr = omui.MQtUtil.mainWindow()
     return wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
-
-
-def clear_orig():
-    sel_lis = mc.ls(sl=1)
-    for obj in sel_lis:
-        for sub_node in mc.listRelatives(obj, ad=True):
-            if 'Orig' in sub_node:
-                mc.delete(sub_node)
-                log.info('模型{}的orig节点{}已删除。'.format(obj, sub_node))
-                continue
 
 
 def freeze_rotation():
@@ -52,30 +43,33 @@ def freeze_rotation():
             obj.rotate.set(0, 0, 0)
             obj.rotateAxis.set(0, 0, 0)
             obj.jointOrient.set(newRotation)
-            log.info('{}的旋转已冻结。'.format(obj))
+            fb_print('{}的旋转已冻结。'.format(obj), info=True)
             continue
 
 
 def select_skinJoint():
+    """
+    通过选中的模型获取该模型的蒙皮关节
+    :return:
+    """
     sel_lis = mc.ls(sl=1)
     jnt_lis = []
     for mod in sel_lis:
-        for obj in mc.listHistory(mod, af=True):
-            if mc.nodeType(obj) == 'skinCluster':
-                for jnt in mc.skinCluster(obj, inf=1, q=1):
-                    if jnt not in jnt_lis:
-                        jnt_lis.append(jnt)
+        skin = mm.eval('findRelatedSkinCluster("{}")'.format(mod))
+        for jnt in mc.skinCluster(skin, inf=1, q=1):
+            if jnt not in jnt_lis:
+                jnt_lis.append(jnt)
     if jnt_lis:
         mc.select(jnt_lis)
-        log.info('已选中蒙皮关节。')
+        fb_print('已选中蒙皮关节。', info=True)
     else:
-        log.error('选中对象没有蒙皮关节。')
+        fb_print('选中对象没有蒙皮关节。', error=True)
 
 
 def get_length():
     obj = mc.ls(sl=True, fl=True)
     n = len(obj)
-    log.info('选中对象共有：{}个。对象为：{}。'.format(n, obj))
+    fb_print('选中对象共有：{}个。对象为：{}。'.format(n, obj), info=True)
 
 
 class SameName(QtWidgets.QDialog):
@@ -113,7 +107,7 @@ class SameName(QtWidgets.QDialog):
             if obj_lis[-1] == self.lin_name.text():
                 same_lis.append(obj)
         mc.select(same_lis)
-        log.info('已选择同名节点{}。'.format(same_lis))
+        fb_print('已选择同名节点{}。'.format(same_lis), info=True)
         self.close()
 
     def closeEvent(self, event):
@@ -151,8 +145,12 @@ def exportSelectToFbx():
                     if not mc.nodeType(obj) == 'joint':
                         hair_lis.append(obj)
         if hair_lis:
-            mc.confirmDialog(title='警告：', message='{}\n可能是毛发模型，应该删除。'.format(hair_lis), button=['确定'])
-            return None
+            resout = mc.confirmDialog(title='警告：', message='{}\n可能是毛发模型，应该删除。'.format(hair_lis),
+                                      button=['取消导出', '继续导出'])
+            if resout == u'取消导出':
+                return None
+            elif resout == u'继续导出':
+                pass
 
         file_path = mc.file(exn=True, q=True)
         file_nam = file_path.split('/')[-1].split('.')[0]
@@ -171,74 +169,27 @@ def exportSelectToFbx():
                     pert_dir[inf] = mc.listRelatives(inf, p=True)[0]
                     mc.parent(inf, w=True)
                 else:
-                    log.info('{}已在世界层级下。'.format(inf))
+                    fb_print('{}已在世界层级下。'.format(inf), info=True)
 
                 if mc.listConnections(inf, d=False):
                     node_lis = mc.listConnections(inf, d=False, c=1, p=1)
                     for n in range(len(node_lis) / 2):
                         mc.disconnectAttr(node_lis[n * 2 + 1], node_lis[n * 2])
-                        log.info('已断开{}。'.format(node_lis[n * 2 + 1]))
+                        fb_print('已断开{}。'.format(node_lis[n * 2 + 1]), info=True)
 
             mc.select(sel_lis)
             mc.file(file_path[0], f=True, typ='FBX export', pr=True, es=True)
-            log.info('已导出{}。'.format(sel_lis))
+            fb_print('已导出{}。'.format(sel_lis), info=True)
 
             for n in range(len(node_lis) / 2):  #重新链接上游节点
                 mc.connectAttr(node_lis[n * 2 + 1], node_lis[n * 2])
-                log.info('已链接{}。'.format(node_lis[n * 2 + 1]))
+                fb_print('已链接{}。'.format(node_lis[n * 2 + 1]), info=True)
             for inf in pert_dir:  # 重新p回父级
                 mc.parent(inf, pert_dir[inf])
 
         else:
-            log.error('没有选择有效路径。')
+            fb_print('没有选择有效路径。', error=True)
 
     else:
-        log.error('没有选择有效对象。')
+        fb_print('没有选择有效对象。', error=True)
 
-def transform_jnt_skin(outSkin_lis, obtain_jnt, mod, delete=False):
-    '''
-    outSkin_lis:要输出权重的关节列表
-    obtain_jnt：要获取权重的关节
-    mod_lis：要改变权重的模型
-    delete：是否删除输出权重的关节
-    '''
-    cluster = mm.eval('findRelatedSkinCluster("{}")'.format(mod))
-    infJnt_lis = mc.skinCluster(cluster, inf=True, q=True)#获取所有该蒙皮节点影响的关节
-
-    for jnt in infJnt_lis:
-        mc.setAttr('{}.liw'.format(jnt), True)#锁住该蒙皮节点下所有关节的权重
-    mc.setAttr('{}.liw'.format(obtain_jnt), False)
-
-    for jnt in outSkin_lis:  # 将每个关节的权重都反向给到脖子关节
-        mc.select(mod)  #传递关节权重需要指定实际对象，选择或者在skinPercent的蒙皮节点名后加上模型的trs名也行
-        if jnt in infJnt_lis:
-            mc.setAttr('{}.liw'.format(jnt), False)
-            mc.skinPercent(cluster, tv=[(jnt, 0)])
-            mc.skinCluster(cluster, e=True, ri=jnt)
-        else:
-            fb_print('{}不在蒙皮中'.format(jnt), warning=True, path=FILE_PATH, line=LINE.f_lineno)
-
-        if delete:#当关节不在世界下时放到世界下，将子级p给父级再把关节放到世界下，当关节在世界下时，当关节有子级时，将子级对象p到世界下
-            if mc.listRelatives(jnt, p=True):
-                if mc.listRelatives(jnt):
-                    sub_obj = mc.listRelatives(jnt)
-                    mc.parent(sub_obj, mc.listRelatives(jnt, p=True))
-                mc.parent(jnt, w=True)
-            else:
-                if mc.listRelatives(jnt):
-                    sub_obj = mc.listRelatives(jnt)
-                    mc.parent(sub_obj, w=True)
-            mc.delete(jnt)
-    mc.setAttr('{}.liw'.format(obtain_jnt), True)
-
-def add_skinJnt(clster, *joints):
-    '''
-    将关节添加进某蒙皮节点中
-    :param clster: 被添加蒙皮关节的蒙皮节点
-    :param joints: 要被添加进蒙皮节点的关节
-    :return: None
-    '''
-    infJnt_lis = mc.skinCluster(clster, inf=True, q=True)
-    for jnt in joints:
-        if jnt not in infJnt_lis:
-            mc.skinCluster(clster, e=True, lw=True, wt=0, ai=jnt)

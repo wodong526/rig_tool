@@ -13,7 +13,7 @@
 import os
 import logging
 
-import utils
+import mutils
 
 try:
     import maya.cmds

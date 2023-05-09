@@ -14,7 +14,7 @@
 from studiovendor.Qt import QtGui
 from studiovendor.Qt import QtWidgets
 
-import utils
+import mutils
 
 
 __all__ = ["FrameRangeMenu", "showFrameRangeMenu"]

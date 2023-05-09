@@ -1,22 +1,23 @@
 # -*- coding:GBK -*-
 from PySide2 import QtCore
 from PySide2 import QtWidgets
-from PySide2 import QtGui
 from shiboken2 import wrapInstance
 
 import maya.cmds as mc
 import maya.mel as mm
 import maya.OpenMayaUI as omui
 
-import sys
 import os
-from feedback_tool import Feedback_info as fb_print
-LIN = sys._getframe()
+
+from feedback_tool import Feedback_info as fb_print, LIN as lin
+
 FILE_PATH = __file__
+
 
 def maya_main_window():
     main_window_ptr = omui.MQtUtil.mainWindow()
     return wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
+
 
 class Export_SM(QtWidgets.QDialog):
     def __init__(self, parent=maya_main_window()):
@@ -78,45 +79,44 @@ class Export_SM(QtWidgets.QDialog):
         self.but_export.clicked.connect(self.exportSM)
 
     def get_data(self):
-        '''
+        """
         获取输入静态模型的面数下线
         生成关节名与模型名对应的字典
         生成关节名与关节对应的静态模型(sm文件名)的字典
         :return:
-        '''
+        """
         clamp_num = self.spn_faces.value()
         mod_dir = self.get_mod(clamp_num)
-        self.jnt_dir = self.get_joint(mod_dir)#关节名==对应关节的所有模型名列表
+        self.jnt_dir = self.get_joint(mod_dir)  #关节名==对应关节的所有模型名列表
 
-        self.export_nam_dir = {}#关节名==对应关节的sm名列表
+        self.export_nam_dir = {}  #关节名==对应关节的sm名列表
         for jnt, mods in self.jnt_dir.items():
             self.export_nam_dir[jnt] = 'SM_{}'.format(mods[0])
 
         if self.export_nam_dir:
             self.create_jntItems()
-            self.spn_faces.clearFocus()#在点击查询场景按钮后使输入框失去焦点
+            self.spn_faces.clearFocus()  #在点击查询场景按钮后使输入框失去焦点
         else:
             fb_print('场景中没有超过{}面数的模型'.format(clamp_num), warning=True, path=FILE_PATH)
 
     def create_jntItems(self, *itm):
-        '''
+        """
         生成关节列表视图里的项
         :param itm: 当重新排列项时记忆上次选中的项，方便继续选中对方
         :return:
-        '''
+        """
         self.lst_jnts.clear()
         self.lst_mods.clear()
         if self.jnt_dir:
             for jnt, mods in self.jnt_dir.items():
                 item = QtWidgets.QListWidgetItem('{}==>  {}'.format(jnt.ljust(30, ' '), self.export_nam_dir[jnt]))
-                item.setData(QtCore.Qt.UserRole, jnt)#将关节名附加到项上
+                item.setData(QtCore.Qt.UserRole, jnt)  #将关节名附加到项上
                 self.lst_jnts.addItem(item)
 
         if itm:
             self.lst_jnts.item(itm[0]).setSelected(True)
         else:
             self.lst_jnts.item(0).setSelected(True)
-
 
     def create_modItems(self, *itm):
         '''
@@ -150,7 +150,7 @@ class Export_SM(QtWidgets.QDialog):
             action_remove.triggered.connect(self.remove_jntItem)
             action_copy.triggered.connect(self.duplicate_jntName)
 
-        menu.exec_(self.lst_jnts.mapToGlobal(pos))#菜单生成的位置
+        menu.exec_(self.lst_jnts.mapToGlobal(pos))  #菜单生成的位置
 
     def contextMenu_mod(self, pos):
         menu = QtWidgets.QMenu()
@@ -165,30 +165,30 @@ class Export_SM(QtWidgets.QDialog):
         menu.exec_(self.lst_mods.mapToGlobal(pos))  #菜单生成的位置
 
     def select_mod(self):
-        '''
+        """
         当模型列表视窗中的项被选中时自动选中场景里对应的模型
         :return:
-        '''
+        """
         sel_item = self.lst_mods.selectedItems()
         if sel_item:
             obj = sel_item[0].text()
             mc.select(obj)
 
     def select_jnt(self):
-        '''
+        """
         当关节列表视窗中的项被选中时自动选中场景里对应的关节
         :return:
-        '''
+        """
         sel_item = self.lst_jnts.selectedItems()
         if sel_item:
             jnt = sel_item[0].data(QtCore.Qt.UserRole)
             mc.select(jnt)
 
     def duplicate_jntName(self):
-        '''
+        """
         复制选中关节项的关节名
         :return:
-        '''
+        """
         sel_item = self.lst_jnts.selectedItems()
         nam = sel_item[0].data(QtCore.Qt.UserRole)
         com = 'echo | set /p unl = ' + nam.strip() + '| clip'
@@ -205,10 +205,10 @@ class Export_SM(QtWidgets.QDialog):
         os.system(com)
 
     def add_modItem(self):
-        '''
+        """
         为模型列表视图中添加新的模型项
         :return:
-        '''
+        """
         sel_lis = mc.ls(sl=True)
         if sel_lis:
             jnt_item = self.lst_jnts.selectedItems()
@@ -230,7 +230,9 @@ class Export_SM(QtWidgets.QDialog):
                     self.create_modItems(i)
                     fb_print('已为{}文件中加入模型{}'.format(self.export_nam_dir[jnt], append_lis), info=True)
                 else:
-                    fb_print('选择列表中没有可加入SM文件的有效模型', warning=True, viewMes=True)
+                    fb_print('选择列表中没有可加入SM文件的有效模型', error=True, viewMes=True)
+            else:
+                fb_print('没有选择有效的关节项。', error=True, path=FILE_PATH, line=lin())
 
     def add_JntItem(self):
         """
@@ -250,7 +252,7 @@ class Export_SM(QtWidgets.QDialog):
                 self.create_jntItems()
                 fb_print('已添加关节{}'.format(add_lis), info=True)
             else:
-                fb_print('选择列表中没有有效关节', warning=True)
+                fb_print('选择列表中没有有效关节', error=True, path=FILE_PATH, line=lin())
 
     def remove_jntItem(self):
         """
@@ -276,8 +278,6 @@ class Export_SM(QtWidgets.QDialog):
             jnt = jnt_item[0].data(QtCore.Qt.UserRole)
 
             mod = mod_item[0].text()
-            print(jnt)
-            print(self.jnt_dir)
             if mod in self.jnt_dir[jnt]:
                 self.jnt_dir[jnt].remove(mod)
                 self.create_modItems()
@@ -312,12 +312,12 @@ class Export_SM(QtWidgets.QDialog):
                 mc.select(self.jnt_dir[jnt])
                 mc.file(fbx_path, f=True, typ='FBX export', pr=True, es=True)
                 export_lis.append(jnt)
-                fb_print('已导出模型{}'.format(self.jnt_dir[jnt]), info=True, path=FILE_PATH, line=LIN.f_lineno)
+                fb_print('已导出模型{}'.format(self.jnt_dir[jnt]), info=True, path=FILE_PATH, line=lin())
             else:
                 fb_print('关节{}没有对应的模型可供导出'.format(jnt), warning=True)
 
         n, path = self.write_txt(export_lis)
-        fb_print('共导出静态模型{}个，生成对应文件{}。'.format(n, path), info=True, path=FILE_PATH, line=LIN.f_lineno, viewMes=True)
+        fb_print('共导出静态模型{}个，生成对应文件{}。'.format(n, path), info=True, path=FILE_PATH, line=lin(), viewMes=True)
 
     def write_txt(self, export_lis):
         '''
@@ -335,10 +335,9 @@ class Export_SM(QtWidgets.QDialog):
 
         with open(self.scence_path.replace('.ma', '.txt'), "w") as f:
             f.write(txt)
-        fb_print('对应文件写入完毕', path=FILE_PATH, line=LIN.f_lineno, info=True)
+        fb_print('对应文件写入完毕', path=FILE_PATH, line=lin(), info=True)
 
         return i, self.scence_path.replace('.ma', '.txt')
-
 
     def rename_jntItem(self):
         '''
@@ -359,7 +358,8 @@ class Export_SM(QtWidgets.QDialog):
         生成对话窗口，让用户输入新的sm文件名
         :return:
         '''
-        mes = QtWidgets.QInputDialog.getText(self, u'重命名SM文件：', u'输入新的SM文件名：', QtWidgets.QLineEdit.Normal, 'SM_')
+        mes = QtWidgets.QInputDialog.getText(self, u'重命名SM文件：', u'输入新的SM文件名：', QtWidgets.QLineEdit.Normal,
+                                             'SM_')
         if mes[0]:
             return mes[0]
         else:
@@ -401,7 +401,7 @@ class Export_SM(QtWidgets.QDialog):
         if error_lis:
             for key, itme in error_lis.items():
                 fb_print('模型{}的蒙皮关节应为一个，实际为{}个'.format(key, itme),
-                         warning=True, path=FILE_PATH, line=LIN.f_lineno, viewMes=True)
+                         warning=True, path=FILE_PATH, line=lin(), viewMes=True)
         return jnt_dir
 
     def get_modJoint(self, mod):
@@ -428,4 +428,3 @@ def export_SM():
     finally:
         my_window = Export_SM()
         my_window.show()
-

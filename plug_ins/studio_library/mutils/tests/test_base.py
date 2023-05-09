@@ -15,7 +15,7 @@ import unittest
 
 import maya.cmds
 
-import utils
+import dutils
 
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(mutils.__file__), "tests", "data")

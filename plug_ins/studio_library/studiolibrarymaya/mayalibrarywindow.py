@@ -19,7 +19,7 @@ from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 import studiolibrary
 from studiolibrary import librarywindow
 
-import utils
+import mutils
 
 
 logger = logging.getLogger(__name__)

@@ -12,7 +12,7 @@
 
 import unittest
 
-import utils
+import dutils
 
 import test_base
 

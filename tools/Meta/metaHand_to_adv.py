@@ -1,19 +1,24 @@
 # -*- coding:GBK -*-
+import maya.cmds as mc
+import maya.mel as mm
+
 import sys
+import traceback
+
 if sys.version_info.major == 3:
     #当环境为py3时
     from importlib import reload
 
-import maya.cmds as mc
-import maya.mel as mm
-
 from feedback_tool import Feedback_info as fb_print
-import rig_tool
-reload(rig_tool)
+from dutils import toolutils
 
-LINE = sys._getframe()
+
+def LIN():
+    line_number = traceback.extract_stack()[-2][1]
+    return line_number
+
+
 FILE_PATH = __file__
-
 
 
 def metaHead_to_adv():
@@ -24,7 +29,8 @@ def metaHead_to_adv():
         transform_neck_weight()
         arrangement_scence()
     else:
-        fb_print('当且仅当adv的颈椎twist关节数量为1时该工具才有效，请重建adv骨架', error=True, path=FILE_PATH, line=LINE.f_lineno, viewMes=True)
+        fb_print('当且仅当adv的颈椎twist关节数量为1时该工具才有效，请重建adv骨架', error=True, path=FILE_PATH,
+                 line=LIN(), viewMes=True)
 
 
 def hide_adv_ctrlAndJoint():
@@ -36,7 +42,8 @@ def hide_adv_ctrlAndJoint():
     for obj in hide_lis:
         if mc.objExists(obj):
             mc.setAttr('{}.v'.format(obj), False)
-    fb_print('已隐藏adv头部无关控制器与关节', info=True, path=FILE_PATH, line=LINE.f_lineno)
+    fb_print('已隐藏adv头部无关控制器与关节', info=True, path=FILE_PATH, line=LIN())
+
 
 def set_advJoint_pos():
     '''
@@ -53,30 +60,33 @@ def set_advJoint_pos():
     mc.xform('FKPS2NeckPart1_M', ws=True, t=meta_neck_02_pos)
     mc.xform('FKPS2Head_M', ws=True, t=meta_head_pos)
     mc.xform('Head', ws=True, t=meta_head_pos)
-    fb_print('已匹配adv骨架到meta', info=True, path=FILE_PATH, line=LINE.f_lineno)
+    fb_print('已匹配adv骨架到meta', info=True, path=FILE_PATH, line=LIN())
 
-    if mc.objExists('drv_spine_04'):#当被头部变换工具操作过，adv的头的控制器需要控制的关节链为驱动关节链
+    if mc.objExists('drv_spine_04'):  #当被头部变换工具操作过，adv的头的控制器需要控制的关节链为驱动关节链
         mc.parentConstraint('FKXHead_M', 'drv_head', mo=True)
     else:
         mc.parentConstraint('FKXHead_M', 'head', mo=True)
-    fb_print('adv头控制器已约束meta头关节', info=True, path=FILE_PATH, line=LINE.f_lineno)
+    fb_print('adv头控制器已约束meta头关节', info=True, path=FILE_PATH, line=LIN())
+
 
 def transform_skin():
     '''
     将meta关节上需要移植到adv关节上的权重传递过去
     :return: None
     '''
-    add_joint_dir = {'Scapula_L':['clavicle_out_l', 'clavicle_scap_l', 'clavicle_l'],
-                     'Scapula_R':['clavicle_out_r', 'clavicle_scap_r', 'clavicle_r'],
-                     'Chest_M':['spine_04', 'clavicle_pec_l', 'clavicle_pec_r', 'spine_04_latissimus_l', 'spine_04_latissimus_r'],
-                     'Shoulder_L':['upperarm_out_l', 'upperarm_bck_l', 'upperarm_fwd_l', 'upperarm_in_l'],
-                     'Shoulder_R':['upperarm_out_r', 'upperarm_bck_r', 'upperarm_fwd_r', 'upperarm_in_r'],
-                     'Neck_M':['neck_01'], 'NeckPart1_M':['neck_02']}
-    for jnt in add_joint_dir:#将adv的头的关节加入到meta头的蒙皮中
+    add_joint_dir = {'Scapula_L': ['clavicle_out_l', 'clavicle_scap_l', 'clavicle_l'],
+                     'Scapula_R': ['clavicle_out_r', 'clavicle_scap_r', 'clavicle_r'],
+                     'Chest_M': ['spine_04', 'clavicle_pec_l', 'clavicle_pec_r', 'spine_04_latissimus_l',
+                                 'spine_04_latissimus_r'],
+                     'Shoulder_L': ['upperarm_out_l', 'upperarm_bck_l', 'upperarm_fwd_l', 'upperarm_in_l'],
+                     'Shoulder_R': ['upperarm_out_r', 'upperarm_bck_r', 'upperarm_fwd_r', 'upperarm_in_r'],
+                     'Neck_M': ['neck_01'], 'NeckPart1_M': ['neck_02']}
+    for jnt in add_joint_dir:  #将adv的头的关节加入到meta头的蒙皮中
         mc.skinCluster('head_lod0_mesh_skinCluster', e=True, lw=True, wt=0, ai=jnt)
 
     for adv_jnt, meta_jnt_lis in add_joint_dir.items():
-        rig_tool.transform_jnt_skin(meta_jnt_lis, adv_jnt, 'head_lod0_mesh', delete=True)
+        toolutils.transform_jnt_skin(meta_jnt_lis, adv_jnt, 'head_lod0_mesh', delete=True)
+
 
 def transform_neck_weight():
     '''
@@ -86,22 +96,23 @@ def transform_neck_weight():
     neck_2_subJoint = mc.listRelatives('FACIAL_C_Neck2Root')  # 获取FACIAL_C_Neck2Root下的所有关节
     neck_1_subJoint = mc.listRelatives('FACIAL_C_Neck1Root')  # 获取FACIAL_C_Neck1Root下的所有关节
 
-    rig_tool.transform_jnt_skin(neck_1_subJoint, 'Neck_M', 'head_lod0_mesh', True)
-    rig_tool.transform_jnt_skin(neck_2_subJoint, 'NeckPart1_M', 'head_lod0_mesh', True)
+    toolutils.transform_jnt_skin(neck_1_subJoint, 'Neck_M', 'head_lod0_mesh', True)
+    toolutils.transform_jnt_skin(neck_2_subJoint, 'NeckPart1_M', 'head_lod0_mesh', True)
 
     #将眼睑、泪腺、眼罩子和头在head关节上的蒙皮放到Head_M上
-    rig_tool.add_skinJnt('head_lod0_mesh_skinCluster', 'Head_M')
-    rig_tool.transform_jnt_skin(['head'], 'Head_M', 'head_lod0_mesh')
-    rig_tool.add_skinJnt('eyeEdge_lod0_mesh_skinCluster', 'Head_M')
-    rig_tool.transform_jnt_skin(['head'], 'Head_M', 'eyeEdge_lod0_mesh')
-    rig_tool.add_skinJnt('cartilage_lod0_mesh_skinCluster', 'Head_M')
-    rig_tool.transform_jnt_skin(['head'], 'Head_M', 'cartilage_lod0_mesh')
-    rig_tool.add_skinJnt('eyeshell_lod0_mesh_skinCluster', 'Head_M')
-    rig_tool.transform_jnt_skin(['head'], 'Head_M', 'eyeshell_lod0_mesh')
+    toolutils.add_skinJnt('head_lod0_mesh_skinCluster', 'Head_M')
+    toolutils.transform_jnt_skin(['head'], 'Head_M', 'head_lod0_mesh')
+    toolutils.add_skinJnt('eyeEdge_lod0_mesh_skinCluster', 'Head_M')
+    toolutils.transform_jnt_skin(['head'], 'Head_M', 'eyeEdge_lod0_mesh')
+    toolutils.add_skinJnt('cartilage_lod0_mesh_skinCluster', 'Head_M')
+    toolutils.transform_jnt_skin(['head'], 'Head_M', 'cartilage_lod0_mesh')
+    toolutils.add_skinJnt('eyeshell_lod0_mesh_skinCluster', 'Head_M')
+    toolutils.transform_jnt_skin(['head'], 'Head_M', 'eyeshell_lod0_mesh')
     mc.parent(mc.listRelatives('head'), 'Head_M')
 
     mc.delete('FACIAL_C_Neck2Root', 'FACIAL_C_Neck1Root')
-    fb_print('脖子关节权重转换完成', info=True, path=FILE_PATH, line=LINE.f_lineno)
+    fb_print('脖子关节权重转换完成', info=True, path=FILE_PATH, line=LIN())
+
 
 def arrangement_scence():
     '''
@@ -115,4 +126,4 @@ def arrangement_scence():
                 mc.rename(jnt, jnt.replace('drv_', ''))
         mc.parent('head', 'grp_moveDrvJnt_001')
     mm.eval('hyperShadePanelMenuCommand("hyperShadePanel1", "deleteUnusedNodes");')
-    fb_print('转换完成', info=True, path=FILE_PATH, line=LINE.f_lineno, viewMes=True)
+    fb_print('转换完成', info=True, path=FILE_PATH, line=LIN(), viewMes=True)

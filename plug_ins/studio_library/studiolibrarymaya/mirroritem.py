@@ -16,7 +16,7 @@ import logging
 from studiolibrarymaya import baseitem
 
 try:
-    import utils
+    import mutils
     import maya.cmds
 except ImportError as error:
     print(error)

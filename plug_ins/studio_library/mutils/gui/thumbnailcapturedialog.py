@@ -32,8 +32,8 @@ except Exception:
 
 import studioqt
 
-import utils.gui
-import utils.gui.modelpanelwidget
+import mutils.gui
+import mutils.gui.modelpanelwidget
 
 
 __all__ = [
