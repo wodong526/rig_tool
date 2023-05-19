@@ -12,7 +12,7 @@ def add_metaToMata_plug():
         if mc.pluginInfo('embeddedRL4', q=1, r=1):
             fb_print('bridgeToMaya“—æ≠º”‘ÿ', info=True, path=__file__, line=lin.f_lineno, viewMes=True)
         else:
-            if 'C:/Rig_Tools/plug_ins/Bridge_To_Maya' in sys.path:
+            if 'C:/Rig_Tools/plugs/Bridge_To_Maya' in sys.path:
                 pass
             else:
                 sys.path.append('C:/Rig_Tools/plug_ins/Bridge_To_Maya')

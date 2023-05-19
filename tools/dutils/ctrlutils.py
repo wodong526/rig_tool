@@ -93,3 +93,37 @@ def add_curveShape_color(ctl_lis, *args):
     else:
         set_color(ctl_lis, *args)
 
+
+def fromObjCreateGroup(name,  typ='ctl', *objs):
+    """
+    通过传入名称，对象，类型批量在对象上创建组
+    :param name: 对象名
+    :param objs:
+    :param typ:
+    :return:
+    """
+    zero_lis = []
+    obj_lis = []
+    i = 0
+    for obj in objs:
+        i += 1
+        pos = mc.xform(obj, t=True, q=True, ws=True)
+        rot = mc.xform(obj, ro=True, q=True, ws=True)
+        scl = mc.xform(obj, s=True, q=True, ws=True)
+
+        if typ == 'ctl':
+            ctl_name = mc.rename(obj, 'ctl_{}_{:03d}'.format(name, i))
+        elif typ == 'mod':
+            ctl_name = mc.rename(obj, 'mod_{}_{:03d}'.format(name, i))
+
+        mc.rename(mc.listRelatives(ctl_name, s=True)[0], '{}Shape'.format(ctl_name))
+        grp = mc.group(em=True, n='zero_{}_{:03d}'.format(name, i), w=True)
+        grpOffset = mc.group(em=True, p=grp, n='grpOffset_{}_{:03d}'.format(name, i))
+        mc.xform(grp, t=pos, ro=rot, s=scl, ws=True)
+        mc.parent(ctl_name, grpOffset)
+
+        zero_lis.append(grp)
+        obj_lis.append(ctl_name)
+        mc.select(grp)
+
+    return zero_lis, obj_lis

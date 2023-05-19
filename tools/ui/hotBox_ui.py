@@ -88,18 +88,18 @@ class Rig_HotBox(object):
         mc.menuItem(p=parent, l=u'获取场景重名', rp='N', c='import rig_clear;'
                                                            'reload(rig_clear);'
                                                            'rig_clear.clear_name()')
-        mc.menuItem(p=parent, l=u'清理场景所有空间名', rp='NW', c='import rig_clear;'
-                                                                  'reload(rig_clear);'
-                                                                  'rig_clear.clear_nameSpace()')
-        mc.menuItem(p=parent, l=u'清理场景关键帧', rp='NE', c='import rig_clear;'
-                                                              'reload(rig_clear);'
-                                                              'rig_clear.clear_key()')
-        mc.menuItem(p=parent, l=u'清理场景动画层', rp='E', c='import rig_clear;'
-                                                             'reload(rig_clear);'
-                                                             'rig_clear.clear_animLayer()')
-        mc.menuItem(p=parent, l=u'清理场景HIK', rp='SE', c='import rig_clear;'
-                                                           'reload(rig_clear);'
-                                                           'rig_clear.clear_hik()')
+        mc.menuItem(p=parent, l=u'清理场景所有空间名', rp='NW', c='from dutils import clearUtils;'
+                                                                  'reload(clearUtils);'
+                                                                  'clearUtils.clear_nameSpace()')
+        mc.menuItem(p=parent, l=u'清理场景关键帧', rp='NE', c='from dutils import clearUtils;'
+                                                              'reload(clearUtils);'
+                                                              'clearUtils.clear_key()')
+        mc.menuItem(p=parent, l=u'清理场景动画层', rp='E', c='from dutils import clearUtils;'
+                                                             'reload(clearUtils);'
+                                                             'clearUtils.clear_animLayer()')
+        mc.menuItem(p=parent, l=u'清理场景HIK', rp='SE', c='from dutils import clearUtils;'
+                                                           'reload(clearUtils);'
+                                                           'clearUtils.clear_hik()')
 
     def menu_jnt(self, parent):
         mc.menuItem(p=parent, l='创建关节工具', rp='N', c='mc.JointTool()')
@@ -108,8 +108,8 @@ class Rig_HotBox(object):
                                                                  'reload(rig_location);'
                                                                  'rig_location.create_joint()')
         mc.menuItem(p=parent, l='创建关节到选择对象的中心', rp='E', c='import rig_location;'
-                                                                      'reload(rig_location);'
-                                                                      'rig_location.get_jnt_core()')
+                                                                  'reload(rig_location);'
+                                                                  'rig_location.get_jnt_core()')
 
     def menu_get(self, parent):
         mc.menuItem(p=parent, l=u'获取选中对象的蒙皮关节', rp='W', c='import rig_tool;'

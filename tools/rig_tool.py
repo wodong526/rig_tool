@@ -12,6 +12,7 @@ from shiboken2 import wrapInstance
 import traceback
 
 from feedback_tool import Feedback_info as fb_print
+from dutils import clearUtils, ctrlutils, skinUtils
 
 FILE_PATH = __file__
 
@@ -127,9 +128,9 @@ def showSameNameWindow():
 
 
 def exportSelectToFbx():
-    '''
+    """
     将选中的对象导出为fbx，切断开关节与控制器的链接。
-    '''
+    """
     sel_lis = mc.ls(sl=1)
     if sel_lis:
 
@@ -151,6 +152,18 @@ def exportSelectToFbx():
                 return None
             elif resout == u'继续导出':
                 pass
+
+        namSpas, namSpas_lis = clearUtils.clear_nameSpace(q=True)  #当场景里有空间名时提示
+        if namSpas:
+            resout = mc.confirmDialog(title='警告：', button=['清理空间名后再导出', '不清理直接导出', '取消'],
+                                      message='场景中有空间名称：\n{}\n是否清理后再导出或直接导出？'.format(
+                                          '\n'.join(namSpas_lis)))
+            if resout == u'清理空间名后再导出':
+                clearUtils.clear_nameSpace()
+            elif resout == u'不清理直接导出':
+                pass
+            else:
+                return None
 
         file_path = mc.file(exn=True, q=True)
         file_nam = file_path.split('/')[-1].split('.')[0]
@@ -178,6 +191,7 @@ def exportSelectToFbx():
                         fb_print('已断开{}。'.format(node_lis[n * 2 + 1]), info=True)
 
             mc.select(sel_lis)
+            mc.FBXProperty('Export|IncludeGrp|Animation', '-v', '0')
             mc.file(file_path[0], f=True, typ='FBX export', pr=True, es=True)
             fb_print('已导出{}。'.format(sel_lis), info=True)
 
@@ -192,4 +206,100 @@ def exportSelectToFbx():
 
     else:
         fb_print('没有选择有效对象。', error=True)
+
+
+def createRibbon(nam, ctl_n, jnt_n, foll_ctl=False):
+    """
+    从两根曲线之间生成ik关节链和控制器，使控制器能随时调整ik
+    :param foll_ctl: 生成的曲面段数是否跟随控制器数量，不跟随则跟随曲线段数
+    :param nam: 此rig的名称
+    :param ctl_n: 控制器数量
+    :param jnt_n: ik关节数量
+    :return: None
+    """
+    sel_lis = mc.ls(sl=True)
+    for cvr in sel_lis:
+        if foll_ctl:
+            mc.rebuildCurve(cvr, rpo=True, end=1, kr=0, kt=False, s=ctl_n - 1)
+        else:
+            mc.rebuildCurve(cvr, ch=0, rpo=1, rt=0, end=1, kr=0, kcp=1, kt=0, s=1, d=3, tol=0.01)
+    surf = mc.loft(sel_lis[0], sel_lis[1], ch=False, u=True, rn=False, po=0, n='surf_{}_{:03d}'.format(nam, 1))[0]
+    mc.setAttr('{}.inheritsTransform'.format(surf), False)
+
+    crvFromSur = mc.createNode('curveFromSurfaceIso', n='crvFromSur_{}_{:03d}'.format(nam, 1))
+    mc.setAttr('{}.isoparmValue'.format(crvFromSur), 0.5)
+    mc.setAttr('{}.isoparmDirection'.format(crvFromSur), 1)
+    lsoShape = mc.createNode('nurbsCurve', n='crv_{}_{:03d}Shape'.format(nam, 1))
+    lso = mc.rename(mc.listRelatives(lsoShape, p=True), 'crv_{}_{:03d}'.format(nam, 1))
+    mc.setAttr('{}.v'.format(lso), False)
+    mc.connectAttr('{}.worldSpace[0]'.format(surf), '{}.inputSurface'.format(crvFromSur))
+    mc.connectAttr('{}.outputCurve'.format(crvFromSur), '{}.create'.format(lsoShape))
+
+    motPath_node = mc.createNode('motionPath', n='motPath_{}_{:03d}'.format(nam, 1))
+    mc.setAttr('{}.fractionMode'.format(motPath_node), 1)
+    mc.connectAttr('{}.worldSpace[0]'.format(lsoShape), '{}.geometryPath'.format(motPath_node))
+    jnt_lis = []
+    for i in range(1, jnt_n + 1):
+        mc.select(cl=True)
+        jnt = mc.joint(n='jnt_{}_{:03d}'.format(nam, i))
+        mc.connectAttr('{}.allCoordinates'.format(motPath_node), '{}.translate'.format(jnt))
+        mc.setAttr('{}.uValue'.format(motPath_node), (i - 1) / (jnt_n - 1.0))
+        mc.disconnectAttr('{}.allCoordinates'.format(motPath_node), '{}.translate'.format(jnt))
+        mc.makeIdentity(jnt, a=True, r=True)
+        if jnt_lis:
+            mc.parent(jnt, jnt_lis[-1])
+        jnt_lis.append(jnt)
+
+    grp_lis = []
+    ctl_lis = []
+    ctlJnt_lis = []
+    for i in range(1, ctl_n + 1):
+        ctl = ctrlutils.create_ctl('ctl_{}_{:03d}'.format(nam, i), id='C01')
+        grp, ctl = ctrlutils.fromObjCreateGroup(nam, ctl)
+
+        mc.select(cl=True)
+        ctlJnt = mc.joint(n='jnt_ctl_{}_{:03d}'.format(nam, i))
+        mc.setAttr('{}.v'.format(ctlJnt), False)
+        mc.parent(ctlJnt, ctl[0])
+        grp_lis.append(grp[0])
+        ctl_lis.append(ctl[0])
+        ctlJnt_lis.append(ctlJnt)
+
+        mc.connectAttr('{}.allCoordinates'.format(motPath_node), '{}.translate'.format(grp[0]))
+        mc.setAttr('{}.uValue'.format(motPath_node), (i - 1) / (ctl_n - 1.0))
+        mc.disconnectAttr('{}.allCoordinates'.format(motPath_node), '{}.translate'.format(grp[0]))
+
+    mc.joint(jnt_lis[0], e=True, oj='xyz', sao='yup', zso=True, ch=True)
+    ikHad = mc.ikHandle(sj=jnt_lis[0], ee=jnt_lis[-1], c=lso, sol='ikSplineSolver', ccv=False,
+                        n='ikHad_{}_{:03d}'.format(nam, 1))[0]
+    surSkin = mc.skinCluster(ctlJnt_lis, surf, n='skin_{}_{:03d}'.format(nam, 1))[0]
+
+    grp_main = mc.group(n='grp_{}_001'.format(nam), w=True, em=True)
+    mc.parent(ikHad, jnt_lis[0], grp_lis, surf, lso, grp_main)
+
+    cvr_info = mc.createNode('curveInfo', n='cvrInfo_{}_{:03d}'.format(nam, 1))
+    mc.connectAttr('{}.worldSpace[0]'.format(lsoShape), '{}.inputCurve'.format(cvr_info))
+    cvr_length = mc.getAttr('{}.arcLength'.format(cvr_info))
+
+    mult_node = mc.createNode('multiplyDivide', n='mult_{}_cvrLength_{:03d}'.format(nam, 1))
+    mc.setAttr('{}.operation'.format(mult_node), 2)
+    mc.setAttr('{}.input2X'.format(mult_node), cvr_length)
+    mc.connectAttr('{}.arcLength'.format(cvr_info), '{}.input1X'.format(mult_node))
+
+    for i in range(len(jnt_lis) - 1):
+        mc.connectAttr('{}.outputX'.format(mult_node), '{}.scaleX'.format(jnt_lis[i]))
+
+
+def cleanBindingDistortion():
+    topLevel = mc.ls(sl=True)[0]
+    if mc.listConnections(topLevel, d=False):
+        mods = mc.listRelatives(topLevel, ad=True)
+        skinUtils.processingSkinPrecision(mods)
+
+    else:
+        fb_print('选择对象还没有被root控制约束', error=True, viewMes=True)
+
+
+
+
 

@@ -12,8 +12,9 @@ else:
 serverSubmitsTheLogs = 'file:///Z:/Library/rig_plug_in/tools/Rig_warehouse/trunk'
 
 
+projectPath = 'Z:/Project/FHZJ/CGT/Asset/'
 
-iconPath = '{}icon/'.format(localPath)#图片路径
+iconPath = '{}icons/'.format(localPath)#图片路径
 metaPath = '{}plug_ins/Bridge_To_Maya/'.format(localPath)#meta插件路径
 advPath = '{}plug_ins/ADV/'.format(localPath)#adv插件路径
 adPosePath = '{}plug_ins/adPose/'.format(localPath)#adPose插件路径

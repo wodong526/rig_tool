@@ -7,9 +7,10 @@ from feedback_tool import Feedback_info as fb_print, LIN as lin
 
 FILE_PATH = __file__
 
+
 def clear_orig():
     """
-    将选中的模型列表依次便利 如果有orig节点就删除
+    将选中的模型列表依次遍历 如果有orig节点就删除
     :return:
     """
     sel_lis = mc.ls(sl=1)
@@ -85,3 +86,55 @@ def transform_jnt_skin(outSkin_lis, obtain_jnt, mod, delete=False):
                     mc.parent(sub_obj, w=True)
             mc.delete(jnt)
     mc.setAttr('{}.liw'.format(obtain_jnt), True)
+
+
+def createFollicle(geo, tag):
+    """
+    在geo（多边形或者曲面）上生成毛囊，毛囊位置为离tag对象最近的位置
+    :param geo: 多边形或者曲面
+    :param tag: 毛囊离它最近
+    :return:
+    """
+    pass
+
+
+def getShapeType(getTrs=False, q=False, typ='', *nodes):
+    """
+    检测对象是什么类型，通过对象的shape节点来检测对象类型
+    :param typ: 要返回的类型
+    :param q: 为true时只返回typ参数指定的类型
+    :param getTrs:True返回对象shape类型名，false返回对象trs名
+    :param nodes:要检测的对象
+    :return:list
+    """
+    if q and typ not in ['mesh', 'nurbsCurve', 'nurbsSurface', 'lattice', 'locator']:
+        fb_print('typ参数没有指定有效类型', error=True)
+
+    rtn_lis = []
+    for node in nodes:
+        if mc.nodeType(node) == 'transform':
+            shape = mc.listRelatives(node, s=True)
+            if shape:
+                if q and shape[0] == typ:
+                    if getTrs:
+                        rtn_lis.append(shape[0])
+                    elif not getTrs:
+                        rtn_lis.append(node)
+                elif not q:
+                    if getTrs:
+                        rtn_lis.append(shape[0])
+                    elif not getTrs:
+                        rtn_lis.append(node)
+            else:
+                continue
+        elif mc.nodeType(node) in ['mesh', 'nurbsCurve', 'nurbsSurface', 'lattice', 'locator']:
+            if q and node == typ:
+                if getTrs:
+                    rtn_lis.append(node)
+                elif not getTrs:
+                    rtn_lis.append(mc.listRelatives(node, p=True)[0])
+            elif not q:
+                if getTrs:
+                    rtn_lis.append(node)
+                elif not getTrs:
+                    rtn_lis.append(mc.listRelatives(node, p=True)[0])

@@ -93,10 +93,10 @@ def allMatchOne():
             fb_print('已将{}匹配到{}。'.format(sel_lis[i], obj_target), info=True)
 
 
-def oneMatchAll(*args, set_attr=False):
-    '''
+def oneMatchAll(set_attr=False, *args):
+    """
     将选择列表中所有对象的位移旋转缩放匹配到第一个选择对象。
-    '''
+    """
     if args:
         sel_lis = args
     else:
@@ -112,6 +112,7 @@ def oneMatchAll(*args, set_attr=False):
         mc.matchTransform(tag_obj, loc)
         mc.delete(loc)
         fb_print('已将{}匹配到对象。'.format(tag_obj), info=True)
+        return tag_obj, pos_obj
 
     if set_attr:
         pass
