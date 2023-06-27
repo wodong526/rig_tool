@@ -5,18 +5,17 @@ import maya.mel as mm
 import sys
 import traceback
 
-if sys.version_info.major == 3:
-    #当环境为py3时
-    from importlib import reload
-
 from feedback_tool import Feedback_info as fb_print
-from dutils import toolutils
+from dutils import skinUtils
 
 
 def LIN():
     line_number = traceback.extract_stack()[-2][1]
     return line_number
 
+if sys.version_info.major == 3:
+    #当环境为py3时
+    from importlib import reload
 
 FILE_PATH = __file__
 
@@ -85,7 +84,7 @@ def transform_skin():
         mc.skinCluster('head_lod0_mesh_skinCluster', e=True, lw=True, wt=0, ai=jnt)
 
     for adv_jnt, meta_jnt_lis in add_joint_dir.items():
-        toolutils.transform_jnt_skin(meta_jnt_lis, adv_jnt, 'head_lod0_mesh', delete=True)
+        skinUtils.transform_jnt_skin(meta_jnt_lis, adv_jnt, 'head_lod0_mesh', delete=True)
 
 
 def transform_neck_weight():
@@ -96,18 +95,18 @@ def transform_neck_weight():
     neck_2_subJoint = mc.listRelatives('FACIAL_C_Neck2Root')  # 获取FACIAL_C_Neck2Root下的所有关节
     neck_1_subJoint = mc.listRelatives('FACIAL_C_Neck1Root')  # 获取FACIAL_C_Neck1Root下的所有关节
 
-    toolutils.transform_jnt_skin(neck_1_subJoint, 'Neck_M', 'head_lod0_mesh', True)
-    toolutils.transform_jnt_skin(neck_2_subJoint, 'NeckPart1_M', 'head_lod0_mesh', True)
+    skinUtils.transform_jnt_skin(neck_1_subJoint, 'Neck_M', 'head_lod0_mesh', True)
+    skinUtils.transform_jnt_skin(neck_2_subJoint, 'NeckPart1_M', 'head_lod0_mesh', True)
 
     #将眼睑、泪腺、眼罩子和头在head关节上的蒙皮放到Head_M上
-    toolutils.add_skinJnt('head_lod0_mesh_skinCluster', 'Head_M')
-    toolutils.transform_jnt_skin(['head'], 'Head_M', 'head_lod0_mesh')
-    toolutils.add_skinJnt('eyeEdge_lod0_mesh_skinCluster', 'Head_M')
-    toolutils.transform_jnt_skin(['head'], 'Head_M', 'eyeEdge_lod0_mesh')
-    toolutils.add_skinJnt('cartilage_lod0_mesh_skinCluster', 'Head_M')
-    toolutils.transform_jnt_skin(['head'], 'Head_M', 'cartilage_lod0_mesh')
-    toolutils.add_skinJnt('eyeshell_lod0_mesh_skinCluster', 'Head_M')
-    toolutils.transform_jnt_skin(['head'], 'Head_M', 'eyeshell_lod0_mesh')
+    skinUtils.add_skinJnt('head_lod0_mesh_skinCluster', 'Head_M')
+    skinUtils.transform_jnt_skin(['head'], 'Head_M', 'head_lod0_mesh')
+    skinUtils.add_skinJnt('eyeEdge_lod0_mesh_skinCluster', 'Head_M')
+    skinUtils.transform_jnt_skin(['head'], 'Head_M', 'eyeEdge_lod0_mesh')
+    skinUtils.add_skinJnt('cartilage_lod0_mesh_skinCluster', 'Head_M')
+    skinUtils.transform_jnt_skin(['head'], 'Head_M', 'cartilage_lod0_mesh')
+    skinUtils.add_skinJnt('eyeshell_lod0_mesh_skinCluster', 'Head_M')
+    skinUtils.transform_jnt_skin(['head'], 'Head_M', 'eyeshell_lod0_mesh')
     mc.parent(mc.listRelatives('head'), 'Head_M')
 
     mc.delete('FACIAL_C_Neck2Root', 'FACIAL_C_Neck1Root')

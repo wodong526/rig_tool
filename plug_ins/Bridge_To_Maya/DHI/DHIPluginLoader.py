@@ -1,42 +1,56 @@
 import os
 import sys
+from ctypes import *
 from DHI.modules.maya.util import MayaUtil
 
 
-def _initializeLibs(platform):
+def _initialize_libs(platform):
     '''
     Initialize required libraries based on Maya version
     Returns
     '''
 
-    #print ("Importing DHI external libraries")
+    #print("Importing DHI external libraries")
     from DHI.modules.file.handler import FileHandler
-    from DHI.modules.maya.about import AboutEnv
-    about = AboutEnv.getInstance()
-    #MayaUtil.logger.info("Running Maya version %s" % about.version)
 
     current = os.path.dirname(os.path.abspath(__file__))
 
     if current not in sys.path:
         sys.path.append(current)
 
-    python_to_load = 'python2'
-    if int(about.version) >= 2022:
-        python_to_load = 'python3'
+    python_to_load = resolve_used_python_version()
 
     lib_folder = FileHandler.joinPath((current, "lib", platform, python_to_load))
     #MayaUtil.logger.info("Fetching libraries from folder %s" % lib_folder)
 
     if platform == "Linux":
+        MayaUtil.logger.info("Setting LD_LIBRARY_PATH to  %s" % lib_folder)
         os.environ["LD_LIBRARY_PATH"] = lib_folder
+        try:
+            cdll.LoadLibrary(lib_folder + "/libdna.so.7.1.0")
+        except Exception as exc:
+            MayaUtil.logger.error("Failed to load library:", exc)
+            sys.exit(1)
 
     if lib_folder not in sys.path:
+        #MayaUtil.logger.info("Lib folder not on path... Adding")
         sys.path.append(lib_folder)
 
-    #print(sys.path)
+
+def resolve_used_python_version():
+    from DHI.modules.maya.about import AboutEnv
+    about = AboutEnv.getInstance()
+    #MayaUtil.logger.info("Running Maya version %s" % about.version)
+    python_to_load = 'python2'
+    if int(about.version) == 2022:
+        python_to_load = 'python3'
+    if int(about.version) == 2023:
+        python_to_load = 'python397'
+
+    return python_to_load
 
 
-def _resolvePlatform():
+def _resolve_platform():
     import platform
     platform = platform.system()
 
@@ -47,24 +61,25 @@ def _resolvePlatform():
     return platform
 
 
-def _loadRequiredPlugins():
+def _load_required_plugins():
     try:
         from modules.maya.util import MayaUtil
         from modules.file.handler import FileHandler
         from modules.maya.about import AboutEnv
         import platform
-        platform = _resolvePlatform()
+        platform = _resolve_platform()
 
         current = os.path.dirname(os.path.abspath(__file__))
 
         about = AboutEnv.getInstance()
         #MayaUtil.logger.info("Running Maya version %s" % about.version)
 
-        rlPluginName = "embeddedRL4"
+        rl_plugin_name = "embeddedRL4"
         if platform == "Linux":
-            rlPluginName = "libembeddedRL4"
+            rl_plugin_name = "libembeddedRL4"
 
-        MayaUtil.loadPlugin(rlPluginName, FileHandler.joinPath((current, "plugins", platform, about.version)), platform)
+        MayaUtil.loadPlugin(rl_plugin_name, FileHandler.joinPath((current, "plugins", platform, about.version)),
+                            platform)
         MayaUtil.loadPlugin("MayaUE4RBFPlugin" + about.version,
                             FileHandler.joinPath((current, "plugins", platform, about.version)), platform, ".mll")
         MayaUtil.loadPlugin("MayaUERBFPlugin",
@@ -75,6 +90,6 @@ def _loadRequiredPlugins():
 
 def load():
     #MayaUtil.logger.info("Preparing paths and loading DHI Plugins")
-    platform = _resolvePlatform()
-    _initializeLibs(platform)
-    _loadRequiredPlugins()
+    platform = _resolve_platform()
+    _initialize_libs(platform)
+    _load_required_plugins()

@@ -119,7 +119,7 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
     def set_transformation(self):
         for obj in self.modAll_lis:
             if 'head' in obj:
-                self.head_mod = obj#头部模型的名字
+                self.head_mod = obj  #头部模型的名字
                 res_mod = mc.duplicate(obj, n='reference_head')
                 mc.parent(res_mod, w=True)
         if res_mod:
@@ -298,7 +298,7 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
         log.info('转换完毕。')
 
     def create_attr(self, pos, rot, scl):
-        attr_dir = {'head_translate':'位移', 'head_rotate':'旋转', 'head_scale':'缩放'}
+        attr_dir = {'head_translate': '位移', 'head_rotate': '旋转', 'head_scale': '缩放'}
         aix_lis = ['X', 'Y', 'Z']
         if mc.objExists('{}.head_translate'.format(self.head_mod)):
             for attr in attr_dir:
@@ -307,14 +307,13 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
             for attr in attr_dir:
                 mc.addAttr(self.head_mod, ln=attr, nn=attr_dir[attr], at='double3', k=False)
                 for aix in aix_lis:
-                    mc.addAttr(self.head_mod, ln='{}_{}'.format(attr, aix), nn='{}_{}'.format(attr_dir[attr], aix), at='double', p=attr, k=False)
+                    mc.addAttr(self.head_mod, ln='{}_{}'.format(attr, aix), nn='{}_{}'.format(attr_dir[attr], aix),
+                               at='double', p=attr, k=False)
 
         for i in range(3):
             mc.setAttr('{}.head_translate_{}'.format(self.head_mod, aix_lis[i]), pos[i], cb=True)
             mc.setAttr('{}.head_rotate_{}'.format(self.head_mod, aix_lis[i]), rot[i], cb=True)
             mc.setAttr('{}.head_scale_{}'.format(self.head_mod, aix_lis[i]), scl[i], cb=True)
-
-
 
     def closeEvent(self, event):
         '''
@@ -327,11 +326,12 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
             log.error('文档中备份蒙皮文件夹仍然存在，因为删除时出错了。')
 
 
-try:
-    my_window.close()
-    my_window.deleteLater()
-except:
-    pass
-finally:
-    my_window = TRANSFORMATION_META()
-    my_window.show()
+def transform_head():
+    try:
+        my_window.close()
+        my_window.deleteLater()
+    except:
+        pass
+    finally:
+        my_window = TRANSFORMATION_META()
+        my_window.show()

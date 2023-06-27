@@ -281,10 +281,10 @@ class CREATE_TRACK(QtWidgets.QDialog):
         self.conn_but.setEnabled(True)
 
     def undo_mod(self):
-        '''
+        """
         将模型组下的所有模型都删除，由于motionPath节点与模型直接相连，所以删除模型时motionPath节点会自动被删除，则在删除该列表时会报错
         :return:
-        '''
+        """
         del_lis = mc.listRelatives(self.mode_grp)
         try:
             mc.delete(del_lis)

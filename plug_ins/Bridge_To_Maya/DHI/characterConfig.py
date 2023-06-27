@@ -1,6 +1,7 @@
 import os
 from DHI.modules.file.handler import FileHandler
 import DHI.core.consts as consts
+import dna
 
 
 class CharacterConfig(object):
@@ -12,6 +13,7 @@ class CharacterConfig(object):
         self.characterName = self.resolveCharacterName(self.dnaPath)
         self.workspaceDir = self.resolveWorkspacePath(self.dnaPath)
         self.bodyScenePath = self.prepareInput(config["characterAssets"]["bodyPath"])
+        self.dnaVersion = self.resolve_dna_version(self.dnaPath)
 
         self.platform = self.resolvePlatform()
         '''
@@ -34,21 +36,26 @@ class CharacterConfig(object):
         '''
         self.headMapsPath = config["common"]["headMapsPath"]
         self.mapsDirPath = config["characterAssets"]["mapsDirPath"]
+        self.db_version_path = FileHandler.joinPath(("db_versions", self.dnaVersion, "assets"))
 
         '''
         Head GUI controls
         '''
-        self.guiPath = FileHandler.joinPath((self.current, "assets", self.resolvePlatform(), "head_gui.ma"))
+        self.guiPath = FileHandler.joinPath((self.current, self.db_version_path, self.resolvePlatform(), "head_gui.ma"))
 
         '''
         Eye controls
         '''
         self.flipflopsDirPath = config["characterAssets"]["mapsDirPath"]
-        self.flipflopsScenePath = FileHandler.joinPath((self.current, "assets", "flipflops", "filplop_mtl_v001.ma"))
-        self.acPath = FileHandler.joinPath((self.current, "assets", self.resolvePlatform(), "head_ac.ma"))
-        self.shaderScenePath = FileHandler.joinPath((self.current, "assets", self.resolvePlatform(), "head_shader.ma"))
-        self.bodyShaderScenePath = FileHandler.joinPath((self.current, "assets", self.resolvePlatform(), "body_shader.ma"))
-        self.lightScenePath = FileHandler.joinPath((self.current, "assets", self.resolvePlatform(), "dh_lights.ma"))
+        self.flipflopsScenePath = FileHandler.joinPath(
+            (self.current, self.db_version_path, "flipflops", "filplop_mtl_v001.ma"))
+        self.acPath = FileHandler.joinPath((self.current, self.db_version_path, self.resolvePlatform(), "head_ac.ma"))
+        self.shaderScenePath = FileHandler.joinPath(
+            (self.current, self.db_version_path, self.resolvePlatform(), "head_shader.ma"))
+        self.bodyShaderScenePath = FileHandler.joinPath(
+            (self.current, self.db_version_path, self.resolvePlatform(), "body_shader.ma"))
+        self.lightScenePath = FileHandler.joinPath(
+            (self.current, self.db_version_path, self.resolvePlatform(), "dh_lights.ma"))
 
     def prepareInput(self, val):
         return val.replace("\\", "/")
@@ -99,9 +106,25 @@ class CharacterConfig(object):
 
         return platform
 
+    def resolve_dna_version(self, dna_path):
+        input_dna = dna.FileStream(str(dna_path),
+                                   dna.FileStream.AccessMode_Read, dna.FileStream.OpenMode_Binary)
+        input_reader = dna.BinaryStreamReader(input_dna)
+        input_reader.read()
+        db_name = input_reader.getDBName()
+
+        if db_name == "DHI":
+            version = "MH.2"
+        else:
+            version = db_name
+
+        return version
+
     def __str__(self):
         return """
             DNA path: %s
+            DNA Version: %s
+            DNA Version Data Path: %s
             Body Scene Path: %s
             Body Mesh Name: %s
             Head Shaders Dir Path: %s
@@ -109,8 +132,11 @@ class CharacterConfig(object):
             Head Common Maps Dir Path: %s
             Masks dir path: %s
             Eye controls: %s
+            FlipFlops dir path: %s
             Scene Orientation: %s
         """ % (self.dnaPath,
+               self.dnaVersion,
+               self.db_version_path,
                self.bodyScenePath,
                self.bodyMeshName,
                self.shadersDirPath,
@@ -118,4 +144,5 @@ class CharacterConfig(object):
                self.headMapsPath,
                self.masksDirPath,
                self.acPath,
+               self.flipflopsDirPath,
                self.sceneOrientation)

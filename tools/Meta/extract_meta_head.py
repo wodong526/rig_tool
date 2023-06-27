@@ -34,7 +34,7 @@ class EXTRACT_META(object):
 
     def delete_useless(self):
         # 删除无用组和模型，包括灯光和一些set集、显示层，并把头的非lod0的组删除
-        del_lis = ['Lights', 'DHIbody:root', 'export_geo_GRP', 'root_drv', 'PSD', 'Body_joints', 'FacialControls']
+        del_lis = ['Lights', 'DHIbody:root', 'export_geo_GRP', 'root_drv', 'PSD', 'Body_joints']
         mc.delete(del_lis)
 
         mc.parent('head_grp', w=True)

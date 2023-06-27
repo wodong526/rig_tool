@@ -12,7 +12,7 @@ from shiboken2 import wrapInstance
 import traceback
 
 from feedback_tool import Feedback_info as fb_print
-from dutils import clearUtils, ctrlutils, skinUtils
+from dutils import clearUtils, toolUtils, attrUtils, ctrlUtils
 
 FILE_PATH = __file__
 
@@ -186,7 +186,7 @@ def exportSelectToFbx():
 
                 if mc.listConnections(inf, d=False):
                     node_lis = mc.listConnections(inf, d=False, c=1, p=1)
-                    for n in range(len(node_lis) / 2):
+                    for n in range(len(node_lis) // 2):
                         mc.disconnectAttr(node_lis[n * 2 + 1], node_lis[n * 2])
                         fb_print('已断开{}。'.format(node_lis[n * 2 + 1]), info=True)
 
@@ -195,7 +195,7 @@ def exportSelectToFbx():
             mc.file(file_path[0], f=True, typ='FBX export', pr=True, es=True)
             fb_print('已导出{}。'.format(sel_lis), info=True)
 
-            for n in range(len(node_lis) / 2):  #重新链接上游节点
+            for n in range(len(node_lis) // 2):  #重新链接上游节点
                 mc.connectAttr(node_lis[n * 2 + 1], node_lis[n * 2])
                 fb_print('已链接{}。'.format(node_lis[n * 2 + 1]), info=True)
             for inf in pert_dir:  # 重新p回父级
@@ -254,8 +254,8 @@ def createRibbon(nam, ctl_n, jnt_n, foll_ctl=False):
     ctl_lis = []
     ctlJnt_lis = []
     for i in range(1, ctl_n + 1):
-        ctl = ctrlutils.create_ctl('ctl_{}_{:03d}'.format(nam, i), id='C01')
-        grp, ctl = ctrlutils.fromObjCreateGroup(nam, ctl)
+        ctl = ctrlUtils.create_ctl('ctl_{}_{:03d}'.format(nam, i), cid='C01')
+        grp, ctl = ctrlUtils.fromObjCreateGroup(nam, ctl)
 
         mc.select(cl=True)
         ctlJnt = mc.joint(n='jnt_ctl_{}_{:03d}'.format(nam, i))
@@ -291,15 +291,133 @@ def createRibbon(nam, ctl_n, jnt_n, foll_ctl=False):
 
 
 def cleanBindingDistortion():
+    """
+    解决绑定离远点太远造成模型抖动的启动函数
+    :return:
+    """
     topLevel = mc.ls(sl=True)[0]
     if mc.listConnections(topLevel, d=False):
         mods = mc.listRelatives(topLevel, ad=True)
-        skinUtils.processingSkinPrecision(mods)
+        toolUtils.processingSkinPrecision(mods)
 
     else:
         fb_print('选择对象还没有被root控制约束', error=True, viewMes=True)
 
 
+def createFollicle(geo, tag_geo, nam='', geo_parent=''):
+    """
+    在geo（多边形或者曲面）上生成毛囊，毛囊位置为离tag对象最近的位置
+    :param nam: 生成的毛囊的主要名字
+    :param geo_parent: 生成的毛囊要放在这个组下
+    :param geo: 多边形或者曲面
+    :param tag_geo: 毛囊离它最近
+    :return:
+    """
+    geo_shape = toolUtils.getShape(geo)
+    if not geo_shape:
+        fb_print('对象{}没有shape节点'.format(geo), error=True)
+
+    uv = toolUtils.fromClosestPointGetUv(geo, tag_geo)
+    if uv:
+        follicle_grp = 'grp_rivet_AA'
+        if not mc.objExists(follicle_grp):
+            mc.group(n='grp_rivet_AA', em=True, w=True)
+            mc.setAttr('{}.v'.format(follicle_grp), 0)
+            attrUtils.lock_and_hide_attrs(follicle_grp, attrs=['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz'],
+                                          hide=True, lock=True)
+
+        if geo_parent:
+            mc.parent(follicle_grp, geo_parent)
+        if not nam:
+            nam = geo
+
+        follicle_shape = 'folc_{}_foliShape'.format(nam)
+        if mc.objExists(follicle_shape):
+            follicle = mc.listRelatives(follicle_shape, p=True)[0]
+            mc.delete(follicle, follicle_shape)
+
+        follicle_shape = mc.createNode('follicle', n=follicle_shape)
+        follicle = mc.listRelatives(follicle_shape, p=True)[0]
+
+        mc.setAttr('{}.parameterU'.format(follicle_shape), uv[0])
+        mc.setAttr('{}.parameterV'.format(follicle_shape), uv[1])
+        mc.connectAttr('{}.worldMatrix[0]'.format(geo_shape[0]), '{}.inputWorldMatrix'.format(follicle_shape))
+        mc.connectAttr('{}.outTranslate'.format(follicle_shape), '{}.translate'.format(follicle), f=True)
+        mc.connectAttr('{}.outRotate'.format(follicle_shape), '{}.rotate'.format(follicle), f=True)
+        mc.parent(follicle, follicle_grp, a=True)
+
+        shape_typ = mc.objectType(geo_shape[0])
+        if shape_typ == 'mesh':
+            mc.connectAttr('{}.outMesh'.format(geo_shape[0]), '{}.inputMesh'.format(follicle_shape))
+        elif shape_typ == 'nurbsSurface':
+            mc.connectAttr('{}.local'.format(geo_shape[0]), '{}.inputSurface'.format(follicle_shape))
+        else:
+            fb_print('对象{}不是模型或者曲面，{}类型是不支持的类型'.format(geo, shape_typ), error=True)
+
+        return follicle
+    else:
+        fb_print('对象{}没有uv'.format(geo), error=True)
 
 
+def create_shape_helper(nam, grp_parent=''):
+    """
+    创建八方向控制器
+    :param nam: 生成的对象的主要名字
+    :param grp_parent: 是否要p到某个组里
+    :return:
+    """
 
+    # set up shape helper group
+    shape_helper_grp = 'grp_{}_helper_001'.format(nam)
+    if not mc.objExists(shape_helper_grp):
+        mc.group(empty=True, name=shape_helper_grp)
+
+    # parent group
+    if grp_parent:
+        mc.parent(shape_helper_grp, grp_parent)
+
+    # set up shape helper
+    base_name = '{}_Helper'.format(nam)
+
+    #sh_grp = mc.group(empty=True, name='grp_{}_001'.format(base_name))
+    sh_sphere_grp = mc.group(empty=True, name='grp_{}_sphere_001'.format(base_name))
+    sh_sphere = mc.sphere(name='{}_sphere'.format(base_name), axis=[0, 1, 0],
+                          degree=3, ssw=270, esw=450, r=1, nsp=4, s=4, ch=False)[0]
+    sh_sphere_shape = mc.listRelatives(sh_sphere, shapes=True)[0]
+    mc.parent(sh_sphere, sh_sphere_grp, absolute=True)
+    mc.parent(sh_sphere_grp, shape_helper_grp, absolute=True)
+
+    sh_aim_loc = mc.spaceLocator(name='loc_{}_001'.format(base_name), absolute=True)[0]
+    mc.setAttr('{}.tx'.format(sh_aim_loc), 10)
+    mc.parent(sh_aim_loc, shape_helper_grp, absolute=True)
+
+    # create closestPointOnSurface node, and connect the locator to project to the sphere
+    cpos_node = mc.createNode('closestPointOnSurface', name='cloOnSuf_{}_001'.format(base_name))
+    mc.connectAttr('{}.worldSpace[0]'.format(sh_sphere_shape), '{}.inputSurface'.format(cpos_node))
+    mc.connectAttr('{}.translate'.format(sh_aim_loc), '{}.inPosition'.format(cpos_node))
+    mc.setAttr('{}.inPosition'.format(cpos_node), lock=True)
+
+    # create nodes to project four direction's distances
+    for attr, uv in {'right': [2, 4], 'left': [2, 0], 'down': [0, 2], 'up': [4, 2]}.items():
+        # add driver attribute on helper sphere
+        mc.addAttr(sh_aim_loc, ln=attr, at='double', min=0, max=1, dv=0, keyable=True)
+
+        posi_node = mc.createNode('pointOnSurfaceInfo', name='pntOnSufInf_{}_pointOnSurfaceInfo_{}'.format(base_name, attr))
+        mc.connectAttr('{}.worldSpace[0]'.format(sh_sphere_shape), '{}.inputSurface'.format(posi_node))
+        mc.setAttr('{}.parameterU'.format(posi_node), uv[0])
+        mc.setAttr('{}.parameterV'.format(posi_node), uv[1])
+
+        dist_node = mc.createNode('distanceDimShape', name='dis_{}_{}Shape'.format(base_name, attr))
+        mc.parent(mc.listRelatives(dist_node, parent=True)[0], shape_helper_grp, absolute=True)
+        mc.connectAttr('{}.position'.format(cpos_node), '{}.startPoint'.format(dist_node))
+        mc.connectAttr('{}.position'.format(posi_node), '{}.endPoint'.format(dist_node))
+
+        remap_node = mc.createNode('remapValue', name='remapVal_{}_{}_001'.format(base_name, attr))
+        mc.connectAttr('{}.distance'.format(dist_node), '{}.inputValue'.format(remap_node))
+        value = mc.getAttr('{}.inputValue'.format(remap_node))
+
+        for a, v in {'inputMin': 0, 'inputMax': value, 'outputMin': 1, 'outputMax': 0}.items():
+            mc.setAttr('{}.{}'.format(remap_node, a), v, lock=True)
+        mc.connectAttr('{}.outValue'.format(remap_node), '{}.{}'.format(sh_aim_loc, attr))
+
+    return sh_sphere_grp, sh_aim_loc

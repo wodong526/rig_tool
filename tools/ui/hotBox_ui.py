@@ -58,28 +58,35 @@ class Rig_HotBox(object):
 
         mc.menuItem(p=menu, l='刷新热盒', c=rebuild_rotBox)
         mc.menuItem(d=True, p=menu)
+        mc.menuItem(p=menu, l='打开上传工具', c='import pushScence_tool;'
+                                              'reload(pushScence_tool);'
+                                              'pushScence_tool.push_rig();')
+        mc.menuItem(d=True, p=menu)
         mc.menuItem(p=menu, l='加载meta脚本', c='import pulg_ins;'
                                                 'reload(pulg_ins);'
                                                 'pulg_ins.add_metaToMata_plug();')
         mc.menuItem(p=menu, l='加载adPose', c='import pulg_ins;'
                                               'reload(pulg_ins);'
                                               'pulg_ins.add_adPose_ui();')
+        mc.menuItem(p=menu, l='打开插件管理器', c="mm.eval('PluginManager;')")
+        mc.menuItem(p=menu, l='绑脸工具', c='from ui import faceUi;'
+                                            'reload(faceUi);')
 
     def menu_sundry(self, parent):
         mc.menuItem(p=parent, l=u'无', rp='N')
-        mc.menuItem(p=parent, l=u'清理选中对象的orig节点', rp='NE', c='from dutils import toolutils;'
-                                                                      'reload(toolutils);'
-                                                                      'toolutils.clear_orig()')
+        mc.menuItem(p=parent, l=u'清理选中对象的orig节点', rp='NE', c='from dutils import toolUtils;'
+                                                                      'reload(toolUtils);'
+                                                                      'toolUtils.clear_orig()')
         mc.menuItem(p=parent, l=u'冻结选中关节的旋转', rp='W', c='import rig_tool;'
                                                                  'reload(rig_tool);'
                                                                  'rig_tool.freeze_rotation()')
         mc.menuItem(p=parent, l=u'打开或关闭对象的轴向', rp='NW', c='mc.ToggleLocalRotationAxes()')
         mc.menuItem(p=parent, l=u'多匹配一', rp='SE', c='import rig_location;'
-                                                      'reload(rig_location);'
-                                                      'rig_location.allMatchOne()')
-        mc.menuItem(p=parent, l=u'一匹配多', rp='E', c='import rig_location;'
                                                         'reload(rig_location);'
-                                                        'rig_location.oneMatchAll()')
+                                                        'rig_location.allMatchOne()')
+        mc.menuItem(p=parent, l=u'一匹配多', rp='E', c='import rig_location;'
+                                                       'reload(rig_location);'
+                                                       'rig_location.oneMatchAll()')
 
     def menu_except(self, parent):
         mc.menuItem(p=parent, l=u'导出当前选择为fbx', rp='S', c='import rig_tool;'
@@ -108,8 +115,8 @@ class Rig_HotBox(object):
                                                                  'reload(rig_location);'
                                                                  'rig_location.create_joint()')
         mc.menuItem(p=parent, l='创建关节到选择对象的中心', rp='E', c='import rig_location;'
-                                                                  'reload(rig_location);'
-                                                                  'rig_location.get_jnt_core()')
+                                                                      'reload(rig_location);'
+                                                                      'rig_location.get_jnt_core()')
 
     def menu_get(self, parent):
         mc.menuItem(p=parent, l=u'获取选中对象的蒙皮关节', rp='W', c='import rig_tool;'
@@ -121,9 +128,9 @@ class Rig_HotBox(object):
         mc.menuItem(p=parent, l=u'选中同名节点', rp='SW', c='import rig_tool;'
                                                             'reload(rig_tool);'
                                                             'rig_tool.showSameNameWindow()')
-        mc.menuItem(p=parent, l=u'回到ADV原始姿势', rp='S', c='from dutils import toolutils;'
-                                                              'reload(toolutils);'
-                                                              'toolutils.goToADV_pose()')
+        mc.menuItem(p=parent, l=u'回到ADV原始姿势', rp='S', c='from dutils import toolUtils;'
+                                                              'reload(toolUtils);'
+                                                              'toolUtils.goToADV_pose()')
 
     def menu_loc(self, parent):
         mc.menuItem(p=parent, l=u'创建定位器到中心', rp='W', c='import rig_location;'

@@ -41,10 +41,9 @@ class Rig_Menu(object):
             mainWindow = pm.language.melGlobals['gMainWindow']
             master_menu = pm.menu(self.menu_n, to=True, l=u'绑定工具架', p=mainWindow)
 
-            pm.menuItem(to=True, p=master_menu, l=u'刷新菜单', i='refresh.png',
-                        c='from ui import menu_ui;'
-                          'reload(menu_ui);'
-                          'menu_ui.reload_menu()')
+            pm.menuItem(to=True, p=master_menu, l=u'刷新菜单', i='refresh.png', c='from ui import menu_ui;'
+                                                                                  'reload(menu_ui);'
+                                                                                  'menu_ui.reload_menu()')
             pm.menuItem(d=1, dl='ADV工具', p=master_menu, )
             rig_adv = pm.menuItem(to=True, p=master_menu, l='ADV', sm=True)
             pm.menuItem(d=1, dl='辅助工具', p=master_menu)
@@ -72,13 +71,13 @@ class Rig_Menu(object):
 
     def adv_menu(self, p_menu):
         pm.menuItem(to=True, p=p_menu, i='AS5.png', l='ADV5',
-                    c="mel.eval('source \"C:/Rig_Tools\/plugs/ADV/AdvancedSkeleton5.mel\";AdvancedSkeleton5;')")
+                    c="mm.eval('source \"C:/Rig_Tools/plug_ins/ADV/AdvancedSkeleton5.mel\";AdvancedSkeleton5;')")
         pm.menuItem(to=True, p=p_menu, i='asBiped.png', l='biped',
-                    c="mel.eval('source \"C:/Rig_Tools\/plugs/ADV/AdvancedSkeleton5Files/Selector/biped.mel\";')")
+                    c="mm.eval('source \"C:/Rig_Tools/plug_ins/ADV/AdvancedSkeleton5Files/Selector/biped.mel\";')")
         pm.menuItem(to=True, p=p_menu, i='asFace.png', l='face',
-                    c="mel.eval('source \"C:/Rig_Tools\/plugs/ADV/AdvancedSkeleton5Files/Selector/face.mel\";')")
+                    c="mm.eval('source \"C:/Rig_Tools/plug_ins/ADV/AdvancedSkeleton5Files/Selector/face.mel\";')")
         pm.menuItem(to=True, p=p_menu, i='picker.png', l='picker',
-                    c="mel.eval('source \"C:/Rig_Tools\/plugs/ADV/AdvancedSkeleton5Files/picker/picker.mel\";')")
+                    c="mm.eval('source \"C:/Rig_Tools/plug_ins/ADV/AdvancedSkeleton5Files/picker/picker.mel\";')")
 
     def tool_menu(self, p_menu):
         pm.menuItem(to=True, p=p_menu, l=u'控制器生成器', i='ctl_tool.png', c='import controller_tool;'
@@ -103,9 +102,9 @@ class Rig_Menu(object):
                                                                              'port_tool.export_SM();')
 
     def push(self, p_menu):
-        pm.menuItem(to=True, p=p_menu, l=u'上传rig到cgt', i='push_rig.png', c='import pushScence_tool;'
-                                                                               'reload(pushScence_tool);'
-                                                                               'pushScence_tool.push_rig();')
+        pm.menuItem(to=True, p=p_menu, l=u'上传rig到cgt', i='push_rig.png',
+                    ann='cgt的替换工具，进行提交和简单的文件操作',
+                    c='import pushScence_tool;reload(pushScence_tool);pushScence_tool.push_rig();')
 
     def mod_clear(self, p_menu):
         pm.menuItem(to=True, p=p_menu, l=u'清理场景重名', c='import rig_clear;'
@@ -139,6 +138,10 @@ class Rig_Menu(object):
         pm.menuItem(to=True, p=p_menu, l=u'找不到过程“onModelChange”', c='import clear_errors;'
                                                                          'reload(clear_errors);'
                                                                          'clear_errors.clear_onModelChange()')
+        pm.menuItem(to=True, p=p_menu, l=u'找不到对象“shaderBallOrthoCamera1”',
+                    c='import clear_errors;'
+                      'reload(clear_errors);'
+                      'clear_errors.clear_shaderBallOrthoCamera1()')
 
     def set_wps(self, p_menu):
         pm.menuItem(to=True, p=p_menu, l='打开工作记录表', i='excel.png',
@@ -149,14 +152,16 @@ class Rig_Menu(object):
                     c='os.startfile("Z:/山魈动画-表格文档/《FHZJ》/资产-UE沟通对接/资产统筹制作表EP07~EP16.xlsx")')
 
     def set_svn(self, p_menu):
-        import svn_tool
         def upData_rigMenu(*args):
+            import svn_tool
             svn_tool.svn_upData()
 
         def edition_info(*args):
+            import svn_tool
             svn_tool.svn_info()
 
         def get_logs(*args):
+            import svn_tool
             svn_tool.svn_logs()
 
         pm.menuItem(to=True, p=p_menu, l=u'同步工具架', i='svn_synchronization.png', c=upData_rigMenu)

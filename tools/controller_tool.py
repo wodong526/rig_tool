@@ -13,8 +13,11 @@ import math
 import functools
 
 from feedback_tool import Feedback_info as fb_print, LIN as lin
+from dutils import ctrlUtils
+import data_path
 
 FILE_PATH = __file__
+
 
 def maya_main_window():
     main_window_ptr = omui.MQtUtil.mainWindow()
@@ -183,7 +186,7 @@ class create_ctl(QtWidgets.QDialog):  # 使该窗口为控件
             pass
 
     def get_ctl_bmp(self):
-        self.ctl_path = 'C:/Rig_Tools/tools/data/ControllerFiles/'
+        self.ctl_path = data_path.controllerFilesDataPath
         bmp_lis = []
         for f in os.listdir(self.ctl_path):
             if os.path.splitext(f)[-1] == '.bmp':
@@ -203,25 +206,12 @@ class create_ctl(QtWidgets.QDialog):  # 使该窗口为控件
             if 'ControlSet' in mc.listConnections('Sets', d=False):
                 mc.sets(trs, e=True, fe='ControlSet')
 
-        mc.select(mc.listRelatives(mc.ls(sl=True), p=True))
-        #self.set_ctl_color('dong')
+        mc.select(trs)
 
     def create_grp(self):
-        sel_cv = self.if_cv()
-        if type(sel_cv) == unicode:
-            pos = mc.xform(sel_cv, t=True, q=True, ws=True)
-            rot = mc.xform(sel_cv, ro=True, q=True, ws=True)
-            scl = mc.xform(sel_cv, s=True, q=True, ws=True)
-            name = self.grp_lin.text()
-            ctl_name = mc.rename(sel_cv, 'ctl_{}_001'.format(name))
-            mc.rename(mc.listRelatives(ctl_name, s=True)[0], 'ctl_{}_001Shape'.format(name))
-            grp = mc.group(em=True, n='zero_{}_001'.format(name))
-            grpOffset = mc.group(em=True, p=grp, n='grpOffset_{}_001'.format(name))
-            mc.xform(grp, t=pos, ro=rot, s=scl, ws=True)
-            mc.parent(ctl_name, grpOffset)
-            mc.select(grp)
-
-            self.grp_lin.clearFocus()
+        sel_cv = self.if_cv(True)
+        ctrlUtils.fromObjCreateGroup(sel_cv, self.grp_lin.text())
+        self.grp_lin.clearFocus()
 
     def get_all_color(self):
         mc.colorEditor()
@@ -297,6 +287,7 @@ class create_ctl(QtWidgets.QDialog):  # 使该窗口为控件
                     if 'AllSet' in mc.listConnections('Sets', d=False):
                         mc.sets(old_name, e=True, fe='AllSet')
                 fb_print('已copy控制器形态到{}。'.format(ctl_cv), info=True)
+                mc.select(ctl_cv[i])
             else:
                 fb_print('未复制任何控制形态。', warning=True)
                 return False

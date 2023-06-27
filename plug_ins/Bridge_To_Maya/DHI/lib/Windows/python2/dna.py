@@ -10,9 +10,9 @@ if _swig_python_version_info < (2, 7, 0):
 
 # Import the low-level C/C++ module
 if __package__ or '.' in __name__:
-    from . import _pydna
+    from . import _py2dna
 else:
-    import _pydna
+    import _py2dna
 
 try:
     import builtins as __builtin__
@@ -91,6 +91,17 @@ class _SwigNonDynamicMeta(type):
 
 
 
+def __new_decorator(factory_func, original_new):
+    @staticmethod
+    def __new(cls, *args, **kwargs):
+# while this workaround solves the immediate issue with the set of classes we currently have,
+# it will fail for classes that use a factory function but need no parameters at all, in which case
+# the factory function will never be invoked, only the original __new__ function.
+        if args or kwargs:
+            return factory_func(*args, **kwargs)
+        return original_new(cls)
+    return __new
+
 def __managed_init(self, *args, **kwargs):
     self._args = args
     self._kwargs = kwargs
@@ -101,83 +112,83 @@ class MemoryResource(object):
     def __init__(self, *args, **kwargs):
         raise AttributeError("No constructor defined - class is abstract")
     __repr__ = _swig_repr
-    __swig_destroy__ = _pydna.delete_MemoryResource
+    __swig_destroy__ = _py2dna.delete_MemoryResource
 
     def allocate(self, size, alignment):
-        return _pydna.MemoryResource_allocate(self, size, alignment)
+        return _py2dna.MemoryResource_allocate(self, size, alignment)
 
     def deallocate(self, ptr, size, alignment):
-        return _pydna.MemoryResource_deallocate(self, ptr, size, alignment)
+        return _py2dna.MemoryResource_deallocate(self, ptr, size, alignment)
 
-# Register MemoryResource in _pydna:
-_pydna.MemoryResource_swigregister(MemoryResource)
+# Register MemoryResource in _py2dna:
+_py2dna.MemoryResource_swigregister(MemoryResource)
 
 class AlignedMemoryResource(MemoryResource):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
     __repr__ = _swig_repr
 
     def allocate(self, size, alignment):
-        return _pydna.AlignedMemoryResource_allocate(self, size, alignment)
+        return _py2dna.AlignedMemoryResource_allocate(self, size, alignment)
 
     def deallocate(self, ptr, size, alignment):
-        return _pydna.AlignedMemoryResource_deallocate(self, ptr, size, alignment)
+        return _py2dna.AlignedMemoryResource_deallocate(self, ptr, size, alignment)
 
     def __init__(self):
-        _pydna.AlignedMemoryResource_swiginit(self, _pydna.new_AlignedMemoryResource())
-    __swig_destroy__ = _pydna.delete_AlignedMemoryResource
+        _py2dna.AlignedMemoryResource_swiginit(self, _py2dna.new_AlignedMemoryResource())
+    __swig_destroy__ = _py2dna.delete_AlignedMemoryResource
 
-# Register AlignedMemoryResource in _pydna:
-_pydna.AlignedMemoryResource_swigregister(AlignedMemoryResource)
+# Register AlignedMemoryResource in _py2dna:
+_py2dna.AlignedMemoryResource_swigregister(AlignedMemoryResource)
 
 class ArenaMemoryResource(MemoryResource):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
     __repr__ = _swig_repr
-    __swig_destroy__ = _pydna.delete_ArenaMemoryResource
+    __swig_destroy__ = _py2dna.delete_ArenaMemoryResource
 
     def __init__(self, *args):
-        _pydna.ArenaMemoryResource_swiginit(self, _pydna.new_ArenaMemoryResource(*args))
+        _py2dna.ArenaMemoryResource_swiginit(self, _py2dna.new_ArenaMemoryResource(*args))
 
     def allocate(self, size, alignment):
-        return _pydna.ArenaMemoryResource_allocate(self, size, alignment)
+        return _py2dna.ArenaMemoryResource_allocate(self, size, alignment)
 
     def deallocate(self, ptr, size, alignment):
-        return _pydna.ArenaMemoryResource_deallocate(self, ptr, size, alignment)
+        return _py2dna.ArenaMemoryResource_deallocate(self, ptr, size, alignment)
 
     def getUpstreamMemoryResource(self):
-        return _pydna.ArenaMemoryResource_getUpstreamMemoryResource(self)
+        return _py2dna.ArenaMemoryResource_getUpstreamMemoryResource(self)
 
-# Register ArenaMemoryResource in _pydna:
-_pydna.ArenaMemoryResource_swigregister(ArenaMemoryResource)
+# Register ArenaMemoryResource in _py2dna:
+_py2dna.ArenaMemoryResource_swigregister(ArenaMemoryResource)
 
 class DefaultMemoryResource(MemoryResource):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
     __repr__ = _swig_repr
 
     def allocate(self, size, alignment):
-        return _pydna.DefaultMemoryResource_allocate(self, size, alignment)
+        return _py2dna.DefaultMemoryResource_allocate(self, size, alignment)
 
     def deallocate(self, ptr, size, alignment):
-        return _pydna.DefaultMemoryResource_deallocate(self, ptr, size, alignment)
+        return _py2dna.DefaultMemoryResource_deallocate(self, ptr, size, alignment)
 
     def __init__(self):
-        _pydna.DefaultMemoryResource_swiginit(self, _pydna.new_DefaultMemoryResource())
-    __swig_destroy__ = _pydna.delete_DefaultMemoryResource
+        _py2dna.DefaultMemoryResource_swiginit(self, _py2dna.new_DefaultMemoryResource())
+    __swig_destroy__ = _py2dna.delete_DefaultMemoryResource
 
-# Register DefaultMemoryResource in _pydna:
-_pydna.DefaultMemoryResource_swigregister(DefaultMemoryResource)
+# Register DefaultMemoryResource in _py2dna:
+_py2dna.DefaultMemoryResource_swigregister(DefaultMemoryResource)
 
 class StatusCode(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
     __repr__ = _swig_repr
-    code = property(_pydna.StatusCode_code_get, _pydna.StatusCode_code_set)
-    message = property(_pydna.StatusCode_message_get, _pydna.StatusCode_message_set)
+    code = property(_py2dna.StatusCode_code_get, _py2dna.StatusCode_code_set)
+    message = property(_py2dna.StatusCode_message_get, _py2dna.StatusCode_message_set)
 
     def __init__(self):
-        _pydna.StatusCode_swiginit(self, _pydna.new_StatusCode())
-    __swig_destroy__ = _pydna.delete_StatusCode
+        _py2dna.StatusCode_swiginit(self, _py2dna.new_StatusCode())
+    __swig_destroy__ = _py2dna.delete_StatusCode
 
-# Register StatusCode in _pydna:
-_pydna.StatusCode_swigregister(StatusCode)
+# Register StatusCode in _py2dna:
+_py2dna.StatusCode_swigregister(StatusCode)
 
 class Status(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -185,24 +196,38 @@ class Status(object):
 
     @staticmethod
     def isOk():
-        return _pydna.Status_isOk()
+        return _py2dna.Status_isOk()
 
     @staticmethod
     def get():
-        return _pydna.Status_get()
+        return _py2dna.Status_get()
+
+    @staticmethod
+    def getHook():
+        return _py2dna.Status_getHook()
+
+    @staticmethod
+    def setHook(hook):
+        return _py2dna.Status_setHook(hook)
 
     def __init__(self):
-        _pydna.Status_swiginit(self, _pydna.new_Status())
-    __swig_destroy__ = _pydna.delete_Status
+        _py2dna.Status_swiginit(self, _py2dna.new_Status())
+    __swig_destroy__ = _py2dna.delete_Status
 
-# Register Status in _pydna:
-_pydna.Status_swigregister(Status)
+# Register Status in _py2dna:
+_py2dna.Status_swigregister(Status)
 
 def Status_isOk():
-    return _pydna.Status_isOk()
+    return _py2dna.Status_isOk()
 
 def Status_get():
-    return _pydna.Status_get()
+    return _py2dna.Status_get()
+
+def Status_getHook():
+    return _py2dna.Status_getHook()
+
+def Status_setHook(hook):
+    return _py2dna.Status_setHook(hook)
 
 class Readable(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -212,10 +237,10 @@ class Readable(object):
     __repr__ = _swig_repr
 
     def read(self, *args):
-        return _pydna.Readable_read(self, *args)
+        return _py2dna.Readable_read(self, *args)
 
-# Register Readable in _pydna:
-_pydna.Readable_swigregister(Readable)
+# Register Readable in _py2dna:
+_py2dna.Readable_swigregister(Readable)
 
 class Writable(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -225,10 +250,10 @@ class Writable(object):
     __repr__ = _swig_repr
 
     def write(self, *args):
-        return _pydna.Writable_write(self, *args)
+        return _py2dna.Writable_write(self, *args)
 
-# Register Writable in _pydna:
-_pydna.Writable_swigregister(Writable)
+# Register Writable in _py2dna:
+_py2dna.Writable_swigregister(Writable)
 
 class Seekable(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -238,13 +263,13 @@ class Seekable(object):
     __repr__ = _swig_repr
 
     def tell(self):
-        return _pydna.Seekable_tell(self)
+        return _py2dna.Seekable_tell(self)
 
     def seek(self, position):
-        return _pydna.Seekable_seek(self, position)
+        return _py2dna.Seekable_seek(self, position)
 
-# Register Seekable in _pydna:
-_pydna.Seekable_swigregister(Seekable)
+# Register Seekable in _py2dna:
+_py2dna.Seekable_swigregister(Seekable)
 
 class Openable(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -254,10 +279,10 @@ class Openable(object):
     __repr__ = _swig_repr
 
     def open(self):
-        return _pydna.Openable_open(self)
+        return _py2dna.Openable_open(self)
 
-# Register Openable in _pydna:
-_pydna.Openable_swigregister(Openable)
+# Register Openable in _py2dna:
+_py2dna.Openable_swigregister(Openable)
 
 class Closeable(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -267,10 +292,10 @@ class Closeable(object):
     __repr__ = _swig_repr
 
     def close(self):
-        return _pydna.Closeable_close(self)
+        return _py2dna.Closeable_close(self)
 
-# Register Closeable in _pydna:
-_pydna.Closeable_swigregister(Closeable)
+# Register Closeable in _py2dna:
+_py2dna.Closeable_swigregister(Closeable)
 
 class Controllable(Openable, Closeable):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -279,8 +304,8 @@ class Controllable(Openable, Closeable):
         raise AttributeError("No constructor defined - class is abstract")
     __repr__ = _swig_repr
 
-# Register Controllable in _pydna:
-_pydna.Controllable_swigregister(Controllable)
+# Register Controllable in _py2dna:
+_py2dna.Controllable_swigregister(Controllable)
 
 class Bounded(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -290,10 +315,10 @@ class Bounded(object):
     __repr__ = _swig_repr
 
     def size(self):
-        return _pydna.Bounded_size(self)
+        return _py2dna.Bounded_size(self)
 
-# Register Bounded in _pydna:
-_pydna.Bounded_swigregister(Bounded)
+# Register Bounded in _py2dna:
+_py2dna.Bounded_swigregister(Bounded)
 
 class Buffered(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -303,10 +328,10 @@ class Buffered(object):
     __repr__ = _swig_repr
 
     def flush(self):
-        return _pydna.Buffered_flush(self)
+        return _py2dna.Buffered_flush(self)
 
-# Register Buffered in _pydna:
-_pydna.Buffered_swigregister(Buffered)
+# Register Buffered in _py2dna:
+_py2dna.Buffered_swigregister(Buffered)
 
 class Resizable(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -316,10 +341,10 @@ class Resizable(object):
     __repr__ = _swig_repr
 
     def resize(self, size):
-        return _pydna.Resizable_resize(self, size)
+        return _py2dna.Resizable_resize(self, size)
 
-# Register Resizable in _pydna:
-_pydna.Resizable_swigregister(Resizable)
+# Register Resizable in _py2dna:
+_py2dna.Resizable_swigregister(Resizable)
 
 class BoundedIOStream(Controllable, Readable, Writable, Seekable, Bounded):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -327,22 +352,22 @@ class BoundedIOStream(Controllable, Readable, Writable, Seekable, Bounded):
     def __init__(self, *args, **kwargs):
         raise AttributeError("No constructor defined - class is abstract")
     __repr__ = _swig_repr
-    __swig_destroy__ = _pydna.delete_BoundedIOStream
+    __swig_destroy__ = _py2dna.delete_BoundedIOStream
 
-# Register BoundedIOStream in _pydna:
-_pydna.BoundedIOStream_swigregister(BoundedIOStream)
-cvar = _pydna.cvar
-BoundedIOStream.OpenError = _pydna.cvar.BoundedIOStream_OpenError
-BoundedIOStream.ReadError = _pydna.cvar.BoundedIOStream_ReadError
-BoundedIOStream.WriteError = _pydna.cvar.BoundedIOStream_WriteError
-BoundedIOStream.AlreadyOpenError = _pydna.cvar.BoundedIOStream_AlreadyOpenError
-BoundedIOStream.SeekError = _pydna.cvar.BoundedIOStream_SeekError
+# Register BoundedIOStream in _py2dna:
+_py2dna.BoundedIOStream_swigregister(BoundedIOStream)
+cvar = _py2dna.cvar
+BoundedIOStream.OpenError = _py2dna.cvar.BoundedIOStream_OpenError
+BoundedIOStream.ReadError = _py2dna.cvar.BoundedIOStream_ReadError
+BoundedIOStream.WriteError = _py2dna.cvar.BoundedIOStream_WriteError
+BoundedIOStream.AlreadyOpenError = _py2dna.cvar.BoundedIOStream_AlreadyOpenError
+BoundedIOStream.SeekError = _py2dna.cvar.BoundedIOStream_SeekError
 
-AccessMode_Read = _pydna.AccessMode_Read
-AccessMode_Write = _pydna.AccessMode_Write
-AccessMode_ReadWrite = _pydna.AccessMode_ReadWrite
-OpenMode_Binary = _pydna.OpenMode_Binary
-OpenMode_Text = _pydna.OpenMode_Text
+AccessMode_Read = _py2dna.AccessMode_Read
+AccessMode_Write = _py2dna.AccessMode_Write
+AccessMode_ReadWrite = _py2dna.AccessMode_ReadWrite
+OpenMode_Binary = _py2dna.OpenMode_Binary
+OpenMode_Text = _py2dna.OpenMode_Text
 class FileStream(BoundedIOStream):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
 
@@ -352,21 +377,21 @@ class FileStream(BoundedIOStream):
 
     @staticmethod
     def create(path, accessMode, openMode, memRes=None):
-        return _pydna.FileStream_create(path, accessMode, openMode, memRes)
+        return _py2dna.FileStream_create(path, accessMode, openMode, memRes)
 
     @staticmethod
     def destroy(instance):
-        return _pydna.FileStream_destroy(instance)
-    __swig_destroy__ = _pydna.delete_FileStream
+        return _py2dna.FileStream_destroy(instance)
+    __swig_destroy__ = _py2dna.delete_FileStream
 
-# Register FileStream in _pydna:
-_pydna.FileStream_swigregister(FileStream)
+# Register FileStream in _py2dna:
+_py2dna.FileStream_swigregister(FileStream)
 
 def FileStream_create(path, accessMode, openMode, memRes=None):
-    return _pydna.FileStream_create(path, accessMode, openMode, memRes)
+    return _py2dna.FileStream_create(path, accessMode, openMode, memRes)
 
 def FileStream_destroy(instance):
-    return _pydna.FileStream_destroy(instance)
+    return _py2dna.FileStream_destroy(instance)
 
 class MemoryMappedFileStream(BoundedIOStream, Buffered, Resizable):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -377,21 +402,21 @@ class MemoryMappedFileStream(BoundedIOStream, Buffered, Resizable):
 
     @staticmethod
     def create(path, accessMode, memRes=None):
-        return _pydna.MemoryMappedFileStream_create(path, accessMode, memRes)
+        return _py2dna.MemoryMappedFileStream_create(path, accessMode, memRes)
 
     @staticmethod
     def destroy(instance):
-        return _pydna.MemoryMappedFileStream_destroy(instance)
-    __swig_destroy__ = _pydna.delete_MemoryMappedFileStream
+        return _py2dna.MemoryMappedFileStream_destroy(instance)
+    __swig_destroy__ = _py2dna.delete_MemoryMappedFileStream
 
-# Register MemoryMappedFileStream in _pydna:
-_pydna.MemoryMappedFileStream_swigregister(MemoryMappedFileStream)
+# Register MemoryMappedFileStream in _py2dna:
+_py2dna.MemoryMappedFileStream_swigregister(MemoryMappedFileStream)
 
 def MemoryMappedFileStream_create(path, accessMode, memRes=None):
-    return _pydna.MemoryMappedFileStream_create(path, accessMode, memRes)
+    return _py2dna.MemoryMappedFileStream_create(path, accessMode, memRes)
 
 def MemoryMappedFileStream_destroy(instance):
-    return _pydna.MemoryMappedFileStream_destroy(instance)
+    return _py2dna.MemoryMappedFileStream_destroy(instance)
 
 class MemoryStream(BoundedIOStream):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -402,39 +427,39 @@ class MemoryStream(BoundedIOStream):
 
     @staticmethod
     def create(*args):
-        return _pydna.MemoryStream_create(*args)
+        return _py2dna.MemoryStream_create(*args)
 
     @staticmethod
     def destroy(instance):
-        return _pydna.MemoryStream_destroy(instance)
-    __swig_destroy__ = _pydna.delete_MemoryStream
+        return _py2dna.MemoryStream_destroy(instance)
+    __swig_destroy__ = _py2dna.delete_MemoryStream
 
-# Register MemoryStream in _pydna:
-_pydna.MemoryStream_swigregister(MemoryStream)
+# Register MemoryStream in _py2dna:
+_py2dna.MemoryStream_swigregister(MemoryStream)
 
 def MemoryStream_create(*args):
-    return _pydna.MemoryStream_create(*args)
+    return _py2dna.MemoryStream_create(*args)
 
 def MemoryStream_destroy(instance):
-    return _pydna.MemoryStream_destroy(instance)
+    return _py2dna.MemoryStream_destroy(instance)
 
 
-FileStream.__new__= staticmethod(lambda cls, *args, **kwargs: FileStream_create(*args, **kwargs))
-FileStream.__del__= lambda instance: FileStream_destroy(instance)
+FileStream.__new__ = __new_decorator(FileStream_create, FileStream.__new__)
+FileStream.__del__ = lambda instance: FileStream_destroy(instance)
 FileStream.__init__ = __managed_init
 del FileStream.create
 del FileStream.destroy
 
 
-MemoryMappedFileStream.__new__= staticmethod(lambda cls, *args, **kwargs: MemoryMappedFileStream_create(*args, **kwargs))
-MemoryMappedFileStream.__del__= lambda instance: MemoryMappedFileStream_destroy(instance)
+MemoryMappedFileStream.__new__ = __new_decorator(MemoryMappedFileStream_create, MemoryMappedFileStream.__new__)
+MemoryMappedFileStream.__del__ = lambda instance: MemoryMappedFileStream_destroy(instance)
 MemoryMappedFileStream.__init__ = __managed_init
 del MemoryMappedFileStream.create
 del MemoryMappedFileStream.destroy
 
 
-MemoryStream.__new__= staticmethod(lambda cls, *args, **kwargs: MemoryStream_create(*args, **kwargs))
-MemoryStream.__del__= lambda instance: MemoryStream_destroy(instance)
+MemoryStream.__new__ = __new_decorator(MemoryStream_create, MemoryStream.__new__)
+MemoryStream.__del__ = lambda instance: MemoryStream_destroy(instance)
 MemoryStream.__init__ = __managed_init
 del MemoryStream.create
 del MemoryStream.destroy
@@ -456,75 +481,75 @@ class StringView(object):
     __repr__ = _swig_repr
 
     def c_str(self):
-        return _pydna.StringView_c_str(self)
+        return _py2dna.StringView_c_str(self)
 
     def __ref__(self):
-        return _pydna.StringView___ref__(self)
+        return _py2dna.StringView___ref__(self)
 
     def __init__(self):
-        _pydna.StringView_swiginit(self, _pydna.new_StringView())
-    __swig_destroy__ = _pydna.delete_StringView
+        _py2dna.StringView_swiginit(self, _py2dna.new_StringView())
+    __swig_destroy__ = _py2dna.delete_StringView
 
-# Register StringView in _pydna:
-_pydna.StringView_swigregister(StringView)
+# Register StringView in _py2dna:
+_py2dna.StringView_swigregister(StringView)
 
 
 def __add__(*args):
-    return _pydna.__add__(*args)
+    return _py2dna.__add__(*args)
 
 def __sub__(*args):
-    return _pydna.__sub__(*args)
+    return _py2dna.__sub__(*args)
 
 def __mul__(*args):
-    return _pydna.__mul__(*args)
+    return _py2dna.__mul__(*args)
 
 def __truediv__(*args):
-    return _pydna.__truediv__(*args)
+    return _py2dna.__truediv__(*args)
 
 def __eq__(*args):
-    return _pydna.__eq__(*args)
+    return _py2dna.__eq__(*args)
 
 def __ne__(*args):
-    return _pydna.__ne__(*args)
-DataLayer_Descriptor = _pydna.DataLayer_Descriptor
-DataLayer_Definition = _pydna.DataLayer_Definition
-DataLayer_Behavior = _pydna.DataLayer_Behavior
-DataLayer_Geometry = _pydna.DataLayer_Geometry
-DataLayer_GeometryWithoutBlendShapes = _pydna.DataLayer_GeometryWithoutBlendShapes
-DataLayer_AllWithoutBlendShapes = _pydna.DataLayer_AllWithoutBlendShapes
-DataLayer_All = _pydna.DataLayer_All
-Archetype_asian = _pydna.Archetype_asian
-Archetype_black = _pydna.Archetype_black
-Archetype_caucasian = _pydna.Archetype_caucasian
-Archetype_hispanic = _pydna.Archetype_hispanic
-Archetype_alien = _pydna.Archetype_alien
-Archetype_other = _pydna.Archetype_other
-Gender_male = _pydna.Gender_male
-Gender_female = _pydna.Gender_female
-Gender_other = _pydna.Gender_other
-TranslationUnit_cm = _pydna.TranslationUnit_cm
-TranslationUnit_m = _pydna.TranslationUnit_m
-RotationUnit_degrees = _pydna.RotationUnit_degrees
-RotationUnit_radians = _pydna.RotationUnit_radians
-Direction_left = _pydna.Direction_left
-Direction_right = _pydna.Direction_right
-Direction_up = _pydna.Direction_up
-Direction_down = _pydna.Direction_down
-Direction_front = _pydna.Direction_front
-Direction_back = _pydna.Direction_back
+    return _py2dna.__ne__(*args)
+DataLayer_Descriptor = _py2dna.DataLayer_Descriptor
+DataLayer_Definition = _py2dna.DataLayer_Definition
+DataLayer_Behavior = _py2dna.DataLayer_Behavior
+DataLayer_Geometry = _py2dna.DataLayer_Geometry
+DataLayer_GeometryWithoutBlendShapes = _py2dna.DataLayer_GeometryWithoutBlendShapes
+DataLayer_AllWithoutBlendShapes = _py2dna.DataLayer_AllWithoutBlendShapes
+DataLayer_All = _py2dna.DataLayer_All
+Archetype_asian = _py2dna.Archetype_asian
+Archetype_black = _py2dna.Archetype_black
+Archetype_caucasian = _py2dna.Archetype_caucasian
+Archetype_hispanic = _py2dna.Archetype_hispanic
+Archetype_alien = _py2dna.Archetype_alien
+Archetype_other = _py2dna.Archetype_other
+Gender_male = _py2dna.Gender_male
+Gender_female = _py2dna.Gender_female
+Gender_other = _py2dna.Gender_other
+TranslationUnit_cm = _py2dna.TranslationUnit_cm
+TranslationUnit_m = _py2dna.TranslationUnit_m
+RotationUnit_degrees = _py2dna.RotationUnit_degrees
+RotationUnit_radians = _py2dna.RotationUnit_radians
+Direction_left = _py2dna.Direction_left
+Direction_right = _py2dna.Direction_right
+Direction_up = _py2dna.Direction_up
+Direction_down = _py2dna.Direction_down
+Direction_front = _py2dna.Direction_front
+Direction_back = _py2dna.Direction_back
 class CoordinateSystem(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
     __repr__ = _swig_repr
-    xAxis = property(_pydna.CoordinateSystem_xAxis_get, _pydna.CoordinateSystem_xAxis_set)
-    yAxis = property(_pydna.CoordinateSystem_yAxis_get, _pydna.CoordinateSystem_yAxis_set)
-    zAxis = property(_pydna.CoordinateSystem_zAxis_get, _pydna.CoordinateSystem_zAxis_set)
+    xAxis = property(_py2dna.CoordinateSystem_xAxis_get, _py2dna.CoordinateSystem_xAxis_set)
+    yAxis = property(_py2dna.CoordinateSystem_yAxis_get, _py2dna.CoordinateSystem_yAxis_set)
+    zAxis = property(_py2dna.CoordinateSystem_zAxis_get, _py2dna.CoordinateSystem_zAxis_set)
 
     def __init__(self):
-        _pydna.CoordinateSystem_swiginit(self, _pydna.new_CoordinateSystem())
-    __swig_destroy__ = _pydna.delete_CoordinateSystem
+        _py2dna.CoordinateSystem_swiginit(self, _py2dna.new_CoordinateSystem())
+    __swig_destroy__ = _py2dna.delete_CoordinateSystem
 
-# Register CoordinateSystem in _pydna:
-_pydna.CoordinateSystem_swigregister(CoordinateSystem)
+# Register CoordinateSystem in _py2dna:
+_py2dna.CoordinateSystem_swigregister(CoordinateSystem)
 
 class DescriptorReader(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -534,62 +559,62 @@ class DescriptorReader(object):
     __repr__ = _swig_repr
 
     def getName(self):
-        return _pydna.DescriptorReader_getName(self)
+        return _py2dna.DescriptorReader_getName(self)
 
     def getArchetype(self):
-        return _pydna.DescriptorReader_getArchetype(self)
+        return _py2dna.DescriptorReader_getArchetype(self)
 
     def getGender(self):
-        return _pydna.DescriptorReader_getGender(self)
+        return _py2dna.DescriptorReader_getGender(self)
 
     def getAge(self):
-        return _pydna.DescriptorReader_getAge(self)
+        return _py2dna.DescriptorReader_getAge(self)
 
     def getMetaDataCount(self):
-        return _pydna.DescriptorReader_getMetaDataCount(self)
+        return _py2dna.DescriptorReader_getMetaDataCount(self)
 
     def getMetaDataKey(self, index):
-        return _pydna.DescriptorReader_getMetaDataKey(self, index)
+        return _py2dna.DescriptorReader_getMetaDataKey(self, index)
 
     def getMetaDataValue(self, key):
-        return _pydna.DescriptorReader_getMetaDataValue(self, key)
+        return _py2dna.DescriptorReader_getMetaDataValue(self, key)
 
     def getTranslationUnit(self):
-        return _pydna.DescriptorReader_getTranslationUnit(self)
+        return _py2dna.DescriptorReader_getTranslationUnit(self)
 
     def getRotationUnit(self):
-        return _pydna.DescriptorReader_getRotationUnit(self)
+        return _py2dna.DescriptorReader_getRotationUnit(self)
 
     def getCoordinateSystem(self):
-        return _pydna.DescriptorReader_getCoordinateSystem(self)
+        return _py2dna.DescriptorReader_getCoordinateSystem(self)
 
     def getLODCount(self):
-        return _pydna.DescriptorReader_getLODCount(self)
+        return _py2dna.DescriptorReader_getLODCount(self)
 
     def getDBMaxLOD(self):
-        return _pydna.DescriptorReader_getDBMaxLOD(self)
+        return _py2dna.DescriptorReader_getDBMaxLOD(self)
 
     def getDBComplexity(self):
-        return _pydna.DescriptorReader_getDBComplexity(self)
+        return _py2dna.DescriptorReader_getDBComplexity(self)
 
     def getDBName(self):
-        return _pydna.DescriptorReader_getDBName(self)
+        return _py2dna.DescriptorReader_getDBName(self)
 
-# Register DescriptorReader in _pydna:
-_pydna.DescriptorReader_swigregister(DescriptorReader)
+# Register DescriptorReader in _py2dna:
+_py2dna.DescriptorReader_swigregister(DescriptorReader)
 
 class MeshBlendShapeChannelMapping(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
     __repr__ = _swig_repr
-    meshIndex = property(_pydna.MeshBlendShapeChannelMapping_meshIndex_get, _pydna.MeshBlendShapeChannelMapping_meshIndex_set)
-    blendShapeChannelIndex = property(_pydna.MeshBlendShapeChannelMapping_blendShapeChannelIndex_get, _pydna.MeshBlendShapeChannelMapping_blendShapeChannelIndex_set)
+    meshIndex = property(_py2dna.MeshBlendShapeChannelMapping_meshIndex_get, _py2dna.MeshBlendShapeChannelMapping_meshIndex_set)
+    blendShapeChannelIndex = property(_py2dna.MeshBlendShapeChannelMapping_blendShapeChannelIndex_get, _py2dna.MeshBlendShapeChannelMapping_blendShapeChannelIndex_set)
 
     def __init__(self):
-        _pydna.MeshBlendShapeChannelMapping_swiginit(self, _pydna.new_MeshBlendShapeChannelMapping())
-    __swig_destroy__ = _pydna.delete_MeshBlendShapeChannelMapping
+        _py2dna.MeshBlendShapeChannelMapping_swiginit(self, _py2dna.new_MeshBlendShapeChannelMapping())
+    __swig_destroy__ = _py2dna.delete_MeshBlendShapeChannelMapping
 
-# Register MeshBlendShapeChannelMapping in _pydna:
-_pydna.MeshBlendShapeChannelMapping_swigregister(MeshBlendShapeChannelMapping)
+# Register MeshBlendShapeChannelMapping in _py2dna:
+_py2dna.MeshBlendShapeChannelMapping_swigregister(MeshBlendShapeChannelMapping)
 
 class DefinitionReader(DescriptorReader):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -599,103 +624,103 @@ class DefinitionReader(DescriptorReader):
     __repr__ = _swig_repr
 
     def getGUIControlCount(self):
-        return _pydna.DefinitionReader_getGUIControlCount(self)
+        return _py2dna.DefinitionReader_getGUIControlCount(self)
 
     def getGUIControlName(self, index):
-        return _pydna.DefinitionReader_getGUIControlName(self, index)
+        return _py2dna.DefinitionReader_getGUIControlName(self, index)
 
     def getRawControlCount(self):
-        return _pydna.DefinitionReader_getRawControlCount(self)
+        return _py2dna.DefinitionReader_getRawControlCount(self)
 
     def getRawControlName(self, index):
-        return _pydna.DefinitionReader_getRawControlName(self, index)
+        return _py2dna.DefinitionReader_getRawControlName(self, index)
 
     def getJointCount(self):
-        return _pydna.DefinitionReader_getJointCount(self)
+        return _py2dna.DefinitionReader_getJointCount(self)
 
     def getJointName(self, index):
-        return _pydna.DefinitionReader_getJointName(self, index)
+        return _py2dna.DefinitionReader_getJointName(self, index)
 
     def getJointIndexListCount(self):
-        return _pydna.DefinitionReader_getJointIndexListCount(self)
+        return _py2dna.DefinitionReader_getJointIndexListCount(self)
 
     def getJointIndicesForLOD(self, lod):
-        return _pydna.DefinitionReader_getJointIndicesForLOD(self, lod)
+        return _py2dna.DefinitionReader_getJointIndicesForLOD(self, lod)
 
     def getJointParentIndex(self, index):
-        return _pydna.DefinitionReader_getJointParentIndex(self, index)
+        return _py2dna.DefinitionReader_getJointParentIndex(self, index)
 
     def getBlendShapeChannelCount(self):
-        return _pydna.DefinitionReader_getBlendShapeChannelCount(self)
+        return _py2dna.DefinitionReader_getBlendShapeChannelCount(self)
 
     def getBlendShapeChannelName(self, index):
-        return _pydna.DefinitionReader_getBlendShapeChannelName(self, index)
+        return _py2dna.DefinitionReader_getBlendShapeChannelName(self, index)
 
     def getBlendShapeChannelIndexListCount(self):
-        return _pydna.DefinitionReader_getBlendShapeChannelIndexListCount(self)
+        return _py2dna.DefinitionReader_getBlendShapeChannelIndexListCount(self)
 
     def getBlendShapeChannelIndicesForLOD(self, lod):
-        return _pydna.DefinitionReader_getBlendShapeChannelIndicesForLOD(self, lod)
+        return _py2dna.DefinitionReader_getBlendShapeChannelIndicesForLOD(self, lod)
 
     def getAnimatedMapCount(self):
-        return _pydna.DefinitionReader_getAnimatedMapCount(self)
+        return _py2dna.DefinitionReader_getAnimatedMapCount(self)
 
     def getAnimatedMapName(self, index):
-        return _pydna.DefinitionReader_getAnimatedMapName(self, index)
+        return _py2dna.DefinitionReader_getAnimatedMapName(self, index)
 
     def getAnimatedMapIndexListCount(self):
-        return _pydna.DefinitionReader_getAnimatedMapIndexListCount(self)
+        return _py2dna.DefinitionReader_getAnimatedMapIndexListCount(self)
 
     def getAnimatedMapIndicesForLOD(self, lod):
-        return _pydna.DefinitionReader_getAnimatedMapIndicesForLOD(self, lod)
+        return _py2dna.DefinitionReader_getAnimatedMapIndicesForLOD(self, lod)
 
     def getMeshCount(self):
-        return _pydna.DefinitionReader_getMeshCount(self)
+        return _py2dna.DefinitionReader_getMeshCount(self)
 
     def getMeshName(self, index):
-        return _pydna.DefinitionReader_getMeshName(self, index)
+        return _py2dna.DefinitionReader_getMeshName(self, index)
 
     def getMeshIndexListCount(self):
-        return _pydna.DefinitionReader_getMeshIndexListCount(self)
+        return _py2dna.DefinitionReader_getMeshIndexListCount(self)
 
     def getMeshIndicesForLOD(self, lod):
-        return _pydna.DefinitionReader_getMeshIndicesForLOD(self, lod)
+        return _py2dna.DefinitionReader_getMeshIndicesForLOD(self, lod)
 
     def getMeshBlendShapeChannelMappingCount(self):
-        return _pydna.DefinitionReader_getMeshBlendShapeChannelMappingCount(self)
+        return _py2dna.DefinitionReader_getMeshBlendShapeChannelMappingCount(self)
 
     def getMeshBlendShapeChannelMapping(self, index):
-        return _pydna.DefinitionReader_getMeshBlendShapeChannelMapping(self, index)
+        return _py2dna.DefinitionReader_getMeshBlendShapeChannelMapping(self, index)
 
     def getMeshBlendShapeChannelMappingIndicesForLOD(self, lod):
-        return _pydna.DefinitionReader_getMeshBlendShapeChannelMappingIndicesForLOD(self, lod)
+        return _py2dna.DefinitionReader_getMeshBlendShapeChannelMappingIndicesForLOD(self, lod)
 
     def getNeutralJointTranslation(self, index):
-        return _pydna.DefinitionReader_getNeutralJointTranslation(self, index)
+        return _py2dna.DefinitionReader_getNeutralJointTranslation(self, index)
 
     def getNeutralJointTranslationXs(self):
-        return _pydna.DefinitionReader_getNeutralJointTranslationXs(self)
+        return _py2dna.DefinitionReader_getNeutralJointTranslationXs(self)
 
     def getNeutralJointTranslationYs(self):
-        return _pydna.DefinitionReader_getNeutralJointTranslationYs(self)
+        return _py2dna.DefinitionReader_getNeutralJointTranslationYs(self)
 
     def getNeutralJointTranslationZs(self):
-        return _pydna.DefinitionReader_getNeutralJointTranslationZs(self)
+        return _py2dna.DefinitionReader_getNeutralJointTranslationZs(self)
 
     def getNeutralJointRotation(self, index):
-        return _pydna.DefinitionReader_getNeutralJointRotation(self, index)
+        return _py2dna.DefinitionReader_getNeutralJointRotation(self, index)
 
     def getNeutralJointRotationXs(self):
-        return _pydna.DefinitionReader_getNeutralJointRotationXs(self)
+        return _py2dna.DefinitionReader_getNeutralJointRotationXs(self)
 
     def getNeutralJointRotationYs(self):
-        return _pydna.DefinitionReader_getNeutralJointRotationYs(self)
+        return _py2dna.DefinitionReader_getNeutralJointRotationYs(self)
 
     def getNeutralJointRotationZs(self):
-        return _pydna.DefinitionReader_getNeutralJointRotationZs(self)
+        return _py2dna.DefinitionReader_getNeutralJointRotationZs(self)
 
-# Register DefinitionReader in _pydna:
-_pydna.DefinitionReader_swigregister(DefinitionReader)
+# Register DefinitionReader in _py2dna:
+_py2dna.DefinitionReader_swigregister(DefinitionReader)
 
 class BehaviorReader(DefinitionReader):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -705,94 +730,94 @@ class BehaviorReader(DefinitionReader):
     __repr__ = _swig_repr
 
     def getGUIToRawInputIndices(self):
-        return _pydna.BehaviorReader_getGUIToRawInputIndices(self)
+        return _py2dna.BehaviorReader_getGUIToRawInputIndices(self)
 
     def getGUIToRawOutputIndices(self):
-        return _pydna.BehaviorReader_getGUIToRawOutputIndices(self)
+        return _py2dna.BehaviorReader_getGUIToRawOutputIndices(self)
 
     def getGUIToRawFromValues(self):
-        return _pydna.BehaviorReader_getGUIToRawFromValues(self)
+        return _py2dna.BehaviorReader_getGUIToRawFromValues(self)
 
     def getGUIToRawToValues(self):
-        return _pydna.BehaviorReader_getGUIToRawToValues(self)
+        return _py2dna.BehaviorReader_getGUIToRawToValues(self)
 
     def getGUIToRawSlopeValues(self):
-        return _pydna.BehaviorReader_getGUIToRawSlopeValues(self)
+        return _py2dna.BehaviorReader_getGUIToRawSlopeValues(self)
 
     def getGUIToRawCutValues(self):
-        return _pydna.BehaviorReader_getGUIToRawCutValues(self)
+        return _py2dna.BehaviorReader_getGUIToRawCutValues(self)
 
     def getPSDCount(self):
-        return _pydna.BehaviorReader_getPSDCount(self)
+        return _py2dna.BehaviorReader_getPSDCount(self)
 
     def getPSDRowIndices(self):
-        return _pydna.BehaviorReader_getPSDRowIndices(self)
+        return _py2dna.BehaviorReader_getPSDRowIndices(self)
 
     def getPSDColumnIndices(self):
-        return _pydna.BehaviorReader_getPSDColumnIndices(self)
+        return _py2dna.BehaviorReader_getPSDColumnIndices(self)
 
     def getPSDValues(self):
-        return _pydna.BehaviorReader_getPSDValues(self)
+        return _py2dna.BehaviorReader_getPSDValues(self)
 
     def getJointRowCount(self):
-        return _pydna.BehaviorReader_getJointRowCount(self)
+        return _py2dna.BehaviorReader_getJointRowCount(self)
 
     def getJointColumnCount(self):
-        return _pydna.BehaviorReader_getJointColumnCount(self)
+        return _py2dna.BehaviorReader_getJointColumnCount(self)
 
     def getJointVariableAttributeIndices(self, lod):
-        return _pydna.BehaviorReader_getJointVariableAttributeIndices(self, lod)
+        return _py2dna.BehaviorReader_getJointVariableAttributeIndices(self, lod)
 
     def getJointGroupCount(self):
-        return _pydna.BehaviorReader_getJointGroupCount(self)
+        return _py2dna.BehaviorReader_getJointGroupCount(self)
 
     def getJointGroupLODs(self, jointGroupIndex):
-        return _pydna.BehaviorReader_getJointGroupLODs(self, jointGroupIndex)
+        return _py2dna.BehaviorReader_getJointGroupLODs(self, jointGroupIndex)
 
     def getJointGroupInputIndices(self, jointGroupIndex):
-        return _pydna.BehaviorReader_getJointGroupInputIndices(self, jointGroupIndex)
+        return _py2dna.BehaviorReader_getJointGroupInputIndices(self, jointGroupIndex)
 
     def getJointGroupOutputIndices(self, jointGroupIndex):
-        return _pydna.BehaviorReader_getJointGroupOutputIndices(self, jointGroupIndex)
+        return _py2dna.BehaviorReader_getJointGroupOutputIndices(self, jointGroupIndex)
 
     def getJointGroupValues(self, jointGroupIndex):
-        return _pydna.BehaviorReader_getJointGroupValues(self, jointGroupIndex)
+        return _py2dna.BehaviorReader_getJointGroupValues(self, jointGroupIndex)
 
     def getJointGroupJointIndices(self, jointGroupIndex):
-        return _pydna.BehaviorReader_getJointGroupJointIndices(self, jointGroupIndex)
+        return _py2dna.BehaviorReader_getJointGroupJointIndices(self, jointGroupIndex)
 
     def getBlendShapeChannelLODs(self):
-        return _pydna.BehaviorReader_getBlendShapeChannelLODs(self)
+        return _py2dna.BehaviorReader_getBlendShapeChannelLODs(self)
 
     def getBlendShapeChannelInputIndices(self):
-        return _pydna.BehaviorReader_getBlendShapeChannelInputIndices(self)
+        return _py2dna.BehaviorReader_getBlendShapeChannelInputIndices(self)
 
     def getBlendShapeChannelOutputIndices(self):
-        return _pydna.BehaviorReader_getBlendShapeChannelOutputIndices(self)
+        return _py2dna.BehaviorReader_getBlendShapeChannelOutputIndices(self)
 
     def getAnimatedMapLODs(self):
-        return _pydna.BehaviorReader_getAnimatedMapLODs(self)
+        return _py2dna.BehaviorReader_getAnimatedMapLODs(self)
 
     def getAnimatedMapInputIndices(self):
-        return _pydna.BehaviorReader_getAnimatedMapInputIndices(self)
+        return _py2dna.BehaviorReader_getAnimatedMapInputIndices(self)
 
     def getAnimatedMapOutputIndices(self):
-        return _pydna.BehaviorReader_getAnimatedMapOutputIndices(self)
+        return _py2dna.BehaviorReader_getAnimatedMapOutputIndices(self)
 
     def getAnimatedMapFromValues(self):
-        return _pydna.BehaviorReader_getAnimatedMapFromValues(self)
+        return _py2dna.BehaviorReader_getAnimatedMapFromValues(self)
 
     def getAnimatedMapToValues(self):
-        return _pydna.BehaviorReader_getAnimatedMapToValues(self)
+        return _py2dna.BehaviorReader_getAnimatedMapToValues(self)
 
     def getAnimatedMapSlopeValues(self):
-        return _pydna.BehaviorReader_getAnimatedMapSlopeValues(self)
+        return _py2dna.BehaviorReader_getAnimatedMapSlopeValues(self)
 
     def getAnimatedMapCutValues(self):
-        return _pydna.BehaviorReader_getAnimatedMapCutValues(self)
+        return _py2dna.BehaviorReader_getAnimatedMapCutValues(self)
 
-# Register BehaviorReader in _pydna:
-_pydna.BehaviorReader_swigregister(BehaviorReader)
+# Register BehaviorReader in _py2dna:
+_py2dna.BehaviorReader_swigregister(BehaviorReader)
 
 class GeometryReader(DefinitionReader):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -802,106 +827,106 @@ class GeometryReader(DefinitionReader):
     __repr__ = _swig_repr
 
     def getVertexPositionCount(self, meshIndex):
-        return _pydna.GeometryReader_getVertexPositionCount(self, meshIndex)
+        return _py2dna.GeometryReader_getVertexPositionCount(self, meshIndex)
 
     def getVertexPosition(self, meshIndex, vertexIndex):
-        return _pydna.GeometryReader_getVertexPosition(self, meshIndex, vertexIndex)
+        return _py2dna.GeometryReader_getVertexPosition(self, meshIndex, vertexIndex)
 
     def getVertexPositionXs(self, meshIndex):
-        return _pydna.GeometryReader_getVertexPositionXs(self, meshIndex)
+        return _py2dna.GeometryReader_getVertexPositionXs(self, meshIndex)
 
     def getVertexPositionYs(self, meshIndex):
-        return _pydna.GeometryReader_getVertexPositionYs(self, meshIndex)
+        return _py2dna.GeometryReader_getVertexPositionYs(self, meshIndex)
 
     def getVertexPositionZs(self, meshIndex):
-        return _pydna.GeometryReader_getVertexPositionZs(self, meshIndex)
+        return _py2dna.GeometryReader_getVertexPositionZs(self, meshIndex)
 
     def getVertexTextureCoordinateCount(self, meshIndex):
-        return _pydna.GeometryReader_getVertexTextureCoordinateCount(self, meshIndex)
+        return _py2dna.GeometryReader_getVertexTextureCoordinateCount(self, meshIndex)
 
     def getVertexTextureCoordinate(self, meshIndex, textureCoordinateIndex):
-        return _pydna.GeometryReader_getVertexTextureCoordinate(self, meshIndex, textureCoordinateIndex)
+        return _py2dna.GeometryReader_getVertexTextureCoordinate(self, meshIndex, textureCoordinateIndex)
 
     def getVertexTextureCoordinateUs(self, meshIndex):
-        return _pydna.GeometryReader_getVertexTextureCoordinateUs(self, meshIndex)
+        return _py2dna.GeometryReader_getVertexTextureCoordinateUs(self, meshIndex)
 
     def getVertexTextureCoordinateVs(self, meshIndex):
-        return _pydna.GeometryReader_getVertexTextureCoordinateVs(self, meshIndex)
+        return _py2dna.GeometryReader_getVertexTextureCoordinateVs(self, meshIndex)
 
     def getVertexNormalCount(self, meshIndex):
-        return _pydna.GeometryReader_getVertexNormalCount(self, meshIndex)
+        return _py2dna.GeometryReader_getVertexNormalCount(self, meshIndex)
 
     def getVertexNormal(self, meshIndex, normalIndex):
-        return _pydna.GeometryReader_getVertexNormal(self, meshIndex, normalIndex)
+        return _py2dna.GeometryReader_getVertexNormal(self, meshIndex, normalIndex)
 
     def getVertexNormalXs(self, meshIndex):
-        return _pydna.GeometryReader_getVertexNormalXs(self, meshIndex)
+        return _py2dna.GeometryReader_getVertexNormalXs(self, meshIndex)
 
     def getVertexNormalYs(self, meshIndex):
-        return _pydna.GeometryReader_getVertexNormalYs(self, meshIndex)
+        return _py2dna.GeometryReader_getVertexNormalYs(self, meshIndex)
 
     def getVertexNormalZs(self, meshIndex):
-        return _pydna.GeometryReader_getVertexNormalZs(self, meshIndex)
+        return _py2dna.GeometryReader_getVertexNormalZs(self, meshIndex)
 
     def getVertexLayoutCount(self, meshIndex):
-        return _pydna.GeometryReader_getVertexLayoutCount(self, meshIndex)
+        return _py2dna.GeometryReader_getVertexLayoutCount(self, meshIndex)
 
     def getVertexLayout(self, meshIndex, layoutIndex):
-        return _pydna.GeometryReader_getVertexLayout(self, meshIndex, layoutIndex)
+        return _py2dna.GeometryReader_getVertexLayout(self, meshIndex, layoutIndex)
 
     def getVertexLayoutPositionIndices(self, meshIndex):
-        return _pydna.GeometryReader_getVertexLayoutPositionIndices(self, meshIndex)
+        return _py2dna.GeometryReader_getVertexLayoutPositionIndices(self, meshIndex)
 
     def getVertexLayoutTextureCoordinateIndices(self, meshIndex):
-        return _pydna.GeometryReader_getVertexLayoutTextureCoordinateIndices(self, meshIndex)
+        return _py2dna.GeometryReader_getVertexLayoutTextureCoordinateIndices(self, meshIndex)
 
     def getVertexLayoutNormalIndices(self, meshIndex):
-        return _pydna.GeometryReader_getVertexLayoutNormalIndices(self, meshIndex)
+        return _py2dna.GeometryReader_getVertexLayoutNormalIndices(self, meshIndex)
 
     def getFaceCount(self, meshIndex):
-        return _pydna.GeometryReader_getFaceCount(self, meshIndex)
+        return _py2dna.GeometryReader_getFaceCount(self, meshIndex)
 
     def getFaceVertexLayoutIndices(self, meshIndex, faceIndex):
-        return _pydna.GeometryReader_getFaceVertexLayoutIndices(self, meshIndex, faceIndex)
+        return _py2dna.GeometryReader_getFaceVertexLayoutIndices(self, meshIndex, faceIndex)
 
     def getMaximumInfluencePerVertex(self, meshIndex):
-        return _pydna.GeometryReader_getMaximumInfluencePerVertex(self, meshIndex)
+        return _py2dna.GeometryReader_getMaximumInfluencePerVertex(self, meshIndex)
 
     def getSkinWeightsCount(self, meshIndex):
-        return _pydna.GeometryReader_getSkinWeightsCount(self, meshIndex)
+        return _py2dna.GeometryReader_getSkinWeightsCount(self, meshIndex)
 
     def getSkinWeightsValues(self, meshIndex, vertexIndex):
-        return _pydna.GeometryReader_getSkinWeightsValues(self, meshIndex, vertexIndex)
+        return _py2dna.GeometryReader_getSkinWeightsValues(self, meshIndex, vertexIndex)
 
     def getSkinWeightsJointIndices(self, meshIndex, vertexIndex):
-        return _pydna.GeometryReader_getSkinWeightsJointIndices(self, meshIndex, vertexIndex)
+        return _py2dna.GeometryReader_getSkinWeightsJointIndices(self, meshIndex, vertexIndex)
 
     def getBlendShapeTargetCount(self, meshIndex):
-        return _pydna.GeometryReader_getBlendShapeTargetCount(self, meshIndex)
+        return _py2dna.GeometryReader_getBlendShapeTargetCount(self, meshIndex)
 
     def getBlendShapeChannelIndex(self, meshIndex, blendShapeTargetIndex):
-        return _pydna.GeometryReader_getBlendShapeChannelIndex(self, meshIndex, blendShapeTargetIndex)
+        return _py2dna.GeometryReader_getBlendShapeChannelIndex(self, meshIndex, blendShapeTargetIndex)
 
     def getBlendShapeTargetDeltaCount(self, meshIndex, blendShapeTargetIndex):
-        return _pydna.GeometryReader_getBlendShapeTargetDeltaCount(self, meshIndex, blendShapeTargetIndex)
+        return _py2dna.GeometryReader_getBlendShapeTargetDeltaCount(self, meshIndex, blendShapeTargetIndex)
 
     def getBlendShapeTargetDelta(self, meshIndex, blendShapeTargetIndex, deltaIndex):
-        return _pydna.GeometryReader_getBlendShapeTargetDelta(self, meshIndex, blendShapeTargetIndex, deltaIndex)
+        return _py2dna.GeometryReader_getBlendShapeTargetDelta(self, meshIndex, blendShapeTargetIndex, deltaIndex)
 
     def getBlendShapeTargetDeltaXs(self, meshIndex, blendShapeTargetIndex):
-        return _pydna.GeometryReader_getBlendShapeTargetDeltaXs(self, meshIndex, blendShapeTargetIndex)
+        return _py2dna.GeometryReader_getBlendShapeTargetDeltaXs(self, meshIndex, blendShapeTargetIndex)
 
     def getBlendShapeTargetDeltaYs(self, meshIndex, blendShapeTargetIndex):
-        return _pydna.GeometryReader_getBlendShapeTargetDeltaYs(self, meshIndex, blendShapeTargetIndex)
+        return _py2dna.GeometryReader_getBlendShapeTargetDeltaYs(self, meshIndex, blendShapeTargetIndex)
 
     def getBlendShapeTargetDeltaZs(self, meshIndex, blendShapeTargetIndex):
-        return _pydna.GeometryReader_getBlendShapeTargetDeltaZs(self, meshIndex, blendShapeTargetIndex)
+        return _py2dna.GeometryReader_getBlendShapeTargetDeltaZs(self, meshIndex, blendShapeTargetIndex)
 
     def getBlendShapeTargetVertexIndices(self, meshIndex, blendShapeTargetIndex):
-        return _pydna.GeometryReader_getBlendShapeTargetVertexIndices(self, meshIndex, blendShapeTargetIndex)
+        return _py2dna.GeometryReader_getBlendShapeTargetVertexIndices(self, meshIndex, blendShapeTargetIndex)
 
-# Register GeometryReader in _pydna:
-_pydna.GeometryReader_swigregister(GeometryReader)
+# Register GeometryReader in _py2dna:
+_py2dna.GeometryReader_swigregister(GeometryReader)
 
 class Reader(BehaviorReader, GeometryReader):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -909,12 +934,32 @@ class Reader(BehaviorReader, GeometryReader):
     def __init__(self, *args, **kwargs):
         raise AttributeError("No constructor defined - class is abstract")
     __repr__ = _swig_repr
-    __swig_destroy__ = _pydna.delete_Reader
+    __swig_destroy__ = _py2dna.delete_Reader
 
-# Register Reader in _pydna:
-_pydna.Reader_swigregister(Reader)
+    def unload(self, layer):
+        return _py2dna.Reader_unload(self, layer)
+
+# Register Reader in _py2dna:
+_py2dna.Reader_swigregister(Reader)
 
 class StreamReader(Reader):
+    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
+
+    def __init__(self, *args, **kwargs):
+        raise AttributeError("No constructor defined - class is abstract")
+    __repr__ = _swig_repr
+    __swig_destroy__ = _py2dna.delete_StreamReader
+
+    def read(self):
+        return _py2dna.StreamReader_read(self)
+
+# Register StreamReader in _py2dna:
+_py2dna.StreamReader_swigregister(StreamReader)
+StreamReader.SignatureMismatchError = _py2dna.cvar.StreamReader_SignatureMismatchError
+StreamReader.VersionMismatchError = _py2dna.cvar.StreamReader_VersionMismatchError
+StreamReader.InvalidDataError = _py2dna.cvar.StreamReader_InvalidDataError
+
+class BinaryStreamReader(StreamReader):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
 
     def __init__(self, *args, **kwargs):
@@ -923,34 +968,60 @@ class StreamReader(Reader):
 
     @staticmethod
     def create(*args):
-        return _pydna.StreamReader_create(*args)
+        return _py2dna.BinaryStreamReader_create(*args)
 
     @staticmethod
     def destroy(instance):
-        return _pydna.StreamReader_destroy(instance)
-    __swig_destroy__ = _pydna.delete_StreamReader
+        return _py2dna.BinaryStreamReader_destroy(instance)
+    __swig_destroy__ = _py2dna.delete_BinaryStreamReader
 
-    def read(self):
-        return _pydna.StreamReader_read(self)
+# Register BinaryStreamReader in _py2dna:
+_py2dna.BinaryStreamReader_swigregister(BinaryStreamReader)
 
-# Register StreamReader in _pydna:
-_pydna.StreamReader_swigregister(StreamReader)
-StreamReader.SignatureMismatchError = _pydna.cvar.StreamReader_SignatureMismatchError
-StreamReader.VersionMismatchError = _pydna.cvar.StreamReader_VersionMismatchError
-StreamReader.InvalidDataError = _pydna.cvar.StreamReader_InvalidDataError
+def BinaryStreamReader_create(*args):
+    return _py2dna.BinaryStreamReader_create(*args)
 
-def StreamReader_create(*args):
-    return _pydna.StreamReader_create(*args)
+def BinaryStreamReader_destroy(instance):
+    return _py2dna.BinaryStreamReader_destroy(instance)
 
-def StreamReader_destroy(instance):
-    return _pydna.StreamReader_destroy(instance)
+class JSONStreamReader(StreamReader):
+    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
+
+    def __init__(self, *args, **kwargs):
+        raise AttributeError("No constructor defined - class is abstract")
+    __repr__ = _swig_repr
+
+    @staticmethod
+    def create(stream, memRes=None):
+        return _py2dna.JSONStreamReader_create(stream, memRes)
+
+    @staticmethod
+    def destroy(instance):
+        return _py2dna.JSONStreamReader_destroy(instance)
+    __swig_destroy__ = _py2dna.delete_JSONStreamReader
+
+# Register JSONStreamReader in _py2dna:
+_py2dna.JSONStreamReader_swigregister(JSONStreamReader)
+
+def JSONStreamReader_create(stream, memRes=None):
+    return _py2dna.JSONStreamReader_create(stream, memRes)
+
+def JSONStreamReader_destroy(instance):
+    return _py2dna.JSONStreamReader_destroy(instance)
 
 
-StreamReader.__new__= staticmethod(lambda cls, *args, **kwargs: StreamReader_create(*args, **kwargs))
-StreamReader.__del__= lambda instance: StreamReader_destroy(instance)
-StreamReader.__init__ = __managed_init
-del StreamReader.create
-del StreamReader.destroy
+BinaryStreamReader.__new__ = __new_decorator(BinaryStreamReader_create, BinaryStreamReader.__new__)
+BinaryStreamReader.__del__ = lambda instance: BinaryStreamReader_destroy(instance)
+BinaryStreamReader.__init__ = __managed_init
+del BinaryStreamReader.create
+del BinaryStreamReader.destroy
+
+
+JSONStreamReader.__new__ = __new_decorator(JSONStreamReader_create, JSONStreamReader.__new__)
+JSONStreamReader.__del__ = lambda instance: JSONStreamReader_destroy(instance)
+JSONStreamReader.__init__ = __managed_init
+del JSONStreamReader.create
+del JSONStreamReader.destroy
 
 class DescriptorWriter(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -960,46 +1031,46 @@ class DescriptorWriter(object):
     __repr__ = _swig_repr
 
     def setName(self, name):
-        return _pydna.DescriptorWriter_setName(self, name)
+        return _py2dna.DescriptorWriter_setName(self, name)
 
     def setArchetype(self, archetype):
-        return _pydna.DescriptorWriter_setArchetype(self, archetype)
+        return _py2dna.DescriptorWriter_setArchetype(self, archetype)
 
     def setGender(self, gender):
-        return _pydna.DescriptorWriter_setGender(self, gender)
+        return _py2dna.DescriptorWriter_setGender(self, gender)
 
     def setAge(self, age):
-        return _pydna.DescriptorWriter_setAge(self, age)
+        return _py2dna.DescriptorWriter_setAge(self, age)
 
     def clearMetaData(self):
-        return _pydna.DescriptorWriter_clearMetaData(self)
+        return _py2dna.DescriptorWriter_clearMetaData(self)
 
     def setMetaData(self, key, value):
-        return _pydna.DescriptorWriter_setMetaData(self, key, value)
+        return _py2dna.DescriptorWriter_setMetaData(self, key, value)
 
     def setTranslationUnit(self, unit):
-        return _pydna.DescriptorWriter_setTranslationUnit(self, unit)
+        return _py2dna.DescriptorWriter_setTranslationUnit(self, unit)
 
     def setRotationUnit(self, unit):
-        return _pydna.DescriptorWriter_setRotationUnit(self, unit)
+        return _py2dna.DescriptorWriter_setRotationUnit(self, unit)
 
     def setCoordinateSystem(self, system):
-        return _pydna.DescriptorWriter_setCoordinateSystem(self, system)
+        return _py2dna.DescriptorWriter_setCoordinateSystem(self, system)
 
     def setLODCount(self, lodCount):
-        return _pydna.DescriptorWriter_setLODCount(self, lodCount)
+        return _py2dna.DescriptorWriter_setLODCount(self, lodCount)
 
     def setDBMaxLOD(self, lod):
-        return _pydna.DescriptorWriter_setDBMaxLOD(self, lod)
+        return _py2dna.DescriptorWriter_setDBMaxLOD(self, lod)
 
     def setDBComplexity(self, name):
-        return _pydna.DescriptorWriter_setDBComplexity(self, name)
+        return _py2dna.DescriptorWriter_setDBComplexity(self, name)
 
     def setDBName(self, name):
-        return _pydna.DescriptorWriter_setDBName(self, name)
+        return _py2dna.DescriptorWriter_setDBName(self, name)
 
-# Register DescriptorWriter in _pydna:
-_pydna.DescriptorWriter_swigregister(DescriptorWriter)
+# Register DescriptorWriter in _py2dna:
+_py2dna.DescriptorWriter_swigregister(DescriptorWriter)
 
 class DefinitionWriter(DescriptorWriter):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -1009,106 +1080,106 @@ class DefinitionWriter(DescriptorWriter):
     __repr__ = _swig_repr
 
     def clearGUIControlNames(self):
-        return _pydna.DefinitionWriter_clearGUIControlNames(self)
+        return _py2dna.DefinitionWriter_clearGUIControlNames(self)
 
     def setGUIControlName(self, index, name):
-        return _pydna.DefinitionWriter_setGUIControlName(self, index, name)
+        return _py2dna.DefinitionWriter_setGUIControlName(self, index, name)
 
     def clearRawControlNames(self):
-        return _pydna.DefinitionWriter_clearRawControlNames(self)
+        return _py2dna.DefinitionWriter_clearRawControlNames(self)
 
     def setRawControlName(self, index, name):
-        return _pydna.DefinitionWriter_setRawControlName(self, index, name)
+        return _py2dna.DefinitionWriter_setRawControlName(self, index, name)
 
     def clearJointNames(self):
-        return _pydna.DefinitionWriter_clearJointNames(self)
+        return _py2dna.DefinitionWriter_clearJointNames(self)
 
     def setJointName(self, index, name):
-        return _pydna.DefinitionWriter_setJointName(self, index, name)
+        return _py2dna.DefinitionWriter_setJointName(self, index, name)
 
     def clearJointIndices(self):
-        return _pydna.DefinitionWriter_clearJointIndices(self)
+        return _py2dna.DefinitionWriter_clearJointIndices(self)
 
     def setJointIndices(self, index, jointIndices):
-        return _pydna.DefinitionWriter_setJointIndices(self, index, jointIndices)
+        return _py2dna.DefinitionWriter_setJointIndices(self, index, jointIndices)
 
     def clearLODJointMappings(self):
-        return _pydna.DefinitionWriter_clearLODJointMappings(self)
+        return _py2dna.DefinitionWriter_clearLODJointMappings(self)
 
     def setLODJointMapping(self, lod, index):
-        return _pydna.DefinitionWriter_setLODJointMapping(self, lod, index)
+        return _py2dna.DefinitionWriter_setLODJointMapping(self, lod, index)
 
     def clearBlendShapeChannelNames(self):
-        return _pydna.DefinitionWriter_clearBlendShapeChannelNames(self)
+        return _py2dna.DefinitionWriter_clearBlendShapeChannelNames(self)
 
     def setBlendShapeChannelName(self, index, name):
-        return _pydna.DefinitionWriter_setBlendShapeChannelName(self, index, name)
+        return _py2dna.DefinitionWriter_setBlendShapeChannelName(self, index, name)
 
     def clearBlendShapeChannelIndices(self):
-        return _pydna.DefinitionWriter_clearBlendShapeChannelIndices(self)
+        return _py2dna.DefinitionWriter_clearBlendShapeChannelIndices(self)
 
     def setBlendShapeChannelIndices(self, index, blendShapeChannelIndices):
-        return _pydna.DefinitionWriter_setBlendShapeChannelIndices(self, index, blendShapeChannelIndices)
+        return _py2dna.DefinitionWriter_setBlendShapeChannelIndices(self, index, blendShapeChannelIndices)
 
     def clearLODBlendShapeChannelMappings(self):
-        return _pydna.DefinitionWriter_clearLODBlendShapeChannelMappings(self)
+        return _py2dna.DefinitionWriter_clearLODBlendShapeChannelMappings(self)
 
     def setLODBlendShapeChannelMapping(self, lod, index):
-        return _pydna.DefinitionWriter_setLODBlendShapeChannelMapping(self, lod, index)
+        return _py2dna.DefinitionWriter_setLODBlendShapeChannelMapping(self, lod, index)
 
     def clearAnimatedMapNames(self):
-        return _pydna.DefinitionWriter_clearAnimatedMapNames(self)
+        return _py2dna.DefinitionWriter_clearAnimatedMapNames(self)
 
     def setAnimatedMapName(self, index, name):
-        return _pydna.DefinitionWriter_setAnimatedMapName(self, index, name)
+        return _py2dna.DefinitionWriter_setAnimatedMapName(self, index, name)
 
     def clearAnimatedMapIndices(self):
-        return _pydna.DefinitionWriter_clearAnimatedMapIndices(self)
+        return _py2dna.DefinitionWriter_clearAnimatedMapIndices(self)
 
     def setAnimatedMapIndices(self, index, animatedMapIndices):
-        return _pydna.DefinitionWriter_setAnimatedMapIndices(self, index, animatedMapIndices)
+        return _py2dna.DefinitionWriter_setAnimatedMapIndices(self, index, animatedMapIndices)
 
     def clearLODAnimatedMapMappings(self):
-        return _pydna.DefinitionWriter_clearLODAnimatedMapMappings(self)
+        return _py2dna.DefinitionWriter_clearLODAnimatedMapMappings(self)
 
     def setLODAnimatedMapMapping(self, lod, index):
-        return _pydna.DefinitionWriter_setLODAnimatedMapMapping(self, lod, index)
+        return _py2dna.DefinitionWriter_setLODAnimatedMapMapping(self, lod, index)
 
     def clearMeshNames(self):
-        return _pydna.DefinitionWriter_clearMeshNames(self)
+        return _py2dna.DefinitionWriter_clearMeshNames(self)
 
     def setMeshName(self, index, name):
-        return _pydna.DefinitionWriter_setMeshName(self, index, name)
+        return _py2dna.DefinitionWriter_setMeshName(self, index, name)
 
     def clearMeshIndices(self):
-        return _pydna.DefinitionWriter_clearMeshIndices(self)
+        return _py2dna.DefinitionWriter_clearMeshIndices(self)
 
     def setMeshIndices(self, index, meshIndices):
-        return _pydna.DefinitionWriter_setMeshIndices(self, index, meshIndices)
+        return _py2dna.DefinitionWriter_setMeshIndices(self, index, meshIndices)
 
     def clearLODMeshMappings(self):
-        return _pydna.DefinitionWriter_clearLODMeshMappings(self)
+        return _py2dna.DefinitionWriter_clearLODMeshMappings(self)
 
     def setLODMeshMapping(self, lod, index):
-        return _pydna.DefinitionWriter_setLODMeshMapping(self, lod, index)
+        return _py2dna.DefinitionWriter_setLODMeshMapping(self, lod, index)
 
     def clearMeshBlendShapeChannelMappings(self):
-        return _pydna.DefinitionWriter_clearMeshBlendShapeChannelMappings(self)
+        return _py2dna.DefinitionWriter_clearMeshBlendShapeChannelMappings(self)
 
     def setMeshBlendShapeChannelMapping(self, index, meshIndex, blendShapeChannelIndex):
-        return _pydna.DefinitionWriter_setMeshBlendShapeChannelMapping(self, index, meshIndex, blendShapeChannelIndex)
+        return _py2dna.DefinitionWriter_setMeshBlendShapeChannelMapping(self, index, meshIndex, blendShapeChannelIndex)
 
     def setJointHierarchy(self, jointIndices):
-        return _pydna.DefinitionWriter_setJointHierarchy(self, jointIndices)
+        return _py2dna.DefinitionWriter_setJointHierarchy(self, jointIndices)
 
     def setNeutralJointTranslations(self, translations):
-        return _pydna.DefinitionWriter_setNeutralJointTranslations(self, translations)
+        return _py2dna.DefinitionWriter_setNeutralJointTranslations(self, translations)
 
     def setNeutralJointRotations(self, rotations):
-        return _pydna.DefinitionWriter_setNeutralJointRotations(self, rotations)
+        return _py2dna.DefinitionWriter_setNeutralJointRotations(self, rotations)
 
-# Register DefinitionWriter in _pydna:
-_pydna.DefinitionWriter_swigregister(DefinitionWriter)
+# Register DefinitionWriter in _py2dna:
+_py2dna.DefinitionWriter_swigregister(DefinitionWriter)
 
 class BehaviorWriter(DefinitionWriter):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -1118,94 +1189,94 @@ class BehaviorWriter(DefinitionWriter):
     __repr__ = _swig_repr
 
     def setGUIToRawInputIndices(self, inputIndices):
-        return _pydna.BehaviorWriter_setGUIToRawInputIndices(self, inputIndices)
+        return _py2dna.BehaviorWriter_setGUIToRawInputIndices(self, inputIndices)
 
     def setGUIToRawOutputIndices(self, outputIndices):
-        return _pydna.BehaviorWriter_setGUIToRawOutputIndices(self, outputIndices)
+        return _py2dna.BehaviorWriter_setGUIToRawOutputIndices(self, outputIndices)
 
     def setGUIToRawFromValues(self, fromValues):
-        return _pydna.BehaviorWriter_setGUIToRawFromValues(self, fromValues)
+        return _py2dna.BehaviorWriter_setGUIToRawFromValues(self, fromValues)
 
     def setGUIToRawToValues(self, toValues):
-        return _pydna.BehaviorWriter_setGUIToRawToValues(self, toValues)
+        return _py2dna.BehaviorWriter_setGUIToRawToValues(self, toValues)
 
     def setGUIToRawSlopeValues(self, slopeValues):
-        return _pydna.BehaviorWriter_setGUIToRawSlopeValues(self, slopeValues)
+        return _py2dna.BehaviorWriter_setGUIToRawSlopeValues(self, slopeValues)
 
     def setGUIToRawCutValues(self, cutValues):
-        return _pydna.BehaviorWriter_setGUIToRawCutValues(self, cutValues)
+        return _py2dna.BehaviorWriter_setGUIToRawCutValues(self, cutValues)
 
     def setPSDCount(self, count):
-        return _pydna.BehaviorWriter_setPSDCount(self, count)
+        return _py2dna.BehaviorWriter_setPSDCount(self, count)
 
     def setPSDRowIndices(self, rowIndices):
-        return _pydna.BehaviorWriter_setPSDRowIndices(self, rowIndices)
+        return _py2dna.BehaviorWriter_setPSDRowIndices(self, rowIndices)
 
     def setPSDColumnIndices(self, columnIndices):
-        return _pydna.BehaviorWriter_setPSDColumnIndices(self, columnIndices)
+        return _py2dna.BehaviorWriter_setPSDColumnIndices(self, columnIndices)
 
     def setPSDValues(self, weights):
-        return _pydna.BehaviorWriter_setPSDValues(self, weights)
+        return _py2dna.BehaviorWriter_setPSDValues(self, weights)
 
     def setJointRowCount(self, rowCount):
-        return _pydna.BehaviorWriter_setJointRowCount(self, rowCount)
+        return _py2dna.BehaviorWriter_setJointRowCount(self, rowCount)
 
     def setJointColumnCount(self, columnCount):
-        return _pydna.BehaviorWriter_setJointColumnCount(self, columnCount)
+        return _py2dna.BehaviorWriter_setJointColumnCount(self, columnCount)
 
     def clearJointGroups(self):
-        return _pydna.BehaviorWriter_clearJointGroups(self)
+        return _py2dna.BehaviorWriter_clearJointGroups(self)
 
     def deleteJointGroup(self, jointGroupIndex):
-        return _pydna.BehaviorWriter_deleteJointGroup(self, jointGroupIndex)
+        return _py2dna.BehaviorWriter_deleteJointGroup(self, jointGroupIndex)
 
     def setJointGroupLODs(self, jointGroupIndex, lods):
-        return _pydna.BehaviorWriter_setJointGroupLODs(self, jointGroupIndex, lods)
+        return _py2dna.BehaviorWriter_setJointGroupLODs(self, jointGroupIndex, lods)
 
     def setJointGroupInputIndices(self, jointGroupIndex, inputIndices):
-        return _pydna.BehaviorWriter_setJointGroupInputIndices(self, jointGroupIndex, inputIndices)
+        return _py2dna.BehaviorWriter_setJointGroupInputIndices(self, jointGroupIndex, inputIndices)
 
     def setJointGroupOutputIndices(self, jointGroupIndex, outputIndices):
-        return _pydna.BehaviorWriter_setJointGroupOutputIndices(self, jointGroupIndex, outputIndices)
+        return _py2dna.BehaviorWriter_setJointGroupOutputIndices(self, jointGroupIndex, outputIndices)
 
     def setJointGroupValues(self, jointGroupIndex, values):
-        return _pydna.BehaviorWriter_setJointGroupValues(self, jointGroupIndex, values)
+        return _py2dna.BehaviorWriter_setJointGroupValues(self, jointGroupIndex, values)
 
     def setJointGroupJointIndices(self, jointGroupIndex, jointIndices):
-        return _pydna.BehaviorWriter_setJointGroupJointIndices(self, jointGroupIndex, jointIndices)
+        return _py2dna.BehaviorWriter_setJointGroupJointIndices(self, jointGroupIndex, jointIndices)
 
     def setBlendShapeChannelLODs(self, lods):
-        return _pydna.BehaviorWriter_setBlendShapeChannelLODs(self, lods)
+        return _py2dna.BehaviorWriter_setBlendShapeChannelLODs(self, lods)
 
     def setBlendShapeChannelInputIndices(self, inputIndices):
-        return _pydna.BehaviorWriter_setBlendShapeChannelInputIndices(self, inputIndices)
+        return _py2dna.BehaviorWriter_setBlendShapeChannelInputIndices(self, inputIndices)
 
     def setBlendShapeChannelOutputIndices(self, outputIndices):
-        return _pydna.BehaviorWriter_setBlendShapeChannelOutputIndices(self, outputIndices)
+        return _py2dna.BehaviorWriter_setBlendShapeChannelOutputIndices(self, outputIndices)
 
     def setAnimatedMapLODs(self, lods):
-        return _pydna.BehaviorWriter_setAnimatedMapLODs(self, lods)
+        return _py2dna.BehaviorWriter_setAnimatedMapLODs(self, lods)
 
     def setAnimatedMapInputIndices(self, inputIndices):
-        return _pydna.BehaviorWriter_setAnimatedMapInputIndices(self, inputIndices)
+        return _py2dna.BehaviorWriter_setAnimatedMapInputIndices(self, inputIndices)
 
     def setAnimatedMapOutputIndices(self, outputIndices):
-        return _pydna.BehaviorWriter_setAnimatedMapOutputIndices(self, outputIndices)
+        return _py2dna.BehaviorWriter_setAnimatedMapOutputIndices(self, outputIndices)
 
     def setAnimatedMapFromValues(self, fromValues):
-        return _pydna.BehaviorWriter_setAnimatedMapFromValues(self, fromValues)
+        return _py2dna.BehaviorWriter_setAnimatedMapFromValues(self, fromValues)
 
     def setAnimatedMapToValues(self, toValues):
-        return _pydna.BehaviorWriter_setAnimatedMapToValues(self, toValues)
+        return _py2dna.BehaviorWriter_setAnimatedMapToValues(self, toValues)
 
     def setAnimatedMapSlopeValues(self, slopeValues):
-        return _pydna.BehaviorWriter_setAnimatedMapSlopeValues(self, slopeValues)
+        return _py2dna.BehaviorWriter_setAnimatedMapSlopeValues(self, slopeValues)
 
     def setAnimatedMapCutValues(self, cutValues):
-        return _pydna.BehaviorWriter_setAnimatedMapCutValues(self, cutValues)
+        return _py2dna.BehaviorWriter_setAnimatedMapCutValues(self, cutValues)
 
-# Register BehaviorWriter in _pydna:
-_pydna.BehaviorWriter_swigregister(BehaviorWriter)
+# Register BehaviorWriter in _py2dna:
+_py2dna.BehaviorWriter_swigregister(BehaviorWriter)
 
 class GeometryWriter(DefinitionWriter):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -1215,55 +1286,55 @@ class GeometryWriter(DefinitionWriter):
     __repr__ = _swig_repr
 
     def clearMeshes(self):
-        return _pydna.GeometryWriter_clearMeshes(self)
+        return _py2dna.GeometryWriter_clearMeshes(self)
 
     def deleteMesh(self, meshIndex):
-        return _pydna.GeometryWriter_deleteMesh(self, meshIndex)
+        return _py2dna.GeometryWriter_deleteMesh(self, meshIndex)
 
     def setVertexPositions(self, meshIndex, positions):
-        return _pydna.GeometryWriter_setVertexPositions(self, meshIndex, positions)
+        return _py2dna.GeometryWriter_setVertexPositions(self, meshIndex, positions)
 
     def setVertexTextureCoordinates(self, meshIndex, textureCoordinates):
-        return _pydna.GeometryWriter_setVertexTextureCoordinates(self, meshIndex, textureCoordinates)
+        return _py2dna.GeometryWriter_setVertexTextureCoordinates(self, meshIndex, textureCoordinates)
 
     def setVertexNormals(self, meshIndex, normals):
-        return _pydna.GeometryWriter_setVertexNormals(self, meshIndex, normals)
+        return _py2dna.GeometryWriter_setVertexNormals(self, meshIndex, normals)
 
     def setVertexLayouts(self, meshIndex, layouts):
-        return _pydna.GeometryWriter_setVertexLayouts(self, meshIndex, layouts)
+        return _py2dna.GeometryWriter_setVertexLayouts(self, meshIndex, layouts)
 
     def clearFaceVertexLayoutIndices(self, meshIndex):
-        return _pydna.GeometryWriter_clearFaceVertexLayoutIndices(self, meshIndex)
+        return _py2dna.GeometryWriter_clearFaceVertexLayoutIndices(self, meshIndex)
 
     def setFaceVertexLayoutIndices(self, meshIndex, faceIndex, layoutIndices):
-        return _pydna.GeometryWriter_setFaceVertexLayoutIndices(self, meshIndex, faceIndex, layoutIndices)
+        return _py2dna.GeometryWriter_setFaceVertexLayoutIndices(self, meshIndex, faceIndex, layoutIndices)
 
     def setMaximumInfluencePerVertex(self, meshIndex, maxInfluenceCount):
-        return _pydna.GeometryWriter_setMaximumInfluencePerVertex(self, meshIndex, maxInfluenceCount)
+        return _py2dna.GeometryWriter_setMaximumInfluencePerVertex(self, meshIndex, maxInfluenceCount)
 
     def clearSkinWeights(self, meshIndex):
-        return _pydna.GeometryWriter_clearSkinWeights(self, meshIndex)
+        return _py2dna.GeometryWriter_clearSkinWeights(self, meshIndex)
 
     def setSkinWeightsValues(self, meshIndex, vertexIndex, weights):
-        return _pydna.GeometryWriter_setSkinWeightsValues(self, meshIndex, vertexIndex, weights)
+        return _py2dna.GeometryWriter_setSkinWeightsValues(self, meshIndex, vertexIndex, weights)
 
     def setSkinWeightsJointIndices(self, meshIndex, vertexIndex, jointIndices):
-        return _pydna.GeometryWriter_setSkinWeightsJointIndices(self, meshIndex, vertexIndex, jointIndices)
+        return _py2dna.GeometryWriter_setSkinWeightsJointIndices(self, meshIndex, vertexIndex, jointIndices)
 
     def clearBlendShapeTargets(self, meshIndex):
-        return _pydna.GeometryWriter_clearBlendShapeTargets(self, meshIndex)
+        return _py2dna.GeometryWriter_clearBlendShapeTargets(self, meshIndex)
 
     def setBlendShapeChannelIndex(self, meshIndex, blendShapeTargetIndex, blendShapeChannelIndex):
-        return _pydna.GeometryWriter_setBlendShapeChannelIndex(self, meshIndex, blendShapeTargetIndex, blendShapeChannelIndex)
+        return _py2dna.GeometryWriter_setBlendShapeChannelIndex(self, meshIndex, blendShapeTargetIndex, blendShapeChannelIndex)
 
     def setBlendShapeTargetDeltas(self, meshIndex, blendShapeTargetIndex, deltas):
-        return _pydna.GeometryWriter_setBlendShapeTargetDeltas(self, meshIndex, blendShapeTargetIndex, deltas)
+        return _py2dna.GeometryWriter_setBlendShapeTargetDeltas(self, meshIndex, blendShapeTargetIndex, deltas)
 
     def setBlendShapeTargetVertexIndices(self, meshIndex, blendShapeTargetIndex, vertexIndices):
-        return _pydna.GeometryWriter_setBlendShapeTargetVertexIndices(self, meshIndex, blendShapeTargetIndex, vertexIndices)
+        return _py2dna.GeometryWriter_setBlendShapeTargetVertexIndices(self, meshIndex, blendShapeTargetIndex, vertexIndices)
 
-# Register GeometryWriter in _pydna:
-_pydna.GeometryWriter_swigregister(GeometryWriter)
+# Register GeometryWriter in _py2dna:
+_py2dna.GeometryWriter_swigregister(GeometryWriter)
 
 class Writer(BehaviorWriter, GeometryWriter):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -1271,15 +1342,29 @@ class Writer(BehaviorWriter, GeometryWriter):
     def __init__(self, *args, **kwargs):
         raise AttributeError("No constructor defined - class is abstract")
     __repr__ = _swig_repr
-    __swig_destroy__ = _pydna.delete_Writer
+    __swig_destroy__ = _py2dna.delete_Writer
 
     def setFrom(self, *args):
-        return _pydna.Writer_setFrom(self, *args)
+        return _py2dna.Writer_setFrom(self, *args)
 
-# Register Writer in _pydna:
-_pydna.Writer_swigregister(Writer)
+# Register Writer in _py2dna:
+_py2dna.Writer_swigregister(Writer)
 
 class StreamWriter(Writer):
+    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
+
+    def __init__(self, *args, **kwargs):
+        raise AttributeError("No constructor defined - class is abstract")
+    __repr__ = _swig_repr
+    __swig_destroy__ = _py2dna.delete_StreamWriter
+
+    def write(self):
+        return _py2dna.StreamWriter_write(self)
+
+# Register StreamWriter in _py2dna:
+_py2dna.StreamWriter_swigregister(StreamWriter)
+
+class BinaryStreamWriter(StreamWriter):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
 
     def __init__(self, *args, **kwargs):
@@ -1288,31 +1373,60 @@ class StreamWriter(Writer):
 
     @staticmethod
     def create(stream, memRes=None):
-        return _pydna.StreamWriter_create(stream, memRes)
+        return _py2dna.BinaryStreamWriter_create(stream, memRes)
 
     @staticmethod
     def destroy(instance):
-        return _pydna.StreamWriter_destroy(instance)
-    __swig_destroy__ = _pydna.delete_StreamWriter
+        return _py2dna.BinaryStreamWriter_destroy(instance)
+    __swig_destroy__ = _py2dna.delete_BinaryStreamWriter
 
-    def write(self):
-        return _pydna.StreamWriter_write(self)
+# Register BinaryStreamWriter in _py2dna:
+_py2dna.BinaryStreamWriter_swigregister(BinaryStreamWriter)
 
-# Register StreamWriter in _pydna:
-_pydna.StreamWriter_swigregister(StreamWriter)
+def BinaryStreamWriter_create(stream, memRes=None):
+    return _py2dna.BinaryStreamWriter_create(stream, memRes)
 
-def StreamWriter_create(stream, memRes=None):
-    return _pydna.StreamWriter_create(stream, memRes)
+def BinaryStreamWriter_destroy(instance):
+    return _py2dna.BinaryStreamWriter_destroy(instance)
 
-def StreamWriter_destroy(instance):
-    return _pydna.StreamWriter_destroy(instance)
+class JSONStreamWriter(StreamWriter):
+    thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
+
+    def __init__(self, *args, **kwargs):
+        raise AttributeError("No constructor defined - class is abstract")
+    __repr__ = _swig_repr
+
+    @staticmethod
+    def create(stream, indentWidth=4, memRes=None):
+        return _py2dna.JSONStreamWriter_create(stream, indentWidth, memRes)
+
+    @staticmethod
+    def destroy(instance):
+        return _py2dna.JSONStreamWriter_destroy(instance)
+    __swig_destroy__ = _py2dna.delete_JSONStreamWriter
+
+# Register JSONStreamWriter in _py2dna:
+_py2dna.JSONStreamWriter_swigregister(JSONStreamWriter)
+
+def JSONStreamWriter_create(stream, indentWidth=4, memRes=None):
+    return _py2dna.JSONStreamWriter_create(stream, indentWidth, memRes)
+
+def JSONStreamWriter_destroy(instance):
+    return _py2dna.JSONStreamWriter_destroy(instance)
 
 
-StreamWriter.__new__= staticmethod(lambda cls, *args, **kwargs: StreamWriter_create(*args, **kwargs))
-StreamWriter.__del__= lambda instance: StreamWriter_destroy(instance)
-StreamWriter.__init__ = __managed_init
-del StreamWriter.create
-del StreamWriter.destroy
+BinaryStreamWriter.__new__ = __new_decorator(BinaryStreamWriter_create, BinaryStreamWriter.__new__)
+BinaryStreamWriter.__del__ = lambda instance: BinaryStreamWriter_destroy(instance)
+BinaryStreamWriter.__init__ = __managed_init
+del BinaryStreamWriter.create
+del BinaryStreamWriter.destroy
+
+
+JSONStreamWriter.__new__ = __new_decorator(JSONStreamWriter_create, JSONStreamWriter.__new__)
+JSONStreamWriter.__del__ = lambda instance: JSONStreamWriter_destroy(instance)
+JSONStreamWriter.__init__ = __managed_init
+del JSONStreamWriter.create
+del JSONStreamWriter.destroy
 
 
 

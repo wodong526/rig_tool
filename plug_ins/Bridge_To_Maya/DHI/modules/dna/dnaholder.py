@@ -29,10 +29,10 @@ class DNAHolder(object):
         MayaUtil.logger.info('Initiatig DNA Holder reader')
         try:
             readStream = dna.FileStream(binaryFilePath.encode('utf-8'), dna.FileStream.AccessMode_Read,
-                                    dna.FileStream.OpenMode_Binary)
+                                        dna.FileStream.OpenMode_Binary)
         except:
             readStream = dna.FileStream(binaryFilePath, dna.FileStream.AccessMode_Read, dna.FileStream.OpenMode_Binary)
-        self._reader = dna.StreamReader(readStream)
+        self._reader = dna.BinaryStreamReader(readStream, dna.DataLayer_All)
         self._reader.read()
 
         readStream.close()
@@ -42,8 +42,8 @@ class DNAHolder(object):
                                               dna.FileStream.OpenMode_Binary)
         except:
             self._fileStream = dna.FileStream(binaryFilePath, dna.FileStream.AccessMode_Write,
-                                          dna.FileStream.OpenMode_Binary)
-        self._writer = dna.StreamWriter(self._fileStream)
+                                              dna.FileStream.OpenMode_Binary)
+        self._writer = dna.BinaryStreamWriter(self._fileStream)
 
         self._writer.setFrom(self._reader)
 

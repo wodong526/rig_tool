@@ -80,7 +80,7 @@ def get_trm_rot():
 
 def allMatchOne():
     '''
-    将选择列表中所有对象的位移旋转缩放匹配到最后一个选择对象。
+    将选择列表中所有对象的位移匹配到最后一个选择对象。
     '''
     sel_lis = mc.ls(sl=True, fl=1)
     if len(sel_lis) < 2:
@@ -89,7 +89,7 @@ def allMatchOne():
     else:
         obj_target = sel_lis[-1]
         for i in range(0, len(sel_lis) - 1):
-            mc.matchTransform(sel_lis[i], obj_target)
+            mc.matchTransform(sel_lis[i], obj_target, pos=True, rot=True, scl=True)
             fb_print('已将{}匹配到{}。'.format(sel_lis[i], obj_target), info=True)
 
 

@@ -91,7 +91,7 @@ def svn_info():
     server_edition = output_info(server_info)
     loca_edition = output_info(loca_info)
     if server_edition != loca_edition:
-        fb_print('你的版本是{}，当前版本是{}。点击同步工具架更新到最新版本。'.format(loca_edition, server_edition),
+        fb_print('你的版本是{}，当前最新版本是{}。点击同步工具架更新到最新版本。'.format(loca_edition, server_edition),
                  warning=True,
                  viewMes=True, path=__file__, line=lin())
     else:

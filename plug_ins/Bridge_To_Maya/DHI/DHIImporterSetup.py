@@ -204,8 +204,8 @@ class DHIImporterSetup:
             pycore.setDrivenKeyframe("GRP_C_eyesAim_parentConstraint1.headW0", itt="linear", ott="linear",
                                      currentDriver="CTRL_eyesAimFollowHead.ty", driverValue=1.0, value=1.0)
         except Exception as ex:
-            print ("Error during connectFollowHead")
-            print (ex)
+            print("Error during connectFollowHead")
+            print(ex)
 
     def getGUITranslation(self, gender, height):
         from DHI.core.consts import GUI_TRANSLATIONS
@@ -254,7 +254,7 @@ class DHIImporterSetup:
         import dna
         fileStream = dna.FileStream(str(self.characterConfig.dnaPath),
                                     dna.FileStream.AccessMode_Read, dna.FileStream.OpenMode_Binary)
-        reader = dna.StreamReader(fileStream)
+        reader = dna.BinaryStreamReader(fileStream, dna.DataLayer_All)
         reader.read()
         pycore.select(clear=True)
         for i in range(reader.getGUIControlCount()):
@@ -307,6 +307,7 @@ class DHIImporterSetup:
         from DHI.core.consts import FLIP_FLOP_SHADERS
         try:
             # create layer groups
+            MayaUtil.logger.info("Creating layer groups")
             pycore.group(parent="geometry_grp", empty=True, name="body_lod0_grp")
             pycore.group(parent="geometry_grp", empty=True, name="body_lod1_grp")
             pycore.group(parent="geometry_grp", empty=True, name="body_lod2_grp")
@@ -331,6 +332,7 @@ class DHIImporterSetup:
             pycore.select(clear=True)
 
             # remove unused layers
+            MayaUtil.logger.info("Removing unused layers...")
             if pycore.objExists(self.characterConfig.bodyMeshName.replace("_body", "") + "_LOD0_layer"):
                 pycore.delete(self.characterConfig.bodyMeshName.replace("_body", "") + "_LOD0_layer")
             if pycore.objExists(self.characterConfig.bodyMeshName.replace("_body", "") + "_LOD1_layer"):
@@ -348,7 +350,8 @@ class DHIImporterSetup:
             if pycore.objExists(self.characterConfig.bodyMeshName.replace("_body", "") + "_lod3_layer"):
                 pycore.delete(self.characterConfig.bodyMeshName.replace("_body", "") + "_lod3_layer")
 
-            # move body meshes to world so we can group them in LOD (no parents allowed)
+            # move body meshes to world, so we can group them in LOD (no parents allowed)
+            MayaUtil.logger.info("Moving body meshes to world...")
             for i in range(0, 4):
                 meshName = "%s_lod%s_mesh" % (bodyMeshName, str(i))
                 if pycore.objExists(meshName):
@@ -356,6 +359,7 @@ class DHIImporterSetup:
 
             # move combined mesh to LOD_0
             resolvedBodyMeshName = self.characterConfig.bodyMeshName.replace("_body", "") + "_combined_lod0_mesh"
+            MayaUtil.logger.info("Moving combined mesh to LOD_0 %s" % resolvedBodyMeshName)
             if pycore.objExists(resolvedBodyMeshName):
                 # set default shader
                 pycore.select(clear=True)
@@ -364,6 +368,7 @@ class DHIImporterSetup:
                 pycore.hide(resolvedBodyMeshName)
                 pycore.parent(resolvedBodyMeshName, "body_lod0_grp")
 
+            MayaUtil.logger.info("Moving flipflops")
             # move flip flops
             flipFlopsMeshes = []
             for i in range(0, 4):
@@ -382,6 +387,7 @@ class DHIImporterSetup:
                 if pycore.objExists(meshName):
                     pycore.parent(meshName, "body_lod" + lod + "_grp")
 
+            MayaUtil.logger.info("Importing shader for flip flops...")
             MESH_SHADER_MAPPING = {}
             MESH_SHADER_MAPPING[bodyMeshName.replace("_body", "") + "_flipflops_lod"] = u'flipflop_shader'
             MESH_SHADER_MAPPING["f_med_shs_flipflops_lod"] = u'flipflop_shader'
@@ -394,7 +400,7 @@ class DHIImporterSetup:
                 pycore.delete("export_geo_grp")
         except Exception as e:
             print("Error moving body meshes to their corresponding LOD groups")
-            print (e)
+            print(e)
             pass
 
     def importBodyAndAttachToHead(self):
@@ -433,6 +439,7 @@ class DHIImporterSetup:
         self.addJointsToNamespace(headNamespace, headJoints)
 
         # import body to scene
+        MayaUtil.logger.info("Importing body scene from path %s" % self.characterConfig.bodyScenePath)
         pycore.importFile(self.characterConfig.bodyScenePath, options="v=0", type="mayaAscii")
 
         # add parent constraint for all matching head joints to body joints
@@ -535,7 +542,7 @@ class DHIImporterSetup:
 
         MayaUtil.logger.info('Resolving DNA path...')
         dnaPath = self.resolveRLDNAPathFromDNAPath(self.characterConfig.dnaPath)
-        MayaUtil.logger.info('Resolving GUI path...')
+        MayaUtil.logger.info("Resolving GUI path...")
         guiPath = self.characterConfig.guiPath
         progressWindowManager.update(0, "Importing head from DNA path: %s" % dnaPath)
 
@@ -581,14 +588,14 @@ class DHIImporterSetup:
             And(). \
             WithCharacterHeight(self.characterConfig.height). \
             And(). \
-            WithAAS(FileHandler.joinPath((current, "connectexp.py")))
+            WithAAS(FileHandler.joinPath((current, "db_versions", self.characterConfig.dnaVersion, "connectexp.py")))
 
         try:
             sceneBuilder.build()
             self.importHeadShaders()
             self.importHeadLightScene()
         except SceneBuilderError as ex:
-            print ("Scene builder error", ex.message)
+            print("Scene builder error", ex.message)
         except Exception as ex:
-            print ("Unexpected error occurred - %s!" % ex.message)
-            print (ex)
+            print("Unexpected error occurred - %s!" % ex.message)
+            print(ex)

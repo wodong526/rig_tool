@@ -38,7 +38,7 @@ except:
 from Megascans.ImporterSetup import importerSetup
 from Megascans.Analytics import Analytics
 
-MAYA_PLUGIN_VERSION = "6.9"
+MAYA_PLUGIN_VERSION = "7.1.5"
 
 """ QLiveLinkMonitor is a QThread-based thread that monitors a specific port for import.
 Simply put, this class is responsible for communication between your software and Bridge."""
@@ -132,11 +132,11 @@ class QLiveLinkMonitor(QThread):
 
 # Setup the plugin UI and start the socket server of LiveLink
 def initLiveLink():
-    #from Megascans import UI
-    #UI.initUI(MAYA_PLUGIN_VERSION)#加载浮动窗口
+    from Megascans import UI
+    UI.initUI(MAYA_PLUGIN_VERSION)
     StartSocketServer()
-    #return UI.LiveLinkUI.Instance
-    
+    return UI.LiveLinkUI.Instance
+
 # Setup Bridge Socket Server and start listening on socket
 def StartSocketServer():
     try:

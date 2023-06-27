@@ -11,11 +11,13 @@ from Megascans import Installer
 from DHI import DHIPluginLoader
 
 # Runs this code automatically at the start of Maya
-pm.evalDeferred("initPlugin()")
+#pm.evalDeferred("initPlugin()")
 
 
 # Delete Old Shelf, create a new shelf (install livelink) and start the listening at socket/start LiveLink
 def initPlugin():
-    DHIPluginLoader.load()
-    #Installer.createMSshelf()
-    initLiveLink()
+    try:
+        DHIPluginLoader.load()
+    finally:   
+        #Installer.createMSshelf()
+        initLiveLink()

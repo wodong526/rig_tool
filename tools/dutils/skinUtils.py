@@ -4,30 +4,58 @@ import maya.mel as mm
 
 from feedback_tool import Feedback_info as fb_print, LIN as lin
 
+FILE_PATH = __file__
 
-def processingSkinPrecision(objs):
-    """
-    解决绑定离原点太远丢失精度而扭曲
-    让模型上层的组跟着root关节走，然后用本代码使关节的世界矩阵乘模型上组的世界逆矩阵，得出每个关节相对root的局部矩阵给蒙皮节点
-    由于模型被root控制器拉到root关节所在位置处，所以即便绑定发生在原点，关节给到蒙皮的变换也是局部，但模型的变形位置还是在root关节所在位置
-    :param args:要修改的蒙皮模型（有其他东西也行，会被清除掉）
-    :return:
-    """
-    jnt_lis = []
-    for obj in objs:
-        if mm.eval('findRelatedSkinCluster("{}")'.format(obj)):
-            skin = mm.eval('findRelatedSkinCluster("{}")'.format(obj))
-            for jnt in mc.skinCluster(skin, inf=1, q=1):  #从蒙皮节点名得到受影响的关节
-                if jnt not in jnt_lis:
-                    jnt_lis.append(jnt)
 
-    if jnt_lis:
-        for jnt in jnt_lis:
-            plug_lis = mc.listConnections('{}.worldMatrix'.format(jnt), s=False, p=True)
-            multMat = mc.createNode('multMatrix', n='multMat_{}_{:03d}'.format(jnt, 1))
-            mc.connectAttr(jnt + '.worldMatrix[0]', multMat + '.matrixIn[0]')
-            mc.connectAttr('Geometry.worldInverseMatrix[0]', multMat + '.matrixIn[1]')
-            for plug in plug_lis:
-                mc.connectAttr(multMat + '.matrixSum', plug, f=True)
+def add_skinJnt(clster, *joints):
+    '''
+    将关节添加进某蒙皮节点中
+    :param clster: 被添加蒙皮关节的蒙皮节点
+    :param joints: 要被添加进蒙皮节点的关节
+    :return: None
+    '''
+    infJnt_lis = mc.skinCluster(clster, inf=True, q=True)
+    for jnt in joints:
+        if jnt not in infJnt_lis:
+            mc.skinCluster(clster, e=True, lw=True, wt=0, ai=jnt)
 
-    fb_print('解决完成', info=True, viewMes=True)
+
+def transform_jnt_skin(outSkin_lis, obtain_jnt, mod, delete=False):
+    '''
+    在同一个模型上将一堆关节的权重给到某一个关节
+    outSkin_lis:要输出权重的关节列表
+    obtain_jnt：要获取权重的关节
+    mod_lis：要改变权重的模型
+    delete：是否删除输出权重的关节
+    '''
+    cluster = mm.eval('findRelatedSkinCluster("{}")'.format(mod))
+    infJnt_lis = mc.skinCluster(cluster, inf=True, q=True)  #获取所有该蒙皮节点影响的关节
+
+    for jnt in infJnt_lis:
+        mc.setAttr('{}.liw'.format(jnt), True)  #锁住该蒙皮节点下所有关节的权重
+
+    if obtain_jnt not in infJnt_lis:
+        mc.skinCluster(cluster, e=1, lw=1, wt=0, ai=obtain_jnt)
+    mc.setAttr('{}.liw'.format(obtain_jnt), False)#只解锁获取权重关节
+
+    for jnt in outSkin_lis:  # 将每个关节的权重都反向给到脖子关节
+        mc.select(mod)  #传递关节权重需要指定实际对象，选择或者在skinPercent的蒙皮节点名后加上模型的trs名也行
+        if jnt in infJnt_lis:
+            mc.setAttr('{}.liw'.format(jnt), False)
+            mc.skinPercent(cluster, tv=[(jnt, 0)])
+            mc.skinCluster(cluster, e=True, ri=jnt)
+        else:
+            fb_print('{}不在蒙皮中'.format(jnt), warning=True, path=FILE_PATH, line=lin())
+
+        if delete:  #当关节不在世界下时放到世界下，将子级p给父级再把关节放到世界下，当关节在世界下时，当关节有子级时，将子级对象p到世界下
+            if mc.listRelatives(jnt, p=True):
+                if mc.listRelatives(jnt):
+                    sub_obj = mc.listRelatives(jnt)
+                    mc.parent(sub_obj, mc.listRelatives(jnt, p=True))
+                mc.parent(jnt, w=True)
+            else:
+                if mc.listRelatives(jnt):
+                    sub_obj = mc.listRelatives(jnt)
+                    mc.parent(sub_obj, w=True)
+            mc.delete(jnt)
+    mc.setAttr('{}.liw'.format(obtain_jnt), True)

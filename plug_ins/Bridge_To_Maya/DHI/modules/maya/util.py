@@ -301,11 +301,10 @@ class MayaUtil(object):
 
     @staticmethod
     def _adaptJoints(scale, scalePivot, orient, translate):
-        jointAdapter = AdditionalAdapterBuilder.buildMayaJointsDataAA(scale, scalePivot, orient, translate)
+        joint_adapter = AdditionalAdapterBuilder.buildMayaJointsDataAA(scale, scalePivot, orient, translate)
 
-        joints = [joint for joint in pycore.ls(type="joint") if not joint.listRelatives(parent=True, type="joint")]
-
-        jointAdapter.adapt(joints)
+        joints = [joint for joint in pycore.ls(type="joint") if not joint.listRelatives(parent=True)]
+        joint_adapter.adapt(joints)
 
     @staticmethod
     def _adaptMeshes(scale, scalePivot, orient, meshNames, translate):

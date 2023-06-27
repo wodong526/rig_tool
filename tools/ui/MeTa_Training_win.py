@@ -10,11 +10,13 @@ import maya.OpenMayaUI as omui
 
 import os
 import sys
-import logging
+from functools import partial
 
-logging.basicConfig()
-log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
+from feedback_tool import Feedback_info as fb_print
+import data_path
+from Meta import mhFaceCtrlsAnimsTool, extract_meta_head, extract_meta_body, adv_to_meta, \
+                 metaHuman_transformation_head, metaHand_to_adv
+reload(mhFaceCtrlsAnimsTool)
 
 if sys.version_info.major == 3:
     #当环境为py3时
@@ -58,12 +60,27 @@ class TrainingApparatus(QtWidgets.QDialog):
         self.but_getRL4_value = QtWidgets.QPushButton(u'获取RL4文件信息')
         self.but_createRL4 = QtWidgets.QPushButton(u'生成embeddedNodeRL4节点')
 
+        self.but_refNamSpace = QtWidgets.QPushButton()
+        self.but_refNamSpace.setMaximumWidth(30)
+        self.but_refNamSpace.setIcon(QtGui.QIcon('{}{}'.format(data_path.iconPath, 'refresh.png')))
+        self.cob_namSpace = QtWidgets.QComboBox()
+        self.but_get_faceCtrl_anim = QtWidgets.QPushButton(u'获取控制器动画信息文件')
+        self.but_get_faceCtrl_anim.setMaximumWidth(130)
+
+        self.lab_trsCtlKey = QtWidgets.QLabel(u'移动metaFace控制器帧')
+        self.spinBox_trsVal = QtWidgets.QSpinBox()
+        self.spinBox_trsVal.setMinimum(-9999999)
+        self.spinBox_trsVal.setMaximum(9999999)
+        self.but_transformKeys = QtWidgets.QPushButton(u'移动控制器帧')
+
         self.line_h_a = QtWidgets.QFrame()
         self.line_h_a.setFrameShape(QtWidgets.QFrame.HLine)
         self.line_h_b = QtWidgets.QFrame()
         self.line_h_b.setFrameShape(QtWidgets.QFrame.HLine)
         self.line_h_c = QtWidgets.QFrame()
         self.line_h_c.setFrameShape(QtWidgets.QFrame.HLine)
+        self.line_h_d = QtWidgets.QFrame()
+        self.line_h_d.setFrameShape(QtWidgets.QFrame.HLine)
 
     def create_layout(self):
         extract_layout = QtWidgets.QHBoxLayout()
@@ -81,7 +98,19 @@ class TrainingApparatus(QtWidgets.QDialog):
         createRL4_layout.addWidget(self.but_getRL4_value)
         createRL4_layout.addWidget(self.but_createRL4)
 
+        trsfFaceAnim_layout = QtWidgets.QHBoxLayout()
+        trsfFaceAnim_layout.addWidget(self.but_refNamSpace)
+        trsfFaceAnim_layout.addWidget(self.cob_namSpace)
+        trsfFaceAnim_layout.addWidget(self.but_get_faceCtrl_anim)
+
+        trsfFaceAnimKeys_layout = QtWidgets.QHBoxLayout()
+        trsfFaceAnimKeys_layout.addWidget(self.lab_trsCtlKey)
+        trsfFaceAnimKeys_layout.addWidget(self.spinBox_trsVal)
+        trsfFaceAnimKeys_layout.addWidget(self.but_transformKeys)
+
         main_layout = QtWidgets.QVBoxLayout(self)
+        main_layout.setContentsMargins(3, 3, 3, 3)
+        main_layout.setSpacing(3)
         main_layout.addLayout(extract_layout)
         main_layout.addWidget(self.line_h_a)
         main_layout.addLayout(link_layout)
@@ -90,6 +119,9 @@ class TrainingApparatus(QtWidgets.QDialog):
         main_layout.addWidget(self.but_hand_to_adv)
         main_layout.addWidget(self.line_h_c)
         main_layout.addLayout(createRL4_layout)
+        main_layout.addWidget(self.line_h_d)
+        main_layout.addLayout(trsfFaceAnim_layout)
+        main_layout.addLayout(trsfFaceAnimKeys_layout)
 
     def create_connections(self):
         self.but_extract_head.clicked.connect(self.extract_head)
@@ -102,13 +134,18 @@ class TrainingApparatus(QtWidgets.QDialog):
         self.but_getDnaPath.clicked.connect(self.get_RL4_path)
         self.but_getRL4_value.clicked.connect(self.get_RL4_value)
         self.but_createRL4.clicked.connect(self.create_RL4)
+        self.but_refNamSpace.clicked.connect(self.refresh_nameSpace)
+        self.but_get_faceCtrl_anim.clicked.connect(partial(mhFaceCtrlsAnimsTool.ExportMetaHumanFaceCtrlAnimToMaya,
+                                                           self.cob_namSpace))
+        self.but_transformKeys.clicked.connect(partial(mhFaceCtrlsAnimsTool.TransformFaceCtrlsKeys,
+                                                       self.spinBox_trsVal, self.cob_namSpace))
+
 
     def extract_head(self):
         '''
         将头的绑定从文件中剥离出来
         :return:
         '''
-        from Meta import extract_meta_head
         reload(extract_meta_head)
         extract_meta_head.EXTRACT_META()
 
@@ -117,7 +154,6 @@ class TrainingApparatus(QtWidgets.QDialog):
         将头和身体的绑定从文件中剥离出来
         :return:
         '''
-        from Meta import extract_meta_body
         reload(extract_meta_body)
         extract_meta_body.Extract_Body()
 
@@ -126,7 +162,6 @@ class TrainingApparatus(QtWidgets.QDialog):
         导入adv的骨架，将meta头的关节链和身体的关节链合并起来
         :return:
         '''
-        from Meta import adv_to_meta
         reload(adv_to_meta)
         adv_to_meta.CreatBied()
 
@@ -135,7 +170,6 @@ class TrainingApparatus(QtWidgets.QDialog):
         将adv的定位骨架骨点放到meta的骨架对应位置上
         :return:
         '''
-        from Meta import adv_to_meta
         reload(adv_to_meta)
         adv_to_meta.MatchJoint()
 
@@ -147,14 +181,13 @@ class TrainingApparatus(QtWidgets.QDialog):
         assert_name = self.lin_assetsName.text()
         if assert_name:
             if mc.ls('Main'):
-                from sx_toolBOX.SX_rig import adv_to_meta
                 reload(adv_to_meta)
                 adv_to_meta.createLink(assert_name)
             else:
-                log.error('未bulid场景。')
+                fb_print('未bulid场景。', error=True)
                 return False
         else:
-            log.error('未输入资产名。')
+            fb_print('未输入资产名。', error=True)
             return False
 
     def set_hand(self):
@@ -162,15 +195,14 @@ class TrainingApparatus(QtWidgets.QDialog):
         导入变换meta的头的py文件，作为一个单独的工具使用
         :return:
         '''
-        from Meta import metaHuman_transformation_head
         reload(metaHuman_transformation_head)
+        metaHuman_transformation_head.transform_head()
 
     def set_hand_to_adv(self):
         '''
         将meta的头接到adv的骨架上
         :return:
         '''
-        from Meta import metaHand_to_adv
         reload(metaHand_to_adv)
         metaHand_to_adv.metaHead_to_adv()
 
@@ -187,7 +219,7 @@ class TrainingApparatus(QtWidgets.QDialog):
             self.RL4_path = file_path[0]
             self.but_getDnaPath.setStyleSheet("background-color: green")
         else:
-            log.warning('没有选择有效文件。')
+            fb_print('没有选择有效文件。', error=True)
 
     def get_RL4_value(self):
         '''
@@ -204,7 +236,7 @@ class TrainingApparatus(QtWidgets.QDialog):
                 self.RL4_val_dir[inf] = mc.getAttr('{}.{}'.format(self.RL4_nam, inf))
             self.but_getRL4_value.setStyleSheet("background-color: green")
         else:
-            log.error('无效的选择对象。')
+            fb_print('无效的选择对象。', error=True)
 
     def create_RL4(self):
         '''
@@ -216,9 +248,17 @@ class TrainingApparatus(QtWidgets.QDialog):
             mm.eval('MHCreateRL4node "{}" {};'.format(self.RL4_path, self.RL4_nam))
             for attr, val in self.RL4_val_dir.items():
                 mc.setAttr('{}.{}'.format(self.RL4_nam, attr), val)
-            log.info('生成embeddedNodeRL4节点完成。')
+            fb_print('生成embeddedNodeRL4节点完成。', info=True)
         else:
-            log.error('条件不满足。')
+            fb_print('条件不满足。', error=True)
+
+    def refresh_nameSpace(self):
+        ref_lis = mc.file(q=True, r=True)
+        self.cob_namSpace.clear()
+        for ref in ref_lis:
+            nam = mc.referenceQuery(ref, ns=True)
+            self.cob_namSpace.addItem(nam[1:]+':')
+
 
 
 try:

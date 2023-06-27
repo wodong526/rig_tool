@@ -11,6 +11,7 @@ version.
 import pymel.core as pycore
 from maya.OpenMaya import MGlobal
 
+
 class AboutEnv:
     '''
     Maya about environment class. This is a singleton class.
@@ -41,12 +42,13 @@ class AboutEnv:
         aboutVersion = pycore.about(version=True)
 
         supportedVersions = {
-                             "2017" : [],
-                             "2018" : [],
-                             "2019" : [],
-                             "2020" : [],
-                             "2022" : []
-                             }
+            "2017": [],
+            "2018": [],
+            "2019": [],
+            "2020": [],
+            "2022": [],
+            "2023": []
+        }
 
         for version, extraArgs in supportedVersions.items():
             # first check if required extra arguments comply with aboutVersion
@@ -60,7 +62,6 @@ class AboutEnv:
                 self.version = version
                 if version == "2016 Extension":
                     self.version = "2016"
-
 
     def getNameWithVersionPrefix(self, name):
         '''

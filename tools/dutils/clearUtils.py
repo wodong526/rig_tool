@@ -1,12 +1,8 @@
 # coding=gbk
 import maya.cmds as mc
 import maya.mel as mm
-import pymel.core as pm
-import maya.OpenMayaUI as omui
 
-import traceback
-
-from feedback_tool import Feedback_info as fb_print, LIN as len
+from feedback_tool import Feedback_info as fb_print, LIN as lin
 
 FILE_PATH = __file__
 
@@ -66,3 +62,26 @@ def clear_animLayer():
             fb_print('已删除动画层{}。'.format(ani), info=True)
         except:
             fb_print('动画层{}删除失败，可能是因为它是其它层的子级，所以在删除父层时自动删除了子级层。'.format(ani), warning=True)
+
+def inspect_weight():
+    error_lis = []
+    for skin in mc.ls(typ='skinCluster'):
+        shape = mc.skinCluster(skin, query=True, g=True)[0]
+
+        verts = mc.ls(shape + '.vtx[*]', fl=True)
+
+        for v in verts:
+            wgt_lis = mc.skinPercent(skin, v, query=True, v=True)
+            if len(wgt_lis) > 1:
+                weight = sum(wgt_lis)
+            else:
+                weight = wgt_lis[0]
+            if abs(weight - 1) >= 0.001:
+                error_lis.append((v, weight))
+
+    if error_lis:
+        fb_print('模型{}有点权重合不为1的点：{}'.format(shape, ['\n'+vtx[0]+vtx[1] for vtx in error_lis]), error=True)
+    else:
+        fb_print('场景中所有模型的点权重都近似为1', info=True)
+
+
