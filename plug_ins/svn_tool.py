@@ -1,15 +1,16 @@
 # -*- coding:GBK -*-
-from PySide2 import QtWidgets, QtCore, QtGui
-from shiboken2 import wrapInstance
-
 import os
 import subprocess
 
-import maya.cmds as mc
 import maya.OpenMayaUI as omui
+import maya.cmds as mc
+from PySide2 import QtWidgets, QtCore, QtGui
+from shiboken2 import wrapInstance
 
-from feedback_tool import Feedback_info as fb_print, LIN as lin
 import data_path
+import reload_tools
+reload(data_path)
+from feedback_tool import Feedback_info as fb_print, LIN as lin
 
 tool_nam = __file__.split('\\')[1]
 
@@ -17,6 +18,19 @@ tool_nam = __file__.split('\\')[1]
 def maya_main_window():
     main_window_ptr = omui.MQtUtil.mainWindow()
     return wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
+
+
+def set_svn(cmmd):
+    try:
+        out_bytes = subprocess.check_output(cmmd, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        out_bytes = e.output
+        code = e.returncode
+    else:
+        code = 0
+
+    #out_text = out_bytes.decode('utf-8')
+    return out_bytes, code
 
 
 class SvnInfo(QtWidgets.QDialog):
@@ -63,16 +77,24 @@ class SvnInfo(QtWidgets.QDialog):
         cursor.setPosition(0)
         self.texEdit.setTextCursor(cursor)
 
+
 def svn_chectOut():
     '''
     签出svn库到指定位置
     :return:
     '''
-    resout = os.system('svn checkout {} {}'.format(data_path.serverSubmitsTheLogs, data_path.localPath))
-    if resout == 0:
+    txt, code = set_svn(['svn', 'checkout', data_path.rigToolWarehouseURL, data_path.localPath])
+    #resout = os.system('svn checkout {} {}'.format(data_path.serverSubmitsTheLogs, data_path.localPath))
+    if code == 0:
         fb_print('工具架签出成功。', info=True, viewMes=True, path=__file__, line=lin())
     else:
-        fb_print('工具架签出失败。', error=True, viewMes=True, path=__file__, line=lin())
+        fb_print('工具架签出失败\n返回码：{}运行信息：{}。'.format(code, txt), error=True, viewMes=True, path=__file__,
+                 line=lin())
+    try:
+        reload_tools.reload_mod()
+        fb_print('mod文件已替换。', info=True)
+    except:
+        fb_print('mod文件替换失败。', info=True)
 
 
 def svn_info():
@@ -85,19 +107,19 @@ def svn_info():
         revisionNum = re.search("Revision:\s\d+", info)
         return revisionNum.group().split(":")[1]
 
-    import re, subprocess
-    server_info = subprocess.check_output("svn info {}".format(data_path.serverSubmitsTheLogs))
-    loca_info = subprocess.check_output("svn info {}".format(data_path.localPath))
-    server_edition = output_info(server_info)
-    loca_edition = output_info(loca_info)
-    if server_edition != loca_edition:
-        fb_print('你的版本是{}，当前最新版本是{}。点击同步工具架更新到最新版本。'.format(loca_edition, server_edition),
-                 warning=True,
-                 viewMes=True, path=__file__, line=lin())
+    import re
+    server_info, server_code = set_svn(['svn', 'info', data_path.rigToolWarehouseURL])
+    #server_info = subprocess.check_output("svn info {}".format(data_path.serverSubmitsTheLogs))
+    loca_info, loca_code = set_svn(['svn', 'info', data_path.localPath])
+    #loca_info = subprocess.check_output("svn info {}".format(data_path.localPath))
+    server_version = output_info(server_info) if server_code == 0 else fb_print('获取服务器版本失败。', error=True)
+    loca_version = output_info(loca_info) if server_code == 0 else fb_print('获取本地版本失败。', error=True, viewMes=True)
+    if server_version != loca_version:
+        fb_print('你的版本是{}，当前最新版本是{}。点击同步工具架更新到最新版本。'.format(loca_version, server_version),
+                 warning=True, viewMes=True, path=__file__, line=lin())
     else:
-        fb_print('你的版本是{}，当前版本是{}。你已经是最新版本。'.format(loca_edition, server_edition), info=True,
-                 viewMes=True,
-                 path=__file__, line=lin())
+        fb_print('你的版本是{}，当前版本是{}。你已经是最新版本。'.format(loca_version, server_version), info=True,
+                 viewMes=True, path=__file__, line=lin())
 
 
 def svn_upData():
@@ -105,8 +127,9 @@ def svn_upData():
     更新本地库为最新版本
     :return:
     '''
-    resout = os.system('pushd "{}" && svn update'.format(data_path.localPath))
-    if resout == 0:
+    txt, code = set_svn(['svn', 'update', data_path.localPath])
+    #resout = os.system('pushd "{}" && svn update'.format(data_path.localPath))
+    if code == 0:
         fb_print('工具架同步成功', info=True, viewMes=True, path=__file__, line=lin())
     else:
         fb_print('工具架同步失败', error=True, viewMes=True, path=__file__, line=lin())
@@ -117,9 +140,10 @@ def svn_logs():
     展示服务器端svn的提交日志
     :return:
     """
-    svn_repo_path = data_path.serverSubmitsTheLogs
-    p = subprocess.Popen(['svn', 'log', svn_repo_path], stdout=subprocess.PIPE)
-    output, err = p.communicate()
+    #svn_repo_path = data_path.rigToolWarehouseURL
+    #p = subprocess.Popen(['svn', 'log', svn_repo_path], stdout=subprocess.PIPE)
+    #output, err = p.communicate()
+    output, code = set_svn(['svn', 'log', data_path.rigToolWarehouseURL])
     log_lines = output.splitlines()
     log_lines = [line.strip() for line in log_lines if line.strip()]
 
@@ -137,8 +161,6 @@ def svn_logs():
             lin_dir['提交时间'] = out_inf[2][0:19]
         else:
             lin_dir['提交内容'].append(lin)
-
-
 
     try:
         svn_window.close()

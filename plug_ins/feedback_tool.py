@@ -6,7 +6,7 @@ import traceback
 
 
 class Feedback_info(object):
-    def __init__(self, tex, path=None, line=None, info=False, warning=False, error=False, viewMes=False):
+    def __init__(self, tex, path=None, line=None, info=False, warning=False, error=False, viewMes=False, block=True):
         if path:
             self.line = line
             self.path = path
@@ -15,6 +15,7 @@ class Feedback_info(object):
             self.line = None
             self.path = None
             self.vieMes = None
+        self.block = block
 
         if info:
             self.print_info(tex)
@@ -30,7 +31,7 @@ class Feedback_info(object):
             mc.inViewMessage(amg='<font color="lightcyan">{}</font>'.format(txt), pos='midCenterBot', f=True, fst=10000)
 
         if self.path:
-            om.MGlobal.displayInfo('文件{}:{}。'.format('{}第{}行'.format(
+            om.MGlobal.displayInfo('文件{}:{}'.format('{}第{}行'.format(
                 self.path, self.line) if self.line else self.path, txt))
         else:
             om.MGlobal.displayInfo('{}。'.format(txt))
@@ -40,20 +41,27 @@ class Feedback_info(object):
             mc.inViewMessage(amg='<font color="yellow">{}</font>'.format(txt), pos='midCenterBot', f=True, fst=10000)
 
         if self.path:
-            om.MGlobal.displayWarning('文件{}:{}。'.format('{}第{}行'.format(
+            om.MGlobal.displayWarning('文件{}:{}'.format('{}第{}行'.format(
                 self.path, self.line) if self.line else self.path, txt))
         else:
             om.MGlobal.displayWarning('{}。'.format(txt))
 
     def print_error(self, txt):
         if self.vieMes:
-            mc.inViewMessage(amg='<font color="red">{}</font>'.format(txt), pos='midCenterBot', f=True, fst=20000)
+            mc.inViewMessage(amg='<font color="red">{}</font>'.format(txt), pos='midCenterBot', f=True, fst=15000)
 
         if self.path:
-            raise RuntimeError('文件{}:{}。'.format('{}第{}行'.format(
-                self.path, self.line) if self.line else self.path, txt))
+            if self.block:
+                raise RuntimeError('文件{}:{}'.format('{}第{}行'.format(
+                    self.path, self.line) if self.line else self.path, txt))
+            else:
+                om.MGlobal.displayError('文件{}:{}'.format('{}第{}行'.format(
+                    self.path, self.line) if self.line else self.path, txt))
         else:
-            raise RuntimeError(txt)
+            if self.block:
+                raise RuntimeError(txt)
+            else:
+                om.MGlobal.displayError(txt)
 
 
 def LIN():

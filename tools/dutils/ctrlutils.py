@@ -118,7 +118,7 @@ def fromObjCreateGroup(objs, name='', num=1, rename_ctl=True):
     obj_lis = []
     if type(objs) == list:
         pass
-    elif type(objs) == str:
+    elif type(objs) == str or type(objs) == unicode:
         objs = [objs]
     else:
         fb_print('该函数只接受字符串列表或字符串类型，实际传入{}类型'.format(type(objs)), error=True)
@@ -144,16 +144,16 @@ def fromObjCreateGroup(objs, name='', num=1, rename_ctl=True):
             if mc.listRelatives(obj, p=True):
                 mc.parent(grp, mc.listRelatives(obj, p=True)[0])
             mc.parent(obj, grpOffset)
-            print(rename_ctl)
             if rename_ctl:
-                print(1)
                 ctl = mc.rename(obj, 'ctrl_{}_{:03d}'.format(nam, i))
                 if mc.listRelatives(ctl, s=True):
-                    print(2)
                     mc.rename(mc.listRelatives(ctl, s=True)[0], '{}Shape'.format(ctl))
 
             zero_lis.append(grp)
             obj_lis.append(obj)
             mc.select(grp)
 
-    return zero_lis, obj_lis
+    if len(zero_lis) == 1:
+        return zero_lis[0], obj_lis[0]
+    else:
+        return zero_lis, obj_lis

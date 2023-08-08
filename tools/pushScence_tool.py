@@ -19,7 +19,6 @@ import data_path
 from qtwidgets import SeparatorAction as menl
 
 
-
 def maya_main_window():
     main_window_ptr = omui.MQtUtil.mainWindow()
     return wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
@@ -80,13 +79,12 @@ class ClearItem(QtWidgets.QWidget):
         :return:
         """
         from dutils import clearUtils
-        fun = getattr(clearUtils, self.fun)#将模块与函数组装起来形成一个新的函数，该函数可用于直接执行
-        try:
-            fun()#清理发生在此处
+        reload(clearUtils)
+        fun = getattr(clearUtils, self.fun)  #将模块与函数组装起来形成一个新的函数，该函数可用于直接执行
+        if not fun():  #清理发生在此处
             self.on_toggled(True)
-        except Exception as e:
+        else:
             self.on_toggled(False)
-            oma.MGlobal.displayError(str(e))
 
     def on_toggled(self, checked):
         """
@@ -96,7 +94,7 @@ class ClearItem(QtWidgets.QWidget):
         """
         if checked:
             self.tooBut_switch.setIcon(QtGui.QIcon('{}checkBox_yes.png'.format(data_path.iconPath)))
-        elif checked == False:#不能用not checked 因为none也属于not False
+        elif checked == False:  #不能用not checked 因为none也属于not False
             self.tooBut_switch.setIcon(QtGui.QIcon('{}checkBox_error.png'.format(data_path.iconPath)))
         else:
             self.tooBut_switch.setIcon(QtGui.QIcon('{}checkBox_blank.png'.format(data_path.iconPath)))
@@ -114,11 +112,11 @@ class pushWindow(QtWidgets.QDialog):
             self.setWindowFlags(QtCore.Qt.Tool)
 
         self.clearWgt_lis = []
-        self.project_path = data_path.projectPath
-        if self.project_path == '':#当服务器路径不存在时，再reload这个文件试一次，路径还是不存在就报错
+        self.project_path = data_path.projectPath_fhzj
+        if self.project_path == '':  #当服务器路径不存在时，再reload这个文件试一次，路径还是不存在就报错
             try:
                 reload(data_path)
-                self.project_path = data_path.projectPath
+                self.project_path = data_path.projectPath_fhzj
                 os.listdir(self.project_path)
             except WindowsError as e:
                 fb_print('导入服务器路径出错，请检查服务器映射是否成功.\n{}'.format(e), error=True)
@@ -148,8 +146,9 @@ class pushWindow(QtWidgets.QDialog):
         self.area_clear_lis.setWidget(self.wdg_clear_lis)
         clear_layout = QtWidgets.QVBoxLayout(self.wdg_clear_lis)
         clear_layout.setContentsMargins(2, 2, 2, 2)
-        for fun in zip(['clear_nameSpace', 'clear_key', 'clear_hik', 'clear_animLayer', 'inspect_weight'],
-                       [u'清理空间名称', u'清理关键帧', u'清理humanIK', u'清理动画层', u'检查权重总量']):
+        for fun in zip(['clear_name', 'clear_nameSpace', 'clear_key', 'clear_hik', 'clear_animLayer', 'inspect_weight'],
+                       [u'查询场景重名', u'清理空间名称', u'清理关键帧', u'清理humanIK', u'清理动画层',
+                        u'检查权重总量']):
             wdg = ClearItem(fun[0], fun[1], parent=self.area_clear_lis)
             self.clearWgt_lis.append(wdg)
             clear_layout.addWidget(wdg)
@@ -224,6 +223,7 @@ class pushWindow(QtWidgets.QDialog):
         为列表视图生成项
         :return:
         """
+
         def add_item():
             item = QtWidgets.QListWidgetItem(nam)
             item.setData(QtCore.Qt.UserRole, os.path.join(self.project_path, typ, nam, 'Rig', 'Final'))  #资产所在文件夹
@@ -282,11 +282,11 @@ class pushWindow(QtWidgets.QDialog):
         :return:
         """
         sel_item = self.lst_asset.selectedItems()[0]
-        path = sel_item.data(QtCore.Qt.UserRole)#rig文件所在路径
+        path = sel_item.data(QtCore.Qt.UserRole)  #rig文件所在路径
         if not os.path.exists(sel_item.data(QtCore.Qt.UserRole)):
             oma.MGlobal.displayError('资产{}没有rig文件夹'.format(sel_item.data(QtCore.Qt.UserRole + 2)))
             return None
-        file_path = glob.glob(os.path.join(path, '*.ma'))#path路径下所有ma文件的绝对路径列表
+        file_path = glob.glob(os.path.join(path, '*.ma'))  #path路径下所有ma文件的绝对路径列表
 
         if inf == 'openRigFile':
             if file_path and os.path.exists(file_path[0]):
@@ -371,7 +371,7 @@ class pushWindow(QtWidgets.QDialog):
             file_path = sel_items[0].data(QtCore.Qt.UserRole)
             scenceFile_path = mc.file(exn=True, q=True)  #当前文件所在完整路径
             scence_path = os.path.dirname(os.path.abspath(scenceFile_path))  #当前文件所在路径
-            asset_path = sel_items[0].data(QtCore.Qt.UserRole)#选择的资产所在路径
+            asset_path = sel_items[0].data(QtCore.Qt.UserRole)  #选择的资产所在路径
 
             if not os.path.exists(file_path):  #当该资产的rig文件夹还没创建时
                 fb_print('正在创建{}的rig文件夹······'.format(sel_items[0].data(QtCore.Qt.UserRole + 2)), info=True)
@@ -421,8 +421,9 @@ class pushWindow(QtWidgets.QDialog):
                 shutil.copy(fileNam_path, '/'.join([fileHistory_path, newHty_nam]))
 
             except Exception as e:
-                fb_print('{}复制到{}历史文件夹出错:{}'.format(fileNam_path, '/'.join([fileHistory_path, newHty_nam]), e),
-                         error=True, viewMes=True)
+                fb_print(
+                    '{}复制到{}历史文件夹出错:{}'.format(fileNam_path, '/'.join([fileHistory_path, newHty_nam]), e),
+                    error=True, viewMes=True)
         else:
             fb_print('文件还未上传第一版', info=True)
 
@@ -461,7 +462,10 @@ class pushWindow(QtWidgets.QDialog):
             for f in file_names:
                 if prefix in f and nam != f:
                     f_prefix = f.split('.')[0]
-                    i = int(f_prefix.replace(prefix + '_v', ''))
+                    if prefix + '_v' in f_prefix:
+                        i = int(f_prefix.replace(prefix + '_v', ''))
+                    else:
+                        continue
                     f_lis.append(i)
 
             f_lis.sort()

@@ -277,7 +277,8 @@ class create_ctl(QtWidgets.QDialog):  # 使该窗口为控件
             if self.ctl_lin.text():
                 ctl = self.ctl_lin.text()
                 dup_cv = mc.duplicate(ctl, n='dup_cv')[0]
-                old_name = mc.listRelatives(ctl_cv[i], s=True)
+                mc.delete(mc.listRelatives(dup_cv, typ='transform', f=True))
+                old_name = mc.listRelatives(ctl_cv[i], s=True)[0]
                 mc.delete(old_name)
                 new_name = mc.rename(mc.listRelatives(dup_cv, s=True, f=1)[0], old_name)
                 mc.parent(new_name, ctl_cv[i], s=True, r=True)

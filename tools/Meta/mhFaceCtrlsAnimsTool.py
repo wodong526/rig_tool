@@ -36,8 +36,12 @@ class ExportMetaHumanFaceCtrlAnimToMaya(object):
         :return: json文件内的字典
         """
         file_path = QtWidgets.QFileDialog.getOpenFileName(maya_main_window(), u'选择材质文件', '', '(*.json)')
-        with open(file_path[0], 'r') as f:
-            result = json.load(f)
+        if file_path[0]:
+            with open(file_path[0], 'r') as f:
+                result = json.load(f)
+        else:
+            fb_print('没有选择有效文件。', error=True)
+
         if 'dictType' not in result.keys() or result['dictType'] != 'metaHuman_FaceCtrlsAnim':
             fb_print('导入的文件不是metaHuman脸部控制器动画。', error=True)
         else:
@@ -103,6 +107,17 @@ class ExportMetaHumanFaceCtrlAnimToMaya(object):
             fb_print('控制器{}不存在'.format(ctrl), warning=True)
 
 
+def readCtrlsFile():
+    """
+    获取metaHuman控制器名称列表
+    :return:
+    """
+    with open(metaFaceCtrlsPath + 'metaFaceCtrls.json', 'r') as f:
+        result = json.load(f)
+
+    return result['metaFaceCtrls']
+
+
 class TransformFaceCtrlsKeys(object):
     """
     批量移动控制器帧
@@ -116,18 +131,8 @@ class TransformFaceCtrlsKeys(object):
         else:
             ns = ''
 
-        ctrl_lis = self.readCtrlsFile()
+        ctrl_lis = readCtrlsFile()
         self.transformKeys(ctrl_lis, ns)
-
-    def readCtrlsFile(self):
-        """
-        获取metaHuman控制器名称列表
-        :return:
-        """
-        with open(metaFaceCtrlsPath + 'metaFaceCtrls.json', 'r') as f:
-            result = json.load(f)
-
-        return result['metaFaceCtrls']
 
     def transformKeys(self, ctrls, ns):
         """
@@ -155,3 +160,19 @@ class TransformFaceCtrlsKeys(object):
             else:
                 fb_print('控制器{}不存在'.format(ctrl), warning=True)
         fb_print('metaHuman控制器动画移动{}帧已完成'.format(self.val), info=True)
+
+
+def elect_metaFaceCtrl(combo_box):
+    namSpace = combo_box.currentText()
+    ctrl_lis = readCtrlsFile()
+    mc.select(cl=True)
+    no_lis = ['CTRL_lookAtSwitch', 'CTRL_faceGUIfollowHead', 'CTRL_eyesAimFollowHead', 'CTRL_rigLogicSwitch']
+    for ctl in ctrl_lis:
+        if ctl in no_lis:
+            continue
+
+        ctrl = namSpace + ctl
+        if mc.objExists(ctrl):
+            mc.select(ctrl, add=True)
+        else:
+            fb_print('控制器{}不存在。'.format(ctrl), warning=True)

@@ -1,10 +1,21 @@
 # coding=gbk
-from feedback_tool import Feedback_info as fb_print, LIN as lin
+from PySide2 import QtCore
+from PySide2 import QtWidgets
+from shiboken2 import wrapInstance
+
+import maya.OpenMayaUI as omui
 
 import shutil
 import os
 import re
 import json
+
+from feedback_tool import Feedback_info as fb_print, LIN as lin
+
+
+def maya_main_window():
+    main_window_ptr = omui.MQtUtil.mainWindow()
+    return wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
 
 
 def create_folder(path, folder_name):
@@ -124,7 +135,7 @@ def writeInfoAsFile(path, user_file, data):
     """
     将信息写入指定文件
     :param path:要写入的文件所在路径
-    :param user_file:要写入的文件名
+    :param user_file:要写入的文件名,包括后缀名
     :param data:要写入文件的信息
     :return:none
     """
@@ -133,3 +144,43 @@ def writeInfoAsFile(path, user_file, data):
             json.dump(data, f, indent=2)
         else:
             f.write(data)
+
+
+def saveFilePath(title='', path='', file_typ=''):
+    """
+    生成保存文件窗口
+    :param title:窗口名
+    :param path: 窗口刚打开的路径
+    :param file_typ: 窗口中显示的文件类型
+    :return: 返回的保存文件的绝对路径
+    """
+    if not file_typ:
+        file_type = '(*.all)'
+    else:
+        file_type = '(*.{})'.format(file_typ)
+
+    file_path = QtWidgets.QFileDialog.getSaveFileName(maya_main_window(), title, path, file_type)
+    if file_path[0]:
+        return file_path[0]
+    else:
+        fb_print('没有选择有效路径', error=True)
+
+
+def getFilePath(title='', path='', file_typ=''):
+    """
+    生成选择文件窗口
+    :param title: 窗口名
+    :param path: 窗口刚打开的路径
+    :param file_typ: 窗口中显示的文件类型
+    :return: 返回选择的文件的绝对路径
+    """
+    if not file_typ:
+        file_type = '(*.all)'
+    else:
+        file_type = '(*.{})'.format(file_typ)
+
+    file_path = QtWidgets.QFileDialog.getOpenFileName(maya_main_window(), title, path, file_type)
+    if file_path[0]:
+        return file_path[0]
+    else:
+        fb_print('没有选择有效文件', error=True)

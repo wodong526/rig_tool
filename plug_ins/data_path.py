@@ -9,13 +9,18 @@ if os.path.exists('C:/Rig_Tools/'):
 else:
     fb_print('绑定插件文件夹不存在，请检查或重新签出', error=True)
 
-serverSubmitsTheLogs = 'file:///Z:/Library/rig_plug_in/tools/Rig_warehouse/trunk'
+rigToolWarehouseURL = 'file:///Z:/Library/rig_plug_in/tools/Rig_warehouse/trunk'
 
-projectPath = ''
-if os.path.exists('Z:/Project/FHZJ/CGT/Asset/'):
-    projectPath = 'Z:/Project/FHZJ/CGT/Asset/'
+projectPath_fhzj = ''
+projectPath_xxtt = ''
+if os.path.exists('Z:/Project/FHZJ/'):
+    projectPath_fhzj = 'Z:/Project/FHZJ/CGT/Asset/'
 else:
-    fb_print('服务器文件夹不存在，请检查服务器是否存在', warning=True)
+    fb_print('项目fhzj文件夹不存在，请检查服务器文件夹是否存在', warning=True)
+if os.path.exists('Z:/Project/XXTT/'):
+    projectPath_xxtt = 'Z:/Project/XXTT/CGT/Asset/'
+else:
+    fb_print('项目xxtt文件夹不存在，请检查服务器文件夹是否存在', warning=True)
 
 iconPath = '{}icons/'.format(localPath)#图片路径
 metaPath = '{}plug_ins/Bridge_To_Maya/'.format(localPath)#meta插件路径

@@ -13,63 +13,47 @@ if sys.version_info.major == 3:
     from importlib import reload
 
 
-def reload_menu():
-    try:
-        from ui import menu_ui
-        reload(menu_ui)
-        menu_ui.Rig_Menu()
-        fb_print('菜单刷新成功', info=True, viewMes=True)
-    except:
-        fb_print('菜单刷新失败', error=True, viewMes=True)
-
-
 class Rig_Menu(object):
     def __init__(self):
-        self.menu_n = 'sanXiaoYingHua'
+        self.menu_n = 'menu_ui'
         self.create_menu()
 
     def create_menu(self):
         mainWindow = pm.language.melGlobals['gMainWindow']
-        try:
-            if mc.menu(self.menu_n, ex=True):
-                mc.deleteUI(self.menu_n)
-        except:
-            pass
-        else:
-            pass
-        finally:
-            mainWindow = pm.language.melGlobals['gMainWindow']
-            master_menu = pm.menu(self.menu_n, to=True, l=u'绑定工具架', p=mainWindow)
+        master_menu = pm.menu(self.menu_n, to=True, l=u'绑定工具架', p=mainWindow)
 
-            pm.menuItem(to=True, p=master_menu, l=u'刷新菜单', i='refresh.png', c='from ui import menu_ui;'
-                                                                                  'reload(menu_ui);'
-                                                                                  'menu_ui.reload_menu()')
-            pm.menuItem(d=1, dl='ADV工具', p=master_menu, )
-            rig_adv = pm.menuItem(to=True, p=master_menu, l='ADV', sm=True)
-            pm.menuItem(d=1, dl='辅助工具', p=master_menu)
-            self.tool_menu(master_menu)
-            rig_clear = pm.menuItem(to=True, p=master_menu, l=u'模型清理', i='polyCleanup.png', sm=True)
-            pm.menuItem(d=1, dl='导出导入', p=master_menu)
-            menu_import = pm.menuItem(to=True, p=master_menu, l=u'导入', i='import.png')
-            menu_export = pm.menuItem(to=True, p=master_menu, l=u'导出', i='export.png', sm=True)
-            pm.menuItem(d=1, dl='上传下载', p=master_menu)
-            menu_push = pm.menuItem(to=True, p=master_menu, l=u'上传', i='pushToServer.png', sm=True)
-            pm.menuItem(d=1, dl='场景清理', p=master_menu)
-            menu_clr = pm.menuItem(to=True, p=master_menu, l=u'清理报错', i='error.png', sm=True)
-            pm.menuItem(d=1, dl='工作表', p=master_menu, )
-            menu_wps = pm.menuItem(to=True, p=master_menu, l=u'打开工作表', i='wps.png', sm=True)
-            pm.menuItem(d=1, dl='svn管理', p=master_menu, )
-            menu_svn = pm.menuItem(to=True, p=master_menu, l=u'svn设置', i='svn_logo.png', sm=True)
-            ##########################################################
-            self.adv_menu(rig_adv)
-            self.port(menu_export)
-            self.push(menu_push)
-            self.mod_clear(rig_clear)
-            self.scene_clear(menu_clr)
-            self.set_wps(menu_wps)
-            self.set_svn(menu_svn)
+        pm.menuItem(to=True, p=master_menu, l=u'刷新菜单', i='refresh.png', c='import reload_tools;'
+                                                                             'reload(reload_tools);'
+                                                                             'reload_tools.reload_menu_ui()')
+        pm.menuItem(d=1, dl='ADV工具', p=master_menu, )
+        rig_adv = pm.menuItem(to=True, p=master_menu, l='ADV', sm=True)
+        pm.menuItem(d=1, dl='辅助工具', p=master_menu)
+        self.tool_menu(master_menu)
+        rig_clear = pm.menuItem(to=True, p=master_menu, l=u'模型清理', i='polyCleanup.png', sm=True)
+        pm.menuItem(d=1, dl='导出导入', p=master_menu)
+        menu_import = pm.menuItem(to=True, p=master_menu, l=u'导入', i='import.png')
+        menu_export = pm.menuItem(to=True, p=master_menu, l=u'导出', i='export.png', sm=True)
+        pm.menuItem(d=1, dl='上传下载', p=master_menu)
+        menu_push = pm.menuItem(to=True, p=master_menu, l=u'上传', i='pushToServer.png', sm=True)
+        pm.menuItem(d=1, dl='场景清理', p=master_menu)
+        menu_clr = pm.menuItem(to=True, p=master_menu, l=u'清理报错', i='error.png', sm=True)
+        pm.menuItem(d=1, dl='工作表', p=master_menu, )
+        menu_wps = pm.menuItem(to=True, p=master_menu, l=u'打开工作表', i='wps.png', sm=True)
+        pm.menuItem(d=1, dl='svn管理', p=master_menu, )
+        menu_svn = pm.menuItem(to=True, p=master_menu, l=u'svn设置', i='svn_logo.png', sm=True)
+        ##########################################################
+        self.adv_menu(rig_adv)
+        self.port(menu_export)
+        self.push(menu_push)
+        self.mod_clear(rig_clear)
+        self.scene_clear(menu_clr)
+        self.set_wps(menu_wps)
+        self.set_svn(menu_svn)
 
     def adv_menu(self, p_menu):
+        pm.menuItem(to=True, p=p_menu, i='AS5.png', l='ADV5', c="from ui import advTools;"
+                                                                "reload(advTools);"
+                                                                "advTools.openAdvTool();")
         pm.menuItem(to=True, p=p_menu, i='AS5.png', l='ADV5',
                     c="mm.eval('source \"C:/Rig_Tools/plug_ins/ADV/AdvancedSkeleton5.mel\";AdvancedSkeleton5;')")
         pm.menuItem(to=True, p=p_menu, i='asBiped.png', l='biped',
@@ -93,6 +77,8 @@ class Rig_Menu(object):
         pm.menuItem(to=True, p=p_menu, l=u'批量链接', i='link_tool.png', c='import batch_connect_tool;'
                                                                            'reload(batch_connect_tool);'
                                                                            'batch_connect_tool.main()')
+        pm.menuItem(to=True, p=p_menu, l=u'传递权重', i='copySkinWeights.png', c='import transformSkinWeight;'
+                                                                                 'reload(transformSkinWeight)')
         pm.menuItem(to=True, p=p_menu, i='studio_library.png', l='打开studio_library', c='import toos_starter;'
                                                                                          'toos_starter.open_studioLibrary();')
 
@@ -107,9 +93,9 @@ class Rig_Menu(object):
                     c='import pushScence_tool;reload(pushScence_tool);pushScence_tool.push_rig();')
 
     def mod_clear(self, p_menu):
-        pm.menuItem(to=True, p=p_menu, l=u'清理场景重名', c='import rig_clear;'
-                                                            'reload(rig_clear);'
-                                                            'rig_clear.clear_name()')
+        pm.menuItem(to=True, p=p_menu, l=u'清理场景重名', c='from dutils import clearUtils;'
+                                                          'reload(clearUtils);'
+                                                          'clearUtils.clear_name()')
         pm.menuItem(to=True, p=p_menu, l=u'查询选中物体的非四边面', c='import rig_clear;'
                                                                       'reload(rig_clear);'
                                                                       'rig_clear.clear_face()')
@@ -147,9 +133,9 @@ class Rig_Menu(object):
         pm.menuItem(to=True, p=p_menu, l='打开工作记录表', i='excel.png',
                     c='os.startfile("Z:/山魈动画-表格文档/《FHZJ》/资产-UE沟通对接/绑定组工作记录.xlsx")')
         pm.menuItem(to=True, p=p_menu, l='打开FBX记录表', i='excel.png',
-                    c='os.startfile("Z:/山魈动画-表格文档/《FHZJ》/资产-UE沟通对接/资产SVN-FBX记录表.xlsx")')
-        pm.menuItem(to=True, p=p_menu, l='打开7—16集资产制作表', i='excel.png',
-                    c='os.startfile("Z:/山魈动画-表格文档/《FHZJ》/资产-UE沟通对接/资产统筹制作表EP07~EP16.xlsx")')
+                    c='os.startfile("Z:/山魈动画-表格文档/《XXTT》/资产-UE沟通对接/资产SVN-FBX记录表.xlsx")')
+        pm.menuItem(to=True, p=p_menu, l='打开XXTT资产制作表', i='excel.png',
+                    c='os.startfile("Z:/山魈动画-表格文档/《XXTT》/资产-UE沟通对接/时间资产制作表.xlsx")')
 
     def set_svn(self, p_menu):
         def upData_rigMenu(*args):

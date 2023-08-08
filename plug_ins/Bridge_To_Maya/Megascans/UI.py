@@ -1,3 +1,4 @@
+# -*- coding:GBK -*-
 """
 This Module:
 - Handles the design part of UI  
@@ -145,7 +146,7 @@ def initUI(MAYA_PLUGIN_VERSION,openUI = True):
     #          pass
 
     LiveLinkUI.Instance = LiveLinkUI(importerSetup.getInstance(),MAYA_PLUGIN_VERSION)
-    #LiveLinkUI.Instance.show()#鑻ヨ鐢熸垚瀵煎叆鏉愯川绐楀彛鏃跺皢姝ゆ敞閲婃墦寮�
+    #LiveLinkUI.Instance.show()#若要生成导入材质窗口时将此注释打开
     pref_geo = QRect(500, 300, 460, 30)
     LiveLinkUI.Instance.setGeometry(pref_geo)
     #return LiveLinkUI.Instance

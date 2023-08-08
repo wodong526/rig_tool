@@ -67,6 +67,8 @@ class TrainingApparatus(QtWidgets.QDialog):
         self.but_get_faceCtrl_anim = QtWidgets.QPushButton(u'获取控制器动画信息文件')
         self.but_get_faceCtrl_anim.setMaximumWidth(130)
 
+        self.but_selAll_faceCtrl = QtWidgets.QPushButton(u'选择所有face控制器')
+
         self.lab_trsCtlKey = QtWidgets.QLabel(u'移动metaFace控制器帧')
         self.spinBox_trsVal = QtWidgets.QSpinBox()
         self.spinBox_trsVal.setMinimum(-9999999)
@@ -121,6 +123,7 @@ class TrainingApparatus(QtWidgets.QDialog):
         main_layout.addLayout(createRL4_layout)
         main_layout.addWidget(self.line_h_d)
         main_layout.addLayout(trsfFaceAnim_layout)
+        main_layout.addWidget(self.but_selAll_faceCtrl)
         main_layout.addLayout(trsfFaceAnimKeys_layout)
 
     def create_connections(self):
@@ -136,6 +139,8 @@ class TrainingApparatus(QtWidgets.QDialog):
         self.but_createRL4.clicked.connect(self.create_RL4)
         self.but_refNamSpace.clicked.connect(self.refresh_nameSpace)
         self.but_get_faceCtrl_anim.clicked.connect(partial(mhFaceCtrlsAnimsTool.ExportMetaHumanFaceCtrlAnimToMaya,
+                                                           self.cob_namSpace))
+        self.but_selAll_faceCtrl.clicked.connect(partial(mhFaceCtrlsAnimsTool.elect_metaFaceCtrl,
                                                            self.cob_namSpace))
         self.but_transformKeys.clicked.connect(partial(mhFaceCtrlsAnimsTool.TransformFaceCtrlsKeys,
                                                        self.spinBox_trsVal, self.cob_namSpace))
@@ -256,9 +261,8 @@ class TrainingApparatus(QtWidgets.QDialog):
         ref_lis = mc.file(q=True, r=True)
         self.cob_namSpace.clear()
         for ref in ref_lis:
-            nam = mc.referenceQuery(ref, ns=True)
-            self.cob_namSpace.addItem(nam[1:]+':')
-
+            nam = os.path.splitext(os.path.basename(ref))[0]
+            self.cob_namSpace.addItem(nam+':')
 
 
 try:

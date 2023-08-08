@@ -1,18 +1,18 @@
 # -*- coding:GBK -*-
+import os
+
 import maya.cmds as mc
 import maya.mel as mm
 import pymel.core as pm
 import maya.OpenMayaUI as omui
 
-from PySide2 import QtCore
 from PySide2 import QtWidgets
-from PySide2 import QtGui
 from shiboken2 import wrapInstance
 
 import traceback
 
-from feedback_tool import Feedback_info as fb_print
-from dutils import clearUtils, toolUtils, attrUtils, ctrlUtils
+from feedback_tool import Feedback_info as fp
+from dutils import clearUtils, toolUtils, attrUtils, ctrlUtils, apiUtils
 
 FILE_PATH = __file__
 
@@ -44,7 +44,7 @@ def freeze_rotation():
             obj.rotate.set(0, 0, 0)
             obj.rotateAxis.set(0, 0, 0)
             obj.jointOrient.set(newRotation)
-            fb_print('{}的旋转已冻结。'.format(obj), info=True)
+            fp('{}的旋转已冻结。'.format(obj), info=True)
             continue
 
 
@@ -56,75 +56,50 @@ def select_skinJoint():
     sel_lis = mc.ls(sl=1)
     jnt_lis = []
     for mod in sel_lis:
-        skin = mm.eval('findRelatedSkinCluster("{}")'.format(mod))
-        for jnt in mc.skinCluster(skin, inf=1, q=1):
-            if jnt not in jnt_lis:
-                jnt_lis.append(jnt)
+        fn_skin = apiUtils.fromObjGetRigNode(mod, path_name=False)[0]
+        jnt_lis = jnt_lis+apiUtils.fromSkinGetInfluence(fn_skin)
     if jnt_lis:
         mc.select(jnt_lis)
-        fb_print('已选中蒙皮关节。', info=True)
+        fp('已选中蒙皮关节。', info=True)
     else:
-        fb_print('选中对象没有蒙皮关节。', error=True)
+        fp('选中对象没有蒙皮关节。', error=True)
 
 
 def get_length():
     obj = mc.ls(sl=True, fl=True)
     n = len(obj)
-    fb_print('选中对象共有：{}个。对象为：{}。'.format(n, obj), info=True)
+    fp('选中对象共有：{}个。对象为：{}。'.format(n, obj), info=True)
 
 
-class SameName(QtWidgets.QDialog):
-    def __init__(self, parent=maya_main_window()):
-        super(SameName, self).__init__(parent)
-
-        self.setWindowTitle(u'选择同名节点')
-        if mc.about(ntOS=True):  # 判断系统类型
-            self.setWindowFlags(self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint)  # 删除窗口上的帮助按钮
-        elif mc.about(macOS=True):
-            self.setWindowFlags(QtCore.Qt.Tool)
-
-        self.create_widgets()
-        self.create_layout()
-        self.create_connections()
-
-    def create_widgets(self):
-        self.lin_name = QtWidgets.QLineEdit()
-        self.lin_name.setAttribute(QtCore.Qt.WA_AcceptDrops)
-        self.lin_name.setAlignment(QtCore.Qt.AlignCenter)
-        self.lin_name.setPlaceholderText(u'填入需要选择的对象名')
-
-    def create_layout(self):
-        main_layout = QtWidgets.QVBoxLayout(self)
-        main_layout.addWidget(self.lin_name)
-
-    def create_connections(self):
-        self.lin_name.returnPressed.connect(self.select_same)
-
-    def select_same(self):
-        sel_lis = mc.ls(l=True)
-        same_lis = []
-        for obj in sel_lis:
-            obj_lis = obj.split('|')
-            if obj_lis[-1] == self.lin_name.text():
-                same_lis.append(obj)
-        mc.select(same_lis)
-        fb_print('已选择同名节点{}。'.format(same_lis), info=True)
-        self.close()
-
-    def closeEvent(self, event):
-        self.close()
-        self.deleteLater()
-
-
-def showSameNameWindow():
+def selectSameName():
+    """
+    生成获取字符的对话框，通过名称匹配得到与指定字符相同的节点，并选择他们
+    :return: None
+    """
     try:
-        sameNamewindow.close()
-        sameNamewindow.deleteLater()
-    except:
-        pass
-    finally:
-        sameNamewindow = SameName()
-        sameNamewindow.show()
+        obj_tag = raw_input()
+    except EOFError:
+        fp('没有输入有效对象', warning=True)
+    else:
+        try:
+            mc.select(obj_tag)
+        except ValueError:
+            all_lis = mc.ls()
+            mc.select(cl=True)
+            uid_lis = []
+            for obj in all_lis:
+                uid_lis.append(mc.ls(obj, uid=True)[0])
+            for key, obj in enumerate(all_lis):
+                if '|' in obj:
+                    obj = obj.split('|')[-1]
+                if obj_tag == obj:
+                    mc.select(mc.ls(uid_lis[key])[0], add=True)
+        finally:
+            if mc.ls(sl=True):
+                #mc.FrameSelectedWithoutChildren()
+                fp('与{}同名的对象有{}个'.format(obj_tag, len(mc.ls(sl=True))), info=True)
+            else:
+                fp('没有与{}同名的对象'.format(obj_tag), info=True)
 
 
 def exportSelectToFbx():
@@ -182,30 +157,30 @@ def exportSelectToFbx():
                     pert_dir[inf] = mc.listRelatives(inf, p=True)[0]
                     mc.parent(inf, w=True)
                 else:
-                    fb_print('{}已在世界层级下。'.format(inf), info=True)
+                    fp('{}已在世界层级下。'.format(inf), info=True)
 
                 if mc.listConnections(inf, d=False):
                     node_lis = mc.listConnections(inf, d=False, c=1, p=1)
                     for n in range(len(node_lis) // 2):
                         mc.disconnectAttr(node_lis[n * 2 + 1], node_lis[n * 2])
-                        fb_print('已断开{}。'.format(node_lis[n * 2 + 1]), info=True)
+                        fp('已断开{}。'.format(node_lis[n * 2 + 1]), info=True)
 
             mc.select(sel_lis)
             mc.FBXProperty('Export|IncludeGrp|Animation', '-v', '0')
             mc.file(file_path[0], f=True, typ='FBX export', pr=True, es=True)
-            fb_print('已导出{}。'.format(sel_lis), info=True)
+            fp('已导出{}。'.format(sel_lis), info=True)
 
             for n in range(len(node_lis) // 2):  #重新链接上游节点
                 mc.connectAttr(node_lis[n * 2 + 1], node_lis[n * 2])
-                fb_print('已链接{}。'.format(node_lis[n * 2 + 1]), info=True)
+                fp('已链接{}。'.format(node_lis[n * 2 + 1]), info=True)
             for inf in pert_dir:  # 重新p回父级
                 mc.parent(inf, pert_dir[inf])
 
         else:
-            fb_print('没有选择有效路径。', error=True)
+            fp('没有选择有效路径。', error=True)
 
     else:
-        fb_print('没有选择有效对象。', error=True)
+        fp('没有选择有效对象。', error=True)
 
 
 def createRibbon(nam, ctl_n, jnt_n, foll_ctl=False):
@@ -292,7 +267,7 @@ def createRibbon(nam, ctl_n, jnt_n, foll_ctl=False):
 
 def cleanBindingDistortion():
     """
-    解决绑定离远点太远造成模型抖动的启动函数
+    解决绑定离原点太远造成模型抖动的启动函数
     :return:
     """
     topLevel = mc.ls(sl=True)[0]
@@ -301,7 +276,7 @@ def cleanBindingDistortion():
         toolUtils.processingSkinPrecision(mods)
 
     else:
-        fb_print('选择对象还没有被root控制约束', error=True, viewMes=True)
+        fp('选择对象还没有被root控制约束', error=True, viewMes=True)
 
 
 def createFollicle(geo, tag_geo, nam='', geo_parent=''):
@@ -315,7 +290,7 @@ def createFollicle(geo, tag_geo, nam='', geo_parent=''):
     """
     geo_shape = toolUtils.getShape(geo)
     if not geo_shape:
-        fb_print('对象{}没有shape节点'.format(geo), error=True)
+        fp('对象{}没有shape节点'.format(geo), error=True)
 
     uv = toolUtils.fromClosestPointGetUv(geo, tag_geo)
     if uv:
@@ -352,11 +327,11 @@ def createFollicle(geo, tag_geo, nam='', geo_parent=''):
         elif shape_typ == 'nurbsSurface':
             mc.connectAttr('{}.local'.format(geo_shape[0]), '{}.inputSurface'.format(follicle_shape))
         else:
-            fb_print('对象{}不是模型或者曲面，{}类型是不支持的类型'.format(geo, shape_typ), error=True)
+            fp('对象{}不是模型或者曲面，{}类型是不支持的类型'.format(geo, shape_typ), error=True)
 
         return follicle
     else:
-        fb_print('对象{}没有uv'.format(geo), error=True)
+        fp('对象{}没有uv'.format(geo), error=True)
 
 
 def create_shape_helper(nam, grp_parent=''):
@@ -366,20 +341,15 @@ def create_shape_helper(nam, grp_parent=''):
     :param grp_parent: 是否要p到某个组里
     :return:
     """
-
-    # set up shape helper group
     shape_helper_grp = 'grp_{}_helper_001'.format(nam)
     if not mc.objExists(shape_helper_grp):
         mc.group(empty=True, name=shape_helper_grp)
 
-    # parent group
     if grp_parent:
         mc.parent(shape_helper_grp, grp_parent)
 
-    # set up shape helper
     base_name = '{}_Helper'.format(nam)
 
-    #sh_grp = mc.group(empty=True, name='grp_{}_001'.format(base_name))
     sh_sphere_grp = mc.group(empty=True, name='grp_{}_sphere_001'.format(base_name))
     sh_sphere = mc.sphere(name='{}_sphere'.format(base_name), axis=[0, 1, 0],
                           degree=3, ssw=270, esw=450, r=1, nsp=4, s=4, ch=False)[0]
@@ -391,18 +361,16 @@ def create_shape_helper(nam, grp_parent=''):
     mc.setAttr('{}.tx'.format(sh_aim_loc), 10)
     mc.parent(sh_aim_loc, shape_helper_grp, absolute=True)
 
-    # create closestPointOnSurface node, and connect the locator to project to the sphere
     cpos_node = mc.createNode('closestPointOnSurface', name='cloOnSuf_{}_001'.format(base_name))
     mc.connectAttr('{}.worldSpace[0]'.format(sh_sphere_shape), '{}.inputSurface'.format(cpos_node))
     mc.connectAttr('{}.translate'.format(sh_aim_loc), '{}.inPosition'.format(cpos_node))
     mc.setAttr('{}.inPosition'.format(cpos_node), lock=True)
 
-    # create nodes to project four direction's distances
     for attr, uv in {'right': [2, 4], 'left': [2, 0], 'down': [0, 2], 'up': [4, 2]}.items():
-        # add driver attribute on helper sphere
         mc.addAttr(sh_aim_loc, ln=attr, at='double', min=0, max=1, dv=0, keyable=True)
 
-        posi_node = mc.createNode('pointOnSurfaceInfo', name='pntOnSufInf_{}_pointOnSurfaceInfo_{}'.format(base_name, attr))
+        posi_node = mc.createNode('pointOnSurfaceInfo',
+                                  name='pntOnSufInf_{}_pointOnSurfaceInfo_{}'.format(base_name, attr))
         mc.connectAttr('{}.worldSpace[0]'.format(sh_sphere_shape), '{}.inputSurface'.format(posi_node))
         mc.setAttr('{}.parameterU'.format(posi_node), uv[0])
         mc.setAttr('{}.parameterV'.format(posi_node), uv[1])
@@ -421,3 +389,31 @@ def create_shape_helper(nam, grp_parent=''):
         mc.connectAttr('{}.outValue'.format(remap_node), '{}.{}'.format(sh_aim_loc, attr))
 
     return sh_sphere_grp, sh_aim_loc
+
+
+def brSmoothTool():
+    """
+    打开brsmooth工具
+    :return:
+    """
+    if not mc.pluginInfo('brSmoothWeights', q=True, r=True):
+        for year in ['2018', '2020', '2022', '2023']:
+            if mc.about(version = True) == year:
+                brSmooth_path = 'C:/Rig_Tools/plug_ins/brSmoothWeights/plug-ins/win64/{}'.format(year)
+                if os.path.exists(brSmooth_path):
+                    if brSmooth_path not in os.environ['MAYA_PLUG_IN_PATH']:
+                        os.environ['MAYA_PLUG_IN_PATH'] = os.environ['MAYA_PLUG_IN_PATH'] + ';' + brSmooth_path
+                    try:
+                        mc.loadPlugin('brSmoothWeights.mll')
+                    except:
+                        fp('brSmoothWeights无法被加载，请检查brSmoothWeights.mll是否在路径中', error=True)
+                    mm.eval('brSmoothWeightsToolCtx')
+                else:
+                    fp('插件不在工具架文件夹中，如果工具架版本不是最新版请同步到最新版。', error=True, viewMes=True, block=False)
+    else:
+        mm.eval('brSmoothWeightsToolCtx')
+
+
+
+
+

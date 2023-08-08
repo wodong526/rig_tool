@@ -14,23 +14,22 @@ def clear_name():
     """
     查询场景中所有的重名
     """
-    obj_lis = mc.ls()
-    dup_lis = copy.deepcopy(obj_lis)
-    chongfu_lis = []
-    for n in range(len(dup_lis)):
-        if "|" in dup_lis[n]:
-            dup_lis[n] = dup_lis[n].split("|")[-1]
-            continue
-    for inf in range(len(obj_lis)):
-        dup_lis.remove(dup_lis[0])
-        slp_obj = ""
-        if "|" in obj_lis[inf]:
-            slp_obj = obj_lis[inf].split("|")[-1]
-        if slp_obj in dup_lis:
-            chongfu_lis.append(obj_lis[inf])
-            continue
-    if chongfu_lis:
-        log.info("重命名对象有：{}。".format(chongfu_lis))
+    error_lis = []
+    repeat_lis = []
+    sel_lis = mc.ls()
+    for obj in sel_lis:
+        if '|' in obj:
+            repeat_lis.append(obj.split('|')[-1])
+        else:
+            repeat_lis.append(obj)
+
+    for i, obj in enumerate(repeat_lis):
+        if repeat_lis.count(obj) > 1:
+            if sel_lis[i] not in error_lis:
+                error_lis.append(sel_lis[i])
+
+    if error_lis:
+        log.info("重命名对象有{}个：{}。".format(error_lis.__len__()/2, ', '.join(error_lis)))
         return True
     log.info("场景中没有重名物体对象。")
     return False
@@ -141,20 +140,23 @@ def clear_history():
     查询场景中所有模型是否有历史。
     """
     shp_lis = mc.ls(typ="mesh")
-    his_lis = {}
-    n = 0
+    his_dir = {}
     for shp in shp_lis:
-        trs = mc.listRelatives(shp, p=1)[0]
-        his = mc.listHistory(trs, ha=1, pdo=1)
-        his_lis[trs] = his
+        his = mc.listHistory(shp, ha=1, pdo=1)
         if his:
-            n = 1
-            continue
-    if n:
-        for inf in his_lis:
-            if his_lis[inf]:
-                log.warning("{}有历史{}".format(inf, his_lis[inf]))
-                continue
+            for h in his:
+                if mc.nodeType(h) == 'groupId' or mc.nodeType(h) == 'shadingEngine':
+                    continue
+                else:
+                    if shp in his_dir:
+                        his_dir[shp].append(h)
+                    else:
+                        his_dir[shp] = [h]
+
+    if his_dir:
+        for inf in his_dir:
+            if his_dir[inf]:
+                log.warning("{}有历史{}".format(inf, his_dir[inf]))
     else:
         log.info('场景中所有模型都没有历史。')
 

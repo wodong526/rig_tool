@@ -42,24 +42,18 @@ class RIG_setUp(object):
             os.environ['XBMLANGPATH'] = str(os.environ['XBMLANGPATH']) + ';' + r'C:\Rig_Tools\icons'
 
     def create_menu(self):
-        try:
-            from ui.menu_ui import Rig_Menu
-            Rig_Menu()
-            fb_print('菜单生成成功', info=True)
-        except:
-            fb_print('菜单生成失败', line=lin(), error=True)
+        import reload_tools
+        reload(reload_tools)
+        reload_tools.reload_menu_ui()
 
     def create_hotBox(self):
-        try:
-            from ui.hotBox_ui import Rig_HotBox
-            Rig_HotBox()
-            fb_print('热盒生成成功。', info=True)
-        except:
-            fb_print('热盒生成失败。', line=lin(), error=True)
+        import reload_tools
+        reload(reload_tools)
+        reload_tools.reload_hot_ui()
 
     def add_metaToMata_plug(self):
         try:
-            if mc.pluginInfo('embeddedRL4', q=1, r=1):
+            if mc.pluginInfo('embeddedRL4', q=True, r=True):
                 fb_print('bridgeToMaya已经加载。', info=True)
             else:
                 if 'C:/Rig_Tools/plug_ins/Bridge_To_Maya' in sys.path:
