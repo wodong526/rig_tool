@@ -11,12 +11,16 @@ import maya.OpenMayaUI as omui
 import os
 import shutil
 import glob
-from pathlib import PurePath
+from plug_ins.pathlib import PurePath
 from functools import partial
 
-from feedback_tool import Feedback_info as fb_print, LIN as lin
-import data_path
+from feedback_tool import Feedback_info as fp
+from data_path import icon_dic as ic, projectPath_xxtt
+from dutils import fileUtils
 from qtwidgets import SeparatorAction as menl
+import rig_tool
+reload(rig_tool)
+from rig_tool import exportSelectToFbx
 
 
 def maya_main_window():
@@ -58,7 +62,7 @@ class ClearItem(QtWidgets.QWidget):
         self.tooBut_switch.setIconSize(QtCore.QSize(32, 32))
         self.tooBut_switch.setFixedSize(QtCore.QSize(35, 35))
         self.tooBut_switch.setToolTip(u'当场景被该项清理后，该复选框将被打√')
-        self.on_toggled(None)
+        self.on_toggled()
 
         self.lab_txt = QtWidgets.QLabel(self.interpretation)
         self.but_artificial = QtWidgets.QPushButton(u'单独清理')
@@ -86,18 +90,18 @@ class ClearItem(QtWidgets.QWidget):
         else:
             self.on_toggled(False)
 
-    def on_toggled(self, checked):
+    def on_toggled(self, checked=None):
         """
         切换复选框的图标
         :param checked:
         :return:
         """
         if checked:
-            self.tooBut_switch.setIcon(QtGui.QIcon('{}checkBox_yes.png'.format(data_path.iconPath)))
+            self.tooBut_switch.setIcon(QtGui.QIcon(ic['checkBox_yes']))
         elif checked == False:  #不能用not checked 因为none也属于not False
-            self.tooBut_switch.setIcon(QtGui.QIcon('{}checkBox_error.png'.format(data_path.iconPath)))
+            self.tooBut_switch.setIcon(QtGui.QIcon(ic['checkBox_error']))
         else:
-            self.tooBut_switch.setIcon(QtGui.QIcon('{}checkBox_blank.png'.format(data_path.iconPath)))
+            self.tooBut_switch.setIcon(QtGui.QIcon(ic['checkBox_blank']))
 
 
 class pushWindow(QtWidgets.QDialog):
@@ -112,14 +116,11 @@ class pushWindow(QtWidgets.QDialog):
             self.setWindowFlags(QtCore.Qt.Tool)
 
         self.clearWgt_lis = []
-        self.project_path = data_path.projectPath_fhzj
-        if self.project_path == '':  #当服务器路径不存在时，再reload这个文件试一次，路径还是不存在就报错
-            try:
-                reload(data_path)
-                self.project_path = data_path.projectPath_fhzj
-                os.listdir(self.project_path)
-            except WindowsError as e:
-                fb_print('导入服务器路径出错，请检查服务器映射是否成功.\n{}'.format(e), error=True)
+        if os.path.exists(projectPath_xxtt):
+            self.project_path = projectPath_xxtt
+            self.project_name = self.project_path.split('/')[2]
+        else:
+            fp('导入服务器路径出错，请检查服务器映射是否成功.。')
 
         self.assetType_lis = [f for f in os.listdir(self.project_path) if
                               os.path.isdir(os.path.join(self.project_path, f))]
@@ -159,13 +160,14 @@ class pushWindow(QtWidgets.QDialog):
         self.lin_searchName.setMinimumHeight(35)
         self.but_clearName = QtWidgets.QPushButton()
         self.but_clearName.setFixedSize(35, 35)
-        self.but_clearName.setIcon(QtGui.QIcon('{}delete.png'.format(data_path.iconPath)))
+        self.but_clearName.setIcon(QtGui.QIcon(ic['delete']))
         self.but_clearName.setIconSize(QtCore.QSize(35, 35))
 
         self.lst_asset = QtWidgets.QListWidget()
         self.lst_asset.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.but_push = QtWidgets.QPushButton(u'上传本场景到指定资产的rig文件夹')
-        self.but_push.setEnabled(True)
+        self.but_push_rig = QtWidgets.QPushButton(u'上传rig文件')
+        self.but_push_rig.setEnabled(True)
+        self.but_push_fbx = QtWidgets.QPushButton(u'上传fbx文件')
 
     def create_layout(self):
         layout_clear = QtWidgets.QVBoxLayout()
@@ -176,10 +178,14 @@ class pushWindow(QtWidgets.QDialog):
         layout_search.addWidget(self.lin_searchName)
         layout_search.addWidget(self.but_clearName)
 
+        layout_pushBut = QtWidgets.QHBoxLayout()
+        layout_pushBut.addWidget(self.but_push_rig)
+        layout_pushBut.addWidget(self.but_push_fbx)
+
         layout_push = QtWidgets.QVBoxLayout()
         layout_push.addLayout(layout_search)
         layout_push.addWidget(self.lst_asset)
-        layout_push.addWidget(self.but_push)
+        layout_push.addLayout(layout_pushBut)
 
         wdt_left = QtWidgets.QWidget()
         wdt_left.setLayout(layout_clear)
@@ -200,7 +206,8 @@ class pushWindow(QtWidgets.QDialog):
         self.lst_asset.itemDoubleClicked.connect(partial(self.menu_function, 'openRigFile'))
         self.lst_asset.customContextMenuRequested.connect(self.create_contextMenu)
         self.lin_searchName.textChanged.connect(self.refresh_Item)
-        self.but_push.clicked.connect(self.push_asset)
+        self.but_push_rig.clicked.connect(self.push_asset)
+        self.but_push_fbx.clicked.connect(self.push_select_to_fbx)
 
     def autoClearScence(self):
         """
@@ -229,6 +236,7 @@ class pushWindow(QtWidgets.QDialog):
             item.setData(QtCore.Qt.UserRole, os.path.join(self.project_path, typ, nam, 'Rig', 'Final'))  #资产所在文件夹
             item.setData(QtCore.Qt.UserRole + 1, typ)  #资产类型
             item.setData(QtCore.Qt.UserRole + 2, nam)  #资产名
+            item.setData(QtCore.Qt.UserRole + 3, os.path.join(self.project_path, typ, nam, 'Rig', 'Unreal'))  #fbx文件路径
             self.lst_asset.addItem(item)
 
         self.lst_asset.clear()
@@ -248,6 +256,7 @@ class pushWindow(QtWidgets.QDialog):
         :return:
         """
         menu = QtWidgets.QMenu()
+        #menu.setTearOffEnabled(True)#使菜单可以被撕下，当前位置不可用
         if self.lst_asset.itemAt(pos):
             action_openRigFile = menu.addAction(u'打开该资产rig文件')
             action_openModFile = menu.addAction(u'打开该资产mod文件')
@@ -359,7 +368,7 @@ class pushWindow(QtWidgets.QDialog):
             if os.path.exists(modPath):
                 os.startfile(modPath)
             else:
-                fb_print('资产{}没有模型文件夹'.format(sel_item.data(QtCore.Qt.UserRole + 2)), warning=True)
+                fp('资产{}没有模型文件夹'.format(sel_item.data(QtCore.Qt.UserRole + 2)), warning=True)
 
     def push_asset(self):
         """
@@ -374,7 +383,7 @@ class pushWindow(QtWidgets.QDialog):
             asset_path = sel_items[0].data(QtCore.Qt.UserRole)  #选择的资产所在路径
 
             if not os.path.exists(file_path):  #当该资产的rig文件夹还没创建时
-                fb_print('正在创建{}的rig文件夹······'.format(sel_items[0].data(QtCore.Qt.UserRole + 2)), info=True)
+                fp('正在创建{}的rig文件夹······'.format(sel_items[0].data(QtCore.Qt.UserRole + 2)), info=True)
                 rig_path = os.path.dirname(os.path.abspath(file_path))
                 os.mkdir(rig_path)
                 os.mkdir(file_path)
@@ -383,15 +392,15 @@ class pushWindow(QtWidgets.QDialog):
             self.iterate_file(sel_items[0])  #向历史文件夹中迭代文件
             if os.path.normcase(os.path.abspath(asset_path)) == os.path.normcase(os.path.abspath(scence_path)):
                 # 当打开的文件就在服务器路径里时
-                self.but_push.setText(u'正在保存场景······')
-                fb_print('正在保存场景······', info=True, viewMes=True)
+                self.but_push_rig.setText(u'正在保存场景······')
+                fp('正在保存场景······', info=True, viewMes=True)
                 mc.file(s=True, f=True, op='v=0')
-                self.but_push.setText(u'场景上传成功！！')
-                fb_print('场景上传成功', info=True, viewMes=True)
+                self.but_push_rig.setText(u'场景上传成功！！')
+                fp('场景上传成功', info=True, viewMes=True)
             else:
                 self.push_file(sel_items[0])  #上传文件
         else:
-            fb_print('没有选择需要提交的资产名', error=True, viewMes=True)
+            fp('没有选择需要提交的资产名', error=True, viewMes=True)
 
     def iterate_file(self, item):
         """
@@ -401,31 +410,30 @@ class pushWindow(QtWidgets.QDialog):
         """
         file_path = item.data(QtCore.Qt.UserRole)  #服务器文件所在路径
         file_nam = '_'.join(
-            ['FHZJ', item.data(QtCore.Qt.UserRole + 1), item.data(QtCore.Qt.UserRole + 2), 'Rig.ma'])  #文件名
+            [self.project_name, item.data(QtCore.Qt.UserRole + 1), item.data(QtCore.Qt.UserRole + 2), 'Rig.ma'])  #文件名
         fileNam_path = '/'.join([file_path, file_nam])  #服务器文件完整路径
         fileHistory_path = '/'.join([file_path, 'history'])  #服务器历史文件夹路径
         if os.path.exists(fileNam_path):
             if not os.path.exists(fileHistory_path):
-                self.but_push.setText(u'正在创建历史文件夹······')
-                fb_print('正在创建历史文件夹······', info=True)
+                self.but_push_rig.setText(u'正在创建历史文件夹······')
+                fp('正在创建历史文件夹······', info=True)
                 os.mkdir(fileHistory_path)
 
             newHty_nam = self.get_history_id(fileHistory_path, file_nam)
-
             if not fileHistory_path:
                 newHty_nam = file_nam.split('.')[0] + '_v01.ma'
 
             try:
-                self.but_push.setText(u'正在向历史文件夹内复制文件······')
-                fb_print('正在向历史文件夹内复制文件······', info=True)
+                self.but_push_rig.setText(u'正在向历史文件夹内复制文件······')
+                fp('正在向历史文件夹内复制文件······', info=True)
                 shutil.copy(fileNam_path, '/'.join([fileHistory_path, newHty_nam]))
 
             except Exception as e:
-                fb_print(
+                fp(
                     '{}复制到{}历史文件夹出错:{}'.format(fileNam_path, '/'.join([fileHistory_path, newHty_nam]), e),
                     error=True, viewMes=True)
         else:
-            fb_print('文件还未上传第一版', info=True)
+            fp('文件还未上传第一版', info=True)
 
     def push_file(self, item):
         """
@@ -434,19 +442,20 @@ class pushWindow(QtWidgets.QDialog):
         :return:
         """
         file_nam = '_'.join(
-            ['FHZJ', item.data(QtCore.Qt.UserRole + 1), item.data(QtCore.Qt.UserRole + 2), 'Rig.ma'])  #文件名
+            [self.project_name, item.data(QtCore.Qt.UserRole + 1), item.data(QtCore.Qt.UserRole + 2), 'Rig.ma'])  #文件名
         file_path = item.data(QtCore.Qt.UserRole)  #服务器文件所在路径
 
-        self.but_push.setText(u'正在保存场景······')
-        fb_print('正在保存场景······', info=True, viewMes=True)
+        self.but_push_rig.setText(u'正在保存场景······')
+        fp('正在保存场景······', info=True, viewMes=True)
         mc.file(s=True, f=True, op='v=0')
-        self.but_push.setText(u'正在上传场景······')
-        fb_print('正在上传场景······', info=True, viewMes=True)
+        self.but_push_rig.setText(u'正在上传场景······')
+        fp('正在上传场景······', info=True, viewMes=True)
         shutil.copy(mc.file(exn=True, q=True), '/'.join([file_path, file_nam]))
-        self.but_push.setText(u'场景上传成功！！')
-        fb_print('场景上传成功', info=True, viewMes=True)
+        self.but_push_rig.setText(u'场景上传成功！！')
+        fp('场景上传成功', info=True, viewMes=True)
 
-    def get_history_id(self, path, nam):
+    @staticmethod
+    def get_history_id(path, nam):
         """
         通过给定的历史文件夹路径获取该资产应该产生的下一个迭代文件名
         :param nam: 该资产的rig完整名
@@ -473,6 +482,37 @@ class pushWindow(QtWidgets.QDialog):
 
         else:
             return '{}_v01.ma'.format(prefix)
+
+    def push_select_to_fbx(self):
+        """
+        将当前选中对象导出为fbx并上传到指定资产sk文件夹内
+        :return:
+        """
+        sel_items = self.lst_asset.selectedItems()
+        if not sel_items:
+            fp('没有选中有效项。', error=True, viewMes=True)
+
+        folder_path = sel_items[0].data(QtCore.Qt.UserRole + 3)  #fbx文件夹服务器路径
+        file_absPath = exportSelectToFbx()  #fbx保存的文件路径
+        file_name = 'SK_{}.fbx'.format(sel_items[0].data(QtCore.Qt.UserRole + 2))  #fbx文件名
+        file_path = os.sep.join([folder_path, file_name])  #fbx服务器文件路径
+        if os.path.normcase(os.path.abspath(file_absPath)) == os.path.normcase(os.path.abspath(file_path)):
+            fp('保存文件就是服务器fbx文件路径地址。', info=True)
+        else:  #当保存位置与服务器fbx文件位置不相等时
+            if not os.path.exists(folder_path):  #服务器fbx文件夹路径不存在时
+                os.mkdir(folder_path)
+            if os.path.exists(file_path):  #服务器fbx文件存在时
+                fp('正在向历史文件夹内保存文件。', info=True)
+                fileUtils.version_up(folder_path, file_name)  #保存历史文件
+                fp('历史文件保存成功。', info=True)
+            try:
+                fp('正在向服务器中提交fbx文件。', info=True)
+                shutil.copyfile(file_absPath, file_path)
+                fp('fbx文件提交成功。', info=True)
+                self.but_push_fbx.setText(u'fbx文件提交成功')
+            except Exception as e:
+                self.but_push_fbx.setText(u'fbx文件提交失败')
+                fp('fbx文件提交失败。{}'.format(e), error=True, viewMes=True)
 
 
 def push_rig():

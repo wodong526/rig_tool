@@ -139,7 +139,7 @@ def fromObjCreateGroup(objs, name='', num=1, rename_ctl=True):
                     nam = obj
 
             grp = mc.group(em=True, n='zero_{}_{:03d}'.format(nam, i), w=True)
-            grpOffset = mc.group(em=True, p=grp, n='Offset_{}_{:03d}'.format(nam, i))
+            grpOffset = mc.group(em=True, p=grp, n='offset_{}_{:03d}'.format(nam, i))
             mc.xform(grp, t=pos, ro=rot, s=scl, ws=True)
             if mc.listRelatives(obj, p=True):
                 mc.parent(grp, mc.listRelatives(obj, p=True)[0])

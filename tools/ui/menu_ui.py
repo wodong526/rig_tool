@@ -51,17 +51,17 @@ class Rig_Menu(object):
         self.set_svn(menu_svn)
 
     def adv_menu(self, p_menu):
-        pm.menuItem(to=True, p=p_menu, i='AS5.png', l='ADV5', c="from ui import advTools;"
-                                                                "reload(advTools);"
-                                                                "advTools.openAdvTool();")
+        pm.menuItem(to=True, p=p_menu, i='AS5_tool.png', l='ADV辅助工具', c="from ui import advTools;"
+                                                                           "reload(advTools);"
+                                                                           "advTools.openAdvTool();")
         pm.menuItem(to=True, p=p_menu, i='AS5.png', l='ADV5',
-                    c="mm.eval('source \"C:/Rig_Tools/plug_ins/ADV/AdvancedSkeleton5.mel\";AdvancedSkeleton5;')")
+                    c="mm.eval('source \"C:/Rig_Tools/scripts/ADV/AdvancedSkeleton5.mel\";AdvancedSkeleton5;')")
         pm.menuItem(to=True, p=p_menu, i='asBiped.png', l='biped',
-                    c="mm.eval('source \"C:/Rig_Tools/plug_ins/ADV/AdvancedSkeleton5Files/Selector/biped.mel\";')")
+                    c="mm.eval('source \"C:/Rig_Tools/scripts/ADV/AdvancedSkeleton5Files/Selector/biped.mel\";')")
         pm.menuItem(to=True, p=p_menu, i='asFace.png', l='face',
-                    c="mm.eval('source \"C:/Rig_Tools/plug_ins/ADV/AdvancedSkeleton5Files/Selector/face.mel\";')")
+                    c="mm.eval('source \"C:/Rig_Tools/scripts/ADV/AdvancedSkeleton5Files/Selector/face.mel\";')")
         pm.menuItem(to=True, p=p_menu, i='picker.png', l='picker',
-                    c="mm.eval('source \"C:/Rig_Tools/plug_ins/ADV/AdvancedSkeleton5Files/picker/picker.mel\";')")
+                    c="mm.eval('source \"C:/Rig_Tools/scripts/ADV/AdvancedSkeleton5Files/picker/picker.mel\";')")
 
     def tool_menu(self, p_menu):
         pm.menuItem(to=True, p=p_menu, l=u'控制器生成器', i='ctl_tool.png', c='import controller_tool;'
@@ -79,8 +79,8 @@ class Rig_Menu(object):
                                                                            'batch_connect_tool.main()')
         pm.menuItem(to=True, p=p_menu, l=u'传递权重', i='copySkinWeights.png', c='import transformSkinWeight;'
                                                                                  'reload(transformSkinWeight)')
-        pm.menuItem(to=True, p=p_menu, i='studio_library.png', l='打开studio_library', c='import toos_starter;'
-                                                                                         'toos_starter.open_studioLibrary();')
+        pm.menuItem(to=True, p=p_menu, i='studio_library.png', l='打开studio_library', c='reload_tools'
+                                                                                         '.open_studioLibrary()')
 
     def port(self, p_menu):
         pm.menuItem(to=True, p=p_menu, l=u'导出SM文件', i='export_sm.jpg', c='import port_tool;'

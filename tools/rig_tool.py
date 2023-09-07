@@ -106,10 +106,20 @@ def exportSelectToFbx():
     """
     将选中的对象导出为fbx，切断开关节与控制器的链接。
     """
+    def to_Tpose():
+        if mc.objExists('FKShoulder_R') and mc.objExists('FKShoulder_L'):
+            if mc.getAttr('FKShoulder_R.ry') == -45 and mc.getAttr('FKShoulder_L.ry') == -45:
+                return
+            else:
+                mc.setAttr('FKShoulder_R.ry', -45)
+                mc.setAttr('FKShoulder_L.ry', -45)
+        else:
+            fp('场景中不存在对象：FKShoulder_R或FKShoulder_L。', error=True, viewMes=True)
+
     sel_lis = mc.ls(sl=1)
     if sel_lis:
 
-        #先检查模型里有没有毛发模型
+        #################检查毛发对象
         obj_lis = []
         hair_lis = []
         for obj in sel_lis:
@@ -127,18 +137,26 @@ def exportSelectToFbx():
                 return None
             elif resout == u'继续导出':
                 pass
-
+        #################检查空间名称
         namSpas, namSpas_lis = clearUtils.clear_nameSpace(q=True)  #当场景里有空间名时提示
         if namSpas:
             resout = mc.confirmDialog(title='警告：', button=['清理空间名后再导出', '不清理直接导出', '取消'],
-                                      message='场景中有空间名称：\n{}\n是否清理后再导出或直接导出？'.format(
-                                          '\n'.join(namSpas_lis)))
+                                      message='场景中有空间名称：\n{}\n是否清理后再导出或直接导出？'.format('\n'.join(namSpas_lis)))
             if resout == u'清理空间名后再导出':
                 clearUtils.clear_nameSpace()
             elif resout == u'不清理直接导出':
                 pass
             else:
                 return None
+        #################掰直手臂
+        resout = mc.confirmDialog(title='导出设置：', button=['导出为TPose', '直接导出当前姿势', '取消'],
+                                  message='是否将APose以TPose姿势导出？')#将APose绑定以TPose姿势导出
+        if resout == u'导出为TPose':
+            to_Tpose()
+        elif resout == u'直接导出当前姿势':
+            pass
+        else:
+            return None
 
         file_path = mc.file(exn=True, q=True)
         file_nam = file_path.split('/')[-1].split('.')[0]
@@ -175,7 +193,7 @@ def exportSelectToFbx():
                 fp('已链接{}。'.format(node_lis[n * 2 + 1]), info=True)
             for inf in pert_dir:  # 重新p回父级
                 mc.parent(inf, pert_dir[inf])
-
+            return file_path[0]
         else:
             fp('没有选择有效路径。', error=True)
 
@@ -399,7 +417,7 @@ def brSmoothTool():
     if not mc.pluginInfo('brSmoothWeights', q=True, r=True):
         for year in ['2018', '2020', '2022', '2023']:
             if mc.about(version = True) == year:
-                brSmooth_path = 'C:/Rig_Tools/plug_ins/brSmoothWeights/plug-ins/win64/{}'.format(year)
+                brSmooth_path = 'C:/Rig_Tools/scripts/brSmoothWeights/plug-ins/win64/{}'.format(year)
                 if os.path.exists(brSmooth_path):
                     if brSmooth_path not in os.environ['MAYA_PLUG_IN_PATH']:
                         os.environ['MAYA_PLUG_IN_PATH'] = os.environ['MAYA_PLUG_IN_PATH'] + ';' + brSmooth_path

@@ -13,7 +13,7 @@ import sys
 from functools import partial
 
 from feedback_tool import Feedback_info as fb_print
-import data_path
+from data_path import icon_dic as ic
 from Meta import mhFaceCtrlsAnimsTool, extract_meta_head, extract_meta_body, adv_to_meta, \
                  metaHuman_transformation_head, metaHand_to_adv
 reload(mhFaceCtrlsAnimsTool)
@@ -33,6 +33,7 @@ class TrainingApparatus(QtWidgets.QDialog):
         super(TrainingApparatus, self).__init__(parent)
 
         self.setWindowTitle(u'Meta调教器')
+        self.setWindowIcon(QtGui.QIcon(ic['MS_Logo']))
         if mc.about(ntOS=True):  # 判断系统类型
             self.setWindowFlags(self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint)  # 删除窗口上的帮助按钮
         elif mc.about(macOS=True):
@@ -62,7 +63,7 @@ class TrainingApparatus(QtWidgets.QDialog):
 
         self.but_refNamSpace = QtWidgets.QPushButton()
         self.but_refNamSpace.setMaximumWidth(30)
-        self.but_refNamSpace.setIcon(QtGui.QIcon('{}{}'.format(data_path.iconPath, 'refresh.png')))
+        self.but_refNamSpace.setIcon(QtGui.QIcon(ic['refresh']))
         self.cob_namSpace = QtWidgets.QComboBox()
         self.but_get_faceCtrl_anim = QtWidgets.QPushButton(u'获取控制器动画信息文件')
         self.but_get_faceCtrl_anim.setMaximumWidth(130)

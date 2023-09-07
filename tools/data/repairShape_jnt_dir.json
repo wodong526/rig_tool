@@ -1,0 +1,92 @@
+{
+    "PinkyFinger1": [
+        "ry",
+        "double",
+        6,
+        90
+    ],
+    "PinkyFinger2": [
+        "ry",
+        "double",
+        6,
+        90
+    ],
+    "PinkyFinger3": [
+        "ry",
+        "double",
+        6,
+        90
+    ],
+    "RingFinger1": [
+        "ry",
+        "double",
+        6,
+        90
+    ],
+    "RingFinger2": [
+        "ry",
+        "double",
+        6,
+        90
+    ],
+    "RingFinger3": [
+        "ry",
+        "double",
+        6,
+        90
+    ],
+    "MiddleFinger1": [
+        "ry",
+        "double",
+        6,
+        90
+    ],
+    "MiddleFinger2": [
+        "ry",
+        "double",
+        6,
+        90
+    ],
+    "MiddleFinger3": [
+        "ry",
+        "double",
+        6,
+        90
+    ],
+    "IndexFinger1": [
+        "ry",
+        "double",
+        6,
+        90
+    ],
+    "IndexFinger2": [
+        "ry",
+        "double",
+        6,
+        90
+    ],
+    "IndexFinger3": [
+        "ry",
+        "double",
+        6,
+        90
+    ],
+    "ThumbFinger2": [
+        "ry",
+        "double",
+        6,
+        90
+    ],
+    "ThumbFinger3": [
+        "ry",
+        "double",
+        6,
+        90
+    ],
+    "Wrist": [
+        "ry_all",
+        "double",
+        6,
+        90
+    ]
+}

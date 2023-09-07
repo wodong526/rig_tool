@@ -20,6 +20,49 @@ def maya_main_window():
     return wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
 
 
+def gatWeightsToData(fn_skin, data, dag_path, components):
+    """
+    获取蒙皮节点的权重列表
+    :param fn_skin:MFnSkinCluster类型对象
+    :param data:承载蒙皮权重信息的字典
+    :param dag_path:蒙皮节点的dagPath对象
+    :param components:蒙皮节点的组件节点
+    :return:转载好权重值的字典
+    """
+    weights = apiUtils.getCurrentWeights(fn_skin, dag_path, components)
+    influencePaths = om.MDagPathArray()
+    numInfluences = fn_skin.influenceObjects(influencePaths)  #影响数
+    numComponentsPerInfluence = weights.length() / numInfluences  #点数
+    for ii in range(influencePaths.length()):  #第几个影响
+        influenceName = influencePaths[ii].partialPathName()
+        data['weights'][influenceName] = [weights[jj * numInfluences + ii] for jj in
+                                          range(numComponentsPerInfluence)]
+
+    return data
+
+
+def blendWeights(fn_skin, data, dag_path, components, get=False):
+    """
+    获取或设置混合权重方式
+    :param data: 承载混合权重方式的字典
+    :param fn_skin: MFnSkinCluster类型对象
+    :param dag_path: 蒙皮节点的dagPath对象
+    :param get: 是获取还是设置
+    :param components: 蒙皮节点的组件节点
+    :return:
+    """
+    if get:
+        weights = om.MDoubleArray()
+        fn_skin.getBlendWeights(dag_path, components, weights)
+        data['blendWeights'] = [weights[i] for i in range(weights.length())]
+        return data
+    elif not get:
+        blendWeights = om.MDoubleArray(len(data['blendWeights']))
+        for i, w in enumerate(data['blendWeights']):
+            blendWeights.set(w, i)
+        fn_skin.setBlendWeights(dag_path, components, blendWeights)
+
+
 class TransforSkinWeightWindow(QtWidgets.QDialog):
     def __init__(self, parent=maya_main_window()):
         super(TransforSkinWeightWindow, self).__init__(parent)
@@ -76,7 +119,7 @@ class TransforSkinWeightWindow(QtWidgets.QDialog):
         self.but_outSkin.clicked.connect(self.exportSkin)
         self.but_imptSkin.clicked.connect(self.importSkin)
 
-    def exportSkin(self):
+    def exportSkin(self, file_path=''):
         nod = mc.ls(sl=True, fl=True)
         if nod and mc.nodeType(mc.listRelatives(nod[0], s=True)[0]) == 'mesh':
             fn_skin = apiUtils.fromObjGetRigNode(nod[0], path_name=False)[0]
@@ -84,10 +127,11 @@ class TransforSkinWeightWindow(QtWidgets.QDialog):
                     'blendWeights': [],
                     'name': nod[0]}
             dagPath, components = apiUtils.getGeometryComponents(fn_skin)
-            data = self.gatWeightsToData(fn_skin, data, dagPath, components)
-            data = self.blendWeights(fn_skin, data, dagPath, components, True)
+            data = gatWeightsToData(fn_skin, data, dagPath, components)
+            data = blendWeights(fn_skin, data, dagPath, components, True)
 
-            file_path = fileUtils.saveFilePath(u'选择要导出权重的文件路径', self.scene_path, 'dong')
+            if not file_path:
+                file_path = fileUtils.saveFilePath(u'选择要导出权重的文件路径', self.scene_path, 'dong')
             with open(file_path, 'wb') as f:
                 pickle.dump(data, f)
             fp('蒙皮{}的权重数据已导出到{}'.format(fn_skin.name(), file_path))
@@ -105,30 +149,10 @@ class TransforSkinWeightWindow(QtWidgets.QDialog):
                 data = pickle.load(f)
 
             self.setInfluenceWeights(fn_skin, data, dagPath, components)
-            self.blendWeights(fn_skin, data, dagPath, components)
+            blendWeights(fn_skin, data, dagPath, components)
             fp('已将{}的蒙皮信息导入到{}中'.format(file_path, fn_skin.name()))
         else:
             fp('选择对象{}不是蒙皮节点'.format(nod[0]), error=True)
-
-    def gatWeightsToData(self, fn_skin, data, dag_path, components):
-        """
-        获取蒙皮节点的权重列表
-        :param fn_skin:MFnSkinCluster类型对象
-        :param data:承载蒙皮权重信息的字典
-        :param dag_path:蒙皮节点的dagPath对象
-        :param components:蒙皮节点的组件节点
-        :return:转载好权重值的字典
-        """
-        weights = apiUtils.getCurrentWeights(fn_skin, dag_path, components)
-        influencePaths = om.MDagPathArray()
-        numInfluences = fn_skin.influenceObjects(influencePaths)  #影响数
-        numComponentsPerInfluence = weights.length() / numInfluences  #点数
-        for ii in range(influencePaths.length()):  #第几个影响
-            influenceName = influencePaths[ii].partialPathName()
-            data['weights'][influenceName] = [weights[jj * numInfluences + ii] for jj in
-                                              range(numComponentsPerInfluence)]
-
-        return data
 
     def setInfluenceWeights(self, fn_skin, data, dag_path, components):
         """
@@ -142,22 +166,25 @@ class TransforSkinWeightWindow(QtWidgets.QDialog):
         weights = apiUtils.getCurrentWeights(fn_skin, dag_path, components)
         influencePaths = om.MDagPathArray()
         numInfluences = fn_skin.influenceObjects(influencePaths)  #当前影响关节对象的容器，已包含关节对象可迭代
-        numComponentsPerInfluence = weights.length() / numInfluences  #点数
-        if len(data['weights'].keys()) == influencePaths.length():
-            for data_jnt, dataWeights in data['weights'].items():  #关节名，权重列表
-                jnt = self.reJointName(data_jnt)
-                for ii in range(influencePaths.length()):  #当前影响关节列表
-                    influenceName = influencePaths[ii].partialPathName()  #当前关节名
-                    if influenceName == jnt:
-                        for jj in range(numComponentsPerInfluence):  #每个点
-                            weights.set(dataWeights[jj], jj * numInfluences + ii)
-                        break
-                else:
-                    fp('字典中的关节{}对应的场景关节{}在蒙皮节点{}中找不到对应项,这可能导致一些点的权重总量不为1'.format(
-                        data_jnt, jnt, fn_skin.name()), warning=True)
-            apiUtils.setCurrentWeights(fn_skin, weights, numInfluences, dag_path, components)
-        else:
-            fp('导入的蒙皮关节数量与场景中的关节数量不对应', error=True)
+        numComponentsPerInfluence = weights.length() / numInfluences  #当前影响对象的点数
+
+        if len(data['weights'].keys()) != influencePaths.length():
+            fp('导入的蒙皮关节数量与选中的关节数量不对应', error=True, viewMes=True)
+        if numComponentsPerInfluence != len(data['weights'].values()[0]):
+            fp('导入的模型点数与选中模型中的点数不对应', error=True, viewMes=True)
+        for data_jnt, dataWeights in data['weights'].items():  #关节名，权重列表
+            jnt = self.reJointName(data_jnt)
+            for ii in range(influencePaths.length()):  #当前影响关节列表
+                influenceName = influencePaths[ii].partialPathName()  #当前关节名
+                if influenceName == jnt:
+                    for jj in range(numComponentsPerInfluence):  #每个点
+                        weights.set(dataWeights[jj], jj * numInfluences + ii)
+                    break
+            else:
+                fp('字典中的关节{}对应的场景关节{}在蒙皮节点{}中找不到对应项,这可能导致一些点的权重总量不为1'.format(
+                    data_jnt, jnt, fn_skin.name()), warning=True)
+        apiUtils.setCurrentWeights(fn_skin, weights, numInfluences, dag_path, components)
+
 
     def reJointName(self, jnt):
         """
@@ -178,27 +205,6 @@ class TransforSkinWeightWindow(QtWidgets.QDialog):
             jnt = jnt + suffix
 
         return jnt
-
-    def blendWeights(self, fn_skin, data, dag_path, components, get=False):
-        """
-        获取或设置混合权重方式
-        :param data: 承载混合权重方式的字典
-        :param fn_skin: MFnSkinCluster类型对象
-        :param dag_path: 蒙皮节点的dagPath对象
-        :param get: 是获取还是设置
-        :param components: 蒙皮节点的组件节点
-        :return:
-        """
-        if get:
-            weights = om.MDoubleArray()
-            fn_skin.getBlendWeights(dag_path, components, weights)
-            data['blendWeights'] = [weights[i] for i in range(weights.length())]
-            return data
-        elif not get:
-            blendWeights = om.MDoubleArray(len(data['blendWeights']))
-            for i, w in enumerate(data['blendWeights']):
-                blendWeights.set(w, i)
-            fn_skin.setBlendWeights(dag_path, components, blendWeights)
 
 
 try:

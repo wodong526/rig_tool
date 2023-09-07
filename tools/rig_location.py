@@ -4,10 +4,10 @@ import maya.cmds as mc
 from feedback_tool import Feedback_info as fb_print, LIN as lin
 
 
-def get_core():
-    '''
+def get_core(get_pos=False):
+    """
     在选择对象的中心创建定位器。
-    '''
+    """
     obj_lis = mc.ls(sl=1, fl=1)
 
     if len(obj_lis) == 0:
@@ -22,10 +22,14 @@ def get_core():
         clst = mc.cluster()
         loc = mc.spaceLocator()[0]
         mc.matchTransform(loc, clst)
-        mc.delete(crv, clst)
-
-        fb_print('已在选择对象的中心创建定位器{}'.format(loc), info=True)
-        return loc
+        if get_pos:
+            pos = mc.xform(loc, q=True, ws=True, t=True)
+            mc.delete(loc, clst, crv)
+            return pos
+        else:
+            mc.delete(crv, clst)
+            fb_print('已在选择对象的中心创建定位器{}'.format(loc), info=True)
+            return loc
 
 
 def create_joint():

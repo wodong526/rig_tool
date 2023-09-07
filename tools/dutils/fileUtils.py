@@ -96,7 +96,9 @@ def version_up(path, user_file):
     :return:
     """
     if os.path.exists("{}/{}".format(path, user_file)):  #场景文件所在路径，json文件名.json
-        hiy_folder = create_folder(path=path, folder_name="history")  #创建历史文件夹
+        hiy_folder = "{}/history".format(path)
+        if not os.path.exists(hiy_folder):
+            hiy_folder = create_folder(path=path, folder_name="history")  #创建历史文件夹
 
         file_extension = os.path.splitext(user_file)[1]  #获取文件的后缀（包含.）
         file_base_name = "{}_v".format(str(user_file).rpartition(file_extension)[0])
