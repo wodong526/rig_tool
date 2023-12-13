@@ -1,13 +1,13 @@
 # coding=gbk
 import maya.cmds as mc
 import maya.mel as mm
-import maya.OpenMayaUI as omui
 import maya.api.OpenMaya as oma
 
-from feedback_tool import Feedback_info as fb_print, LIN as lin
-from dutils import apiUtils
+import requests
+import re
 
-FILE_PATH = __file__
+from feedback_tool import Feedback_info as fb_print
+from dutils import apiUtils
 
 
 def clear_orig():
@@ -105,7 +105,7 @@ def fromClosestPointGetUv(geo, tag_geo):
     if not geo_shpae:
         fb_print('对象{}没有shape节点'.format(geo), error=True)
 
-    geo_dag = apiUtils.getDagPath(geo)
+    geo_dag = apiUtils.getApiNode(geo)
     poj_pos = apiUtils.getMPoint(tag_geo)
 
     uv = None
@@ -142,7 +142,7 @@ def processingSkinPrecision(objs):
     for obj in objs:
         if mm.eval('findRelatedSkinCluster("{}")'.format(obj)):
             skin = mm.eval('findRelatedSkinCluster("{}")'.format(obj))
-            for jnt in mc.skinCluster(skin, inf=1, q=1):  #从蒙皮节点名得到受影响的关节
+            for jnt in mc.skinCluster(skin, inf=True, q=True):  #从蒙皮节点名得到受影响的关节
                 if jnt not in jnt_lis:
                     jnt_lis.append(jnt)
 
@@ -168,7 +168,7 @@ def closeSkinPrecision():
         if skin_lis:
             for skin_attr in mc.listConnections(mult + '.matrixSum', s=False, t='skinCluster', p=True):
                 for jnt_attr in mc.listConnections(mult, d=False, t='joint', p=True):
-                    mc.connectAttr(jnt_attr, skin_attr, f=1)
+                    mc.connectAttr(jnt_attr, skin_attr, f=True)
             fb_print('已解决矩阵乘除节点{}'.format(mult), info=True)
 
 
@@ -196,3 +196,37 @@ def list_operation(list_a, list_b, operation='|'):
         return list(set_a.difference(set_b))  #a有而b没有的元素列表
     elif operation == '^':
         return list(set_a.symmetric_difference(set_b))  #返回a与b互不相同的元素
+
+def get_instance_polygon():
+    """
+    获取场景中所有以相同shape的模型
+    :return: shape名：transform名
+    """
+    all_models = mc.ls(dag=True, type='transform')
+    shape_dict = {}
+    for model in all_models:
+        shapes = mc.listRelatives(model, shapes=True)
+        if shapes:
+            for shape in shapes:
+                if shape not in shape_dict:
+                    shape_dict[shape] = [model]
+                else:
+                    shape_dict[shape].append(model)
+    for shape, models in shape_dict.items():
+        if len(models) > 1:
+            fb_print("shape：{}有多个transform：{}".format(shape, models), info=True)
+
+def get_native_iP():
+    """
+    获取本机ip地址
+    :return: ip地址本身
+    """
+    ip = ''
+    try:
+        res = requests.get('https://myip.ipip.net', timeout=5).text
+        ip = re.findall(r'(\d+\.\d+\.\d+\.\d+)', res)
+        ip = ip[0] if ip else ''
+    except Exception as e:
+        fb_print('获取本机地址失败！\n{}'.format(e), error=True)
+    finally:
+        return ip

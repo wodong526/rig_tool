@@ -9,18 +9,18 @@ import maya.api.OpenMaya as oma
 import maya.OpenMayaUI as omui
 
 import os
-import shutil
 import glob
-from plug_ins.pathlib import PurePath
+from pathlib import PurePath
 from functools import partial
 
 from feedback_tool import Feedback_info as fp
-from data_path import icon_dic as ic, projectPath_xxtt
-from dutils import fileUtils
-from qtwidgets import SeparatorAction as menl
-import rig_tool
-reload(rig_tool)
+import data_path
+reload(data_path)
+from data_path import icon_dir as ic, projectPath_xxtt as pojpt_xt
+from dutils import cgtUtils as cgt
+from qt_widgets import SeparatorAction as menl, set_font
 from rig_tool import exportSelectToFbx
+reload(cgt)
 
 
 def maya_main_window():
@@ -40,14 +40,22 @@ class MyButton(QtWidgets.QPushButton):
             self.clickedRightSig.emit(True)
 
 
+class AssetTtem(QtWidgets.QWidget):
+    def __init__(self, l_tex, r_tex, parent=None):
+        super(AssetTtem, self).__init__(parent)
+        __lab_Ltex = QtWidgets.QLabel(l_tex)
+        __lab_Rtex = QtWidgets.QLabel(r_tex)
+        main_layout = QtWidgets.QHBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.addWidget(__lab_Ltex)
+        main_layout.addStretch()
+        main_layout.addWidget(__lab_Rtex)
+
+
 class ClearItem(QtWidgets.QWidget):
     def __init__(self, fun, interpretation, parent=None):
         super(ClearItem, self).__init__(parent)
         self.setMaximumHeight(40)
-        # self.setAutoFillBackground(True)
-        # palette = self.palette()
-        # palette.setColor(QtGui.QPalette.Window, QtGui.QColor(78, 42, 66))
-        # self.setPalette(palette)
 
         self.fun = fun
         self.interpretation = interpretation
@@ -83,7 +91,6 @@ class ClearItem(QtWidgets.QWidget):
         :return:
         """
         from dutils import clearUtils
-        reload(clearUtils)
         fun = getattr(clearUtils, self.fun)  #将模块与函数组装起来形成一个新的函数，该函数可用于直接执行
         if not fun():  #清理发生在此处
             self.on_toggled(True)
@@ -104,11 +111,13 @@ class ClearItem(QtWidgets.QWidget):
             self.tooBut_switch.setIcon(QtGui.QIcon(ic['checkBox_blank']))
 
 
-class pushWindow(QtWidgets.QDialog):
+class PushWindow(QtWidgets.QDialog):
+
     def __init__(self, parent=maya_main_window()):
-        super(pushWindow, self).__init__(parent)
+        super(PushWindow, self).__init__(parent)
 
         self.setWindowTitle(u'上传rig到CGT')
+        self.setWindowIcon(QtGui.QIcon(ic['cgt_logo']))
 
         if mc.about(ntOS=True):  #判断系统类型
             self.setWindowFlags(self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint)  #删除窗口上的帮助按钮
@@ -116,20 +125,10 @@ class pushWindow(QtWidgets.QDialog):
             self.setWindowFlags(QtCore.Qt.Tool)
 
         self.clearWgt_lis = []
-        if os.path.exists(projectPath_xxtt):
-            self.project_path = projectPath_xxtt
-            self.project_name = self.project_path.split('/')[2]
+        if os.path.exists(pojpt_xt[0]):
+            self.project_name = pojpt_xt[0].split('/')[2]
         else:
-            fp('导入服务器路径出错，请检查服务器映射是否成功.。')
-
-        self.assetType_lis = [f for f in os.listdir(self.project_path) if
-                              os.path.isdir(os.path.join(self.project_path, f))]
-        self.asset_dir = {}
-        for assetType in self.assetType_lis:
-            self.asset_dir[assetType] = []
-            assetPath = self.project_path + assetType
-            for nam in [f for f in os.listdir(assetPath) if os.path.isdir(os.path.join(assetPath, f))]:
-                self.asset_dir[assetType].append(nam.decode('GBK'))
+            fp('导入服务器路径出错，请检查服务器映射是否成功.。', error=True, block=True)
 
         self.create_widgets()
         self.create_layout()
@@ -165,9 +164,11 @@ class pushWindow(QtWidgets.QDialog):
 
         self.lst_asset = QtWidgets.QListWidget()
         self.lst_asset.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.but_push_rig = QtWidgets.QPushButton(u'上传rig文件')
-        self.but_push_rig.setEnabled(True)
-        self.but_push_fbx = QtWidgets.QPushButton(u'上传fbx文件')
+        self.comb_typ = QtWidgets.QComboBox()
+        self.comb_typ.setMaximumSize(65, 25)
+        self.comb_typ.setFont(set_font(10))
+        self.comb_typ.addItems([u'模型', u'绑定', u'ueFBX'])
+        self.but_push = QtWidgets.QPushButton(u'上传')
 
     def create_layout(self):
         layout_clear = QtWidgets.QVBoxLayout()
@@ -179,8 +180,8 @@ class pushWindow(QtWidgets.QDialog):
         layout_search.addWidget(self.but_clearName)
 
         layout_pushBut = QtWidgets.QHBoxLayout()
-        layout_pushBut.addWidget(self.but_push_rig)
-        layout_pushBut.addWidget(self.but_push_fbx)
+        layout_pushBut.addWidget(self.comb_typ)
+        layout_pushBut.addWidget(self.but_push)
 
         layout_push = QtWidgets.QVBoxLayout()
         layout_push.addLayout(layout_search)
@@ -190,6 +191,7 @@ class pushWindow(QtWidgets.QDialog):
         wdt_left = QtWidgets.QWidget()
         wdt_left.setLayout(layout_clear)
         wdt_reght = QtWidgets.QWidget()
+        wdt_reght.setMinimumWidth(400)
         wdt_reght.setLayout(layout_push)
 
         spt_layout = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
@@ -205,9 +207,8 @@ class pushWindow(QtWidgets.QDialog):
         self.but_clearName.clicked.connect(self.lin_searchName.clear)
         self.lst_asset.itemDoubleClicked.connect(partial(self.menu_function, 'openRigFile'))
         self.lst_asset.customContextMenuRequested.connect(self.create_contextMenu)
-        self.lin_searchName.textChanged.connect(self.refresh_Item)
-        self.but_push_rig.clicked.connect(self.push_asset)
-        self.but_push_fbx.clicked.connect(self.push_select_to_fbx)
+        self.lin_searchName.returnPressed.connect(self.refresh_Item)
+        self.but_push.clicked.connect(self.push_file)
 
     def autoClearScence(self):
         """
@@ -231,23 +232,41 @@ class pushWindow(QtWidgets.QDialog):
         :return:
         """
 
-        def add_item():
-            item = QtWidgets.QListWidgetItem(nam)
-            item.setData(QtCore.Qt.UserRole, os.path.join(self.project_path, typ, nam, 'Rig', 'Final'))  #资产所在文件夹
-            item.setData(QtCore.Qt.UserRole + 1, typ)  #资产类型
-            item.setData(QtCore.Qt.UserRole + 2, nam)  #资产名
-            item.setData(QtCore.Qt.UserRole + 3, os.path.join(self.project_path, typ, nam, 'Rig', 'Unreal'))  #fbx文件路径
-            self.lst_asset.addItem(item)
+        def add_item(ass_nam, ch_nam, ass_typ, uid, mod_final, rig_final, rig_unreal, dyn_final):
+            """
+            向列表编辑器中添加项，并附上每项的相关信息
+            :param ass_nam: 资产的英文名
+            :param ch_nam: 资产的中文名
+            :param ass_typ: 资产的类型名
+            :param uid: 资产的mod阶段id
+            :param mod_final: 模型文件夹路径
+            :param rig_final: 绑定文件夹路径
+            :param rig_unreal: uefbx文件夹路径
+            :param dyn_final: 特效dyn文件夹路径
+            :return: None
+            """
+            item = QtWidgets.QListWidgetItem(self.lst_asset)
+            self.lst_asset.setItemWidget(item, AssetTtem(ass_nam, ch_nam))
+            item.setData(QtCore.Qt.UserRole, uid)  #资产的task.mod.id
+            item.setData(QtCore.Qt.UserRole + 1, mod_final)  #mod文件夹
+            item.setData(QtCore.Qt.UserRole + 2, rig_final)  #rig文件夹
+            item.setData(QtCore.Qt.UserRole + 3, rig_unreal)  #ueFBX文件夹
+            item.setData(QtCore.Qt.UserRole + 4, dyn_final)  #dyn文件夹
+            item.setData(QtCore.Qt.UserRole + 5, ass_typ)  #资产类型名
+            item.setData(QtCore.Qt.UserRole + 6, ass_nam)  #资产名(英文)
 
         self.lst_asset.clear()
         searchInfo = self.lin_searchName.text()
-        for typ, nam_lis in self.asset_dir.items():
-            for nam in nam_lis:
-                if searchInfo:
-                    if searchInfo.lower() in nam.lower():
-                        add_item()
-                else:
-                    add_item()
+        mod_dir = cgt.get_asset_dir(pojpt_xt[1])
+        mod_id_lis = cgt.get_id_lis(pojpt_xt[1], 'asset')
+        folder_dir = cgt.get_asset_folder(pojpt_xt[1], mod_id_lis)
+        typ_dir = cgt.get_asset_type(pojpt_xt[1], mod_id_lis)
+        for i in mod_id_lis:  #返回的是所有id的文件夹列表
+            if searchInfo:
+                if searchInfo.lower() in mod_dir[i][1].lower() or searchInfo in mod_dir[i][0]:
+                    add_item(mod_dir[i][1], mod_dir[i][0], typ_dir[i], i, *folder_dir[i])
+            else:
+                add_item(mod_dir[i][1], mod_dir[i][0], typ_dir[i], i, *folder_dir[i])
 
     def create_contextMenu(self, pos):
         """
@@ -269,6 +288,7 @@ class pushWindow(QtWidgets.QDialog):
             menu.addAction(menl(p=menu))
             action_openRIgPath = menu.addAction(u'用资产管理器打开该资产的rig文件夹')
             action_openModPath = menu.addAction(u'用资产管理器打开该资产的mod文件夹')
+            action_openUePath = menu.addAction(u'用资产管理器打开该资产的UeFbx文件夹')
             #------------------------------------------------------------------------------
             action_openRigFile.triggered.connect(partial(self.menu_function, 'openRigFile'))
             action_openModFile.triggered.connect(partial(self.menu_function, 'openModFile'))
@@ -281,6 +301,7 @@ class pushWindow(QtWidgets.QDialog):
 
             action_openRIgPath.triggered.connect(partial(self.menu_function, 'openRigPath'))
             action_openModPath.triggered.connect(partial(self.menu_function, 'openModPath'))
+            action_openUePath.triggered.connect(partial(self.menu_function, 'openUefbxPath'))
 
         menu.exec_(self.lst_asset.mapToGlobal(pos))  #菜单生成的位置
 
@@ -291,10 +312,9 @@ class pushWindow(QtWidgets.QDialog):
         :return:
         """
         sel_item = self.lst_asset.selectedItems()[0]
-        path = sel_item.data(QtCore.Qt.UserRole)  #rig文件所在路径
-        if not os.path.exists(sel_item.data(QtCore.Qt.UserRole)):
-            oma.MGlobal.displayError('资产{}没有rig文件夹'.format(sel_item.data(QtCore.Qt.UserRole + 2)))
-            return None
+        path = sel_item.data(QtCore.Qt.UserRole + 2)  #rig文件所在路径
+        # if not os.path.exists(sel_item.data(QtCore.Qt.UserRole + 2)):
+        #     oma.MGlobal.displayError('资产{}没有rig文件夹'.format(sel_item.data(QtCore.Qt.UserRole + 6)))
         file_path = glob.glob(os.path.join(path, '*.ma'))  #path路径下所有ma文件的绝对路径列表
 
         if inf == 'openRigFile':
@@ -311,7 +331,7 @@ class pushWindow(QtWidgets.QDialog):
                 else:
                     mc.file(file_path[0], o=True, iv=True, typ='mayaAscii', op='v=0')
             else:
-                oma.MGlobal.displayError('资产{}没有rig文件'.format(sel_item.data(QtCore.Qt.UserRole + 2)))
+                oma.MGlobal.displayError('资产{}没有rig文件'.format(sel_item.data(QtCore.Qt.UserRole + 6)))
         elif inf == 'openModFile':
             path = path.replace('Rig', 'Mod')
             mod_path = glob.glob(os.path.join(path, '*.ma'))
@@ -328,7 +348,7 @@ class pushWindow(QtWidgets.QDialog):
                 else:
                     mc.file(mod_path[0], o=True, iv=True, typ='mayaAscii', op='v=0')
             else:
-                oma.MGlobal.displayError('资产{}没有mod文件'.format(sel_item.data(QtCore.Qt.UserRole + 2)))
+                oma.MGlobal.displayError('资产{}没有mod文件'.format(sel_item.data(QtCore.Qt.UserRole + 6)))
         #----------------------------------------------------
         elif inf == 'copyRigFile':
             if file_path and os.path.exists(file_path[0]):
@@ -337,7 +357,7 @@ class pushWindow(QtWidgets.QDialog):
                 md.setUrls([PurePath(file_path[0]).as_uri()])
                 cb.setMimeData(md)
             else:
-                oma.MGlobal.displayError('资产{}没有rig文件'.format(sel_item.data(QtCore.Qt.UserRole + 2)))
+                oma.MGlobal.displayError('资产{}没有rig文件'.format(sel_item.data(QtCore.Qt.UserRole + 6)))
         elif inf == 'copyModFile':
             path = path.replace('Rig', 'Mod')
             mod_path = glob.glob(os.path.join(path, '*.ma'))
@@ -347,7 +367,7 @@ class pushWindow(QtWidgets.QDialog):
                 md.setUrls([PurePath(mod_path[0]).as_uri()])
                 cb.setMimeData(md)
             else:
-                oma.MGlobal.displayError('资产{}没有mod文件'.format(sel_item.data(QtCore.Qt.UserRole + 2)))
+                oma.MGlobal.displayError('资产{}没有mod文件'.format(sel_item.data(QtCore.Qt.UserRole + 6)))
         #----------------------------------------------------
         elif inf == 'copyRigPath':
             cb = QtWidgets.QApplication.clipboard()
@@ -362,157 +382,65 @@ class pushWindow(QtWidgets.QDialog):
             cb.setMimeData(md)
         #----------------------------------------------------
         elif inf == 'openRigPath':
-            os.startfile(path)
+            if os.path.exists(path):
+                os.startfile(path)
+            else:
+                fp('资产{}没有rig文件夹'.format(sel_item.data(QtCore.Qt.UserRole + 6)), warning=True)
         elif inf == 'openModPath':
             modPath = path.replace('Rig', 'Mod')
             if os.path.exists(modPath):
                 os.startfile(modPath)
             else:
-                fp('资产{}没有模型文件夹'.format(sel_item.data(QtCore.Qt.UserRole + 2)), warning=True)
-
-    def push_asset(self):
-        """
-        上传文件
-        :return:
-        """
-        sel_items = self.lst_asset.selectedItems()
-        if sel_items:
-            file_path = sel_items[0].data(QtCore.Qt.UserRole)
-            scenceFile_path = mc.file(exn=True, q=True)  #当前文件所在完整路径
-            scence_path = os.path.dirname(os.path.abspath(scenceFile_path))  #当前文件所在路径
-            asset_path = sel_items[0].data(QtCore.Qt.UserRole)  #选择的资产所在路径
-
-            if not os.path.exists(file_path):  #当该资产的rig文件夹还没创建时
-                fp('正在创建{}的rig文件夹······'.format(sel_items[0].data(QtCore.Qt.UserRole + 2)), info=True)
-                rig_path = os.path.dirname(os.path.abspath(file_path))
-                os.mkdir(rig_path)
-                os.mkdir(file_path)
-                os.mkdir(file_path.replace('Final', 'Unreal'))
-
-            self.iterate_file(sel_items[0])  #向历史文件夹中迭代文件
-            if os.path.normcase(os.path.abspath(asset_path)) == os.path.normcase(os.path.abspath(scence_path)):
-                # 当打开的文件就在服务器路径里时
-                self.but_push_rig.setText(u'正在保存场景······')
-                fp('正在保存场景······', info=True, viewMes=True)
-                mc.file(s=True, f=True, op='v=0')
-                self.but_push_rig.setText(u'场景上传成功！！')
-                fp('场景上传成功', info=True, viewMes=True)
+                fp('资产{}没有模型文件夹'.format(sel_item.data(QtCore.Qt.UserRole + 6)), warning=True)
+        elif inf == 'openUefbxPath':
+            fbxPath = sel_item.data(QtCore.Qt.UserRole + 3)
+            if os.path.exists(fbxPath):
+                os.startfile(fbxPath)
             else:
-                self.push_file(sel_items[0])  #上传文件
+                fp('资产{}没有UeFbx文件夹'.format(sel_item.data(QtCore.Qt.UserRole + 6)), warning=True)
         else:
-            fp('没有选择需要提交的资产名', error=True, viewMes=True)
+            fp('好像参数不对啊！淦！！', warning=True, viewMes=True)
 
-    def iterate_file(self, item):
-        """
-        迭代保存
-        :param item:被选中的项
-        :return:
-        """
-        file_path = item.data(QtCore.Qt.UserRole)  #服务器文件所在路径
-        file_nam = '_'.join(
-            [self.project_name, item.data(QtCore.Qt.UserRole + 1), item.data(QtCore.Qt.UserRole + 2), 'Rig.ma'])  #文件名
-        fileNam_path = '/'.join([file_path, file_nam])  #服务器文件完整路径
-        fileHistory_path = '/'.join([file_path, 'history'])  #服务器历史文件夹路径
-        if os.path.exists(fileNam_path):
-            if not os.path.exists(fileHistory_path):
-                self.but_push_rig.setText(u'正在创建历史文件夹······')
-                fp('正在创建历史文件夹······', info=True)
-                os.mkdir(fileHistory_path)
-
-            newHty_nam = self.get_history_id(fileHistory_path, file_nam)
-            if not fileHistory_path:
-                newHty_nam = file_nam.split('.')[0] + '_v01.ma'
-
-            try:
-                self.but_push_rig.setText(u'正在向历史文件夹内复制文件······')
-                fp('正在向历史文件夹内复制文件······', info=True)
-                shutil.copy(fileNam_path, '/'.join([fileHistory_path, newHty_nam]))
-
-            except Exception as e:
-                fp(
-                    '{}复制到{}历史文件夹出错:{}'.format(fileNam_path, '/'.join([fileHistory_path, newHty_nam]), e),
-                    error=True, viewMes=True)
+    def push_file(self):
+        sel_item = None
+        if self.lst_asset.selectedItems():
+            sel_item = self.lst_asset.selectedItems()[0]
         else:
-            fp('文件还未上传第一版', info=True)
+            fp('没有选择有效项', error=True, viewMes=True)
 
-    def push_file(self, item):
-        """
-        将当前文件上传到服务器文件路径下
-        :param item:
-        :return:
-        """
-        file_nam = '_'.join(
-            [self.project_name, item.data(QtCore.Qt.UserRole + 1), item.data(QtCore.Qt.UserRole + 2), 'Rig.ma'])  #文件名
-        file_path = item.data(QtCore.Qt.UserRole)  #服务器文件所在路径
-
-        self.but_push_rig.setText(u'正在保存场景······')
-        fp('正在保存场景······', info=True, viewMes=True)
-        mc.file(s=True, f=True, op='v=0')
-        self.but_push_rig.setText(u'正在上传场景······')
-        fp('正在上传场景······', info=True, viewMes=True)
-        shutil.copy(mc.file(exn=True, q=True), '/'.join([file_path, file_nam]))
-        self.but_push_rig.setText(u'场景上传成功！！')
-        fp('场景上传成功', info=True, viewMes=True)
-
-    @staticmethod
-    def get_history_id(path, nam):
-        """
-        通过给定的历史文件夹路径获取该资产应该产生的下一个迭代文件名
-        :param nam: 该资产的rig完整名
-        :param path:历史文件夹
-        :return:
-        """
-        file_names = os.listdir(path)
-        file_names = [f for f in file_names if os.path.splitext(f)[1] == '.ma']
-
-        prefix = nam.split('.')[0]
-        if file_names:
-            f_lis = []
-            for f in file_names:
-                if prefix in f and nam != f:
-                    f_prefix = f.split('.')[0]
-                    if prefix + '_v' in f_prefix:
-                        i = int(f_prefix.replace(prefix + '_v', ''))
+        push_typ = {0: 'mod_body', 1: 'rig_body', 2: 'rig_fbx'}[self.comb_typ.currentIndex()]
+        if push_typ in ['rig_body', 'rig_fbx']:#当为rig模块时
+            ids = cgt.get_id_lis(pojpt_xt[1], stage='Rig')
+            for uid, val in cgt.get_asset_dir(pojpt_xt[1], ids, ['asset.entity']).items():#通过资产名匹配获得rig阶段的id
+                if val[0] == sel_item.data(QtCore.Qt.UserRole+6):
+                    res = None#提交结果。true:提交成功/false:提交失败
+                    path = None#提交到的目录文件路径，包含文件本身
+                    if push_typ == 'rig_body':
+                        res, path = cgt.push_file_to_teamWork(pojpt_xt[1], uid, push_typ, mc.file(exn=True, q=True))
+                    elif push_typ == 'rig_fbx':
+                        fbx_path = exportSelectToFbx() if sel_item.data(
+                            QtCore.Qt.UserRole + 5) == 'CHR' else exportSelectToFbx(totpose=False)  #fbx保存的文件路径
+                        res, path = cgt.push_file_to_teamWork(pojpt_xt[1], uid, push_typ, fbx_path, save=False)
+                    if res:
+                        fp('文件{}上传成功！！'.format(path), info=True, viewMes=True) if cgt.set_status(pojpt_xt[1], uid) \
+                            else fp('文件{}上传成功但状态未修改成功'.format(path), warning=True, viewMes=True)
+                    elif not res:
+                        fp('文件{}上传失败！！'.format(path), error=True, viewMes=True)
                     else:
-                        continue
-                    f_lis.append(i)
+                        fp('未知的结果。', warning=True, viewMes=True)
+                    break
+        elif push_typ in ['mod_body']:#当为mod模块时，因为当前项储存的id就是mod.id，所以不需要检测rig的id
+            res, path = cgt.push_file_to_teamWork(pojpt_xt[1], sel_item.data(QtCore.Qt.UserRole), push_typ,
+                                                  mc.file(exn=True, q=True))
+            if res:
+                fp('文件{}上传成功！！'.format(path), info=True, viewMes=True) \
+                    if cgt.set_status(pojpt_xt[1], sel_item.data(QtCore.Qt.UserRole)) \
+                    else fp('文件{}上传成功但状态未修改成功'.format(path), warning=True, viewMes=True)
+            elif not res:
+                fp('文件{}上传失败！！'.format(path), error=True, viewMes=True)
+            else:
+                fp('未知的结果。', warning=True, viewMes=True)
 
-            f_lis.sort()
-            return '{}_v{}.ma'.format(prefix, str(f_lis[-1] + 1).zfill(2))
-
-        else:
-            return '{}_v01.ma'.format(prefix)
-
-    def push_select_to_fbx(self):
-        """
-        将当前选中对象导出为fbx并上传到指定资产sk文件夹内
-        :return:
-        """
-        sel_items = self.lst_asset.selectedItems()
-        if not sel_items:
-            fp('没有选中有效项。', error=True, viewMes=True)
-
-        folder_path = sel_items[0].data(QtCore.Qt.UserRole + 3)  #fbx文件夹服务器路径
-        file_absPath = exportSelectToFbx()  #fbx保存的文件路径
-        file_name = 'SK_{}.fbx'.format(sel_items[0].data(QtCore.Qt.UserRole + 2))  #fbx文件名
-        file_path = os.sep.join([folder_path, file_name])  #fbx服务器文件路径
-        if os.path.normcase(os.path.abspath(file_absPath)) == os.path.normcase(os.path.abspath(file_path)):
-            fp('保存文件就是服务器fbx文件路径地址。', info=True)
-        else:  #当保存位置与服务器fbx文件位置不相等时
-            if not os.path.exists(folder_path):  #服务器fbx文件夹路径不存在时
-                os.mkdir(folder_path)
-            if os.path.exists(file_path):  #服务器fbx文件存在时
-                fp('正在向历史文件夹内保存文件。', info=True)
-                fileUtils.version_up(folder_path, file_name)  #保存历史文件
-                fp('历史文件保存成功。', info=True)
-            try:
-                fp('正在向服务器中提交fbx文件。', info=True)
-                shutil.copyfile(file_absPath, file_path)
-                fp('fbx文件提交成功。', info=True)
-                self.but_push_fbx.setText(u'fbx文件提交成功')
-            except Exception as e:
-                self.but_push_fbx.setText(u'fbx文件提交失败')
-                fp('fbx文件提交失败。{}'.format(e), error=True, viewMes=True)
 
 
 def push_rig():
@@ -522,5 +450,5 @@ def push_rig():
     except:
         pass
     finally:
-        pushScence_window = pushWindow()
+        pushScence_window = PushWindow()
         pushScence_window.show()

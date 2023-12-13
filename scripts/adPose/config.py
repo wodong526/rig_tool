@@ -2,15 +2,18 @@
 import os
 import json
 import re
-from general_ui import *
+
+from .general_ui import *
 
 
 config = None
 default_config = data = [
     [u"左边", "right", ["R_*", "*Rt*", "*_R", "*Right*"]],
     [u"右边", "left", ["L_*", "*Lf*", "*_L", "*Left*"]],
-    [u"骨骼", "joint", ["*Joint", "*_jnt", "*JNT", "(?P<prefix>.+)"]],
-    [u"控制器", "ctrl", ["*Control", "*_ctrl", "*CON", "FK{prefix}"]],
+    [u"骨骼", "joint", ["*Joint", "*_jnt", "*JNT", r"^(?P<name>\w+)Part[0-9](?P<suffix>\w+)$"]],
+    [u"控制器", "ctrl", ["*Control", "*_ctrl", "*CON", "FK{name}{suffix}"]],
+    [u"前缀", "prefix", ["FK"]],
+    [u"后缀", "suffix", []],
 ]
 
 
@@ -56,8 +59,12 @@ class ConfigTool(Tool):
             self.weights[key].setText(",".join(value))
 
 
-def get_names(name, src_formats, dst_formats):
+def get_names(name, src_formats, dst_formats, prefix_list, suffix_list):
     names = []
+    for prefix in prefix_list:
+        names.append(prefix+name)
+    for suffix in suffix_list:
+        names.append(name + suffix)
     for src, dst in zip(src_formats, dst_formats):
         if src[0] == "*" and src[-1] == "*":
             if src[1:-1] in name:
@@ -68,23 +75,22 @@ def get_names(name, src_formats, dst_formats):
         elif src[-1] == "*":
             if name[:len(src)-1] == src[:-1]:
                 names.append(dst[:-1]+name[len(src)-1:])
-        else:
+        elif "?" in src:
             match = re.match(src, name)
-            if match is None:
-                continue
-            names.append(dst.format(**match.groupdict()))
+            if match:
+                names.append(dst.format(**match.groupdict()))
     return names
 
 
 def get_ctrl_names(name):
     _config = get_dict_config()
-    return get_names(name, _config["joint"], _config["ctrl"])
+    return get_names(name, _config["joint"], _config["ctrl"],  _config["prefix"], _config["suffix"])
 
 
 def get_rl_names(name):
     _config = get_dict_config()
-    names = get_names(name, _config["right"], _config["left"])
-    names += get_names(name, _config["left"], _config["right"])
+    names = get_names(name, _config["right"], _config["left"], [], [])
+    names += get_names(name, _config["left"], _config["right"], [], [])
     return names
 
 

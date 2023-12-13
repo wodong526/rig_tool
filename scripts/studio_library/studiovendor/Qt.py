@@ -1513,10 +1513,10 @@ def _log(text):
 
 
 def _convert(lines):
-    """Convert compiled .ui file from PySide2 to Qt.py
+    """Convert compiled .tool_ui file from PySide2 to Qt.py
 
     Arguments:
-        lines (list): Each line of of .ui file
+        lines (list): Each line of of .tool_ui file
 
     Usage:
         >> with open("myui.py") as f:
@@ -1532,7 +1532,7 @@ def _convert(lines):
             raise NotImplementedError("QtCore.SIGNAL is missing from PyQt5 "
                                       "and so Qt.py does not support it: you "
                                       "should avoid defining signals inside "
-                                      "your ui files.")
+                                      "your tool_ui files.")
         return line
 
     parsed = list()
@@ -1551,7 +1551,7 @@ def _cli(args):
     parser.add_argument("--convert",
                         help="Path to compiled Python module, e.g. my_ui.py")
     parser.add_argument("--compile",
-                        help="Accept raw .ui file and compile with native "
+                        help="Accept raw .tool_ui file and compile with native "
                              "PySide2 compiler.")
     parser.add_argument("--stdout",
                         help="Write to stdout instead of file",

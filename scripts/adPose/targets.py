@@ -1,8 +1,8 @@
 # coding:utf-8
-from general_ui import *
-from ADPose import ADPoses, update_ui_ctrl
-import bs
-import joints
+from .general_ui import *
+from .ADPose import ADPoses
+from . import bs
+from . import joints
 
 
 class TargetList(QListWidget):
@@ -43,7 +43,7 @@ class TargetList(QListWidget):
         return [item.text() for item in self.selectedItems()]
 
     def warp_copy_targets(self):
-        ADPoses.warp_copy_targets(self.selected_targets())
+        bs.tool_part_warp_copy(ADPoses.warp_copy_targets)(self.selected_targets())
 
     def reload(self):
         self.clear()
@@ -65,10 +65,12 @@ class TargetList(QListWidget):
 
     def set_text(self, text):
         self.text = text
-        if self.text:
-            self.query()
-        else:
-            self.reload()
+        self.query()
+
+    def load_objs(self, text):
+        self.text = text
+        self.reload()
+        self.query()
 
     def contextMenuEvent(self, event):
         self.menu.exec_(event.globalPos())
@@ -83,31 +85,22 @@ class TargetEditTool(Tool):
     def __init__(self, parent=None):
         Tool.__init__(self, parent)
         self.polygons = MayaObjLayouts(u"模型：", 40)
-        self.ctrl = MayaObjLayouts(u"控制：", 40)
         self.query = MayaObjLayouts(u"搜索：", 40)
         self.query.line.setReadOnly(False)
         self.slider = TargetSlider()
         self.list = TargetList(self)
         self.kwargs_layout.addLayout(self.slider)
         self.kwargs_layout.addLayout(self.polygons)
-        self.kwargs_layout.addLayout(self.ctrl)
         self.kwargs_layout.addLayout(self.query)
         self.kwargs_layout.addWidget(self.list)
-        self.query.textChanged.connect(self.list.set_text)
+        self.query.textChanged.connect(self.list.load_objs)
         self.query.line.textChanged.connect(self.list.set_text)
         self.list.mirrorTargets.connect(self.mirror)
         self.slider.slider.valueChanged.connect(self.set_ib_pose_by_targets)
         self.slider.button.clicked.connect(self.esc)
-        self.ctrl.line.textChanged.connect(self.update_ui_global)
-        self.query.line.textChanged.connect(self.update_ui_global)
-
-    def update_ui_global(self):
-        ctrl = self.ctrl.line.text()
-        joint = self.query.line.text()
-        update_ui_ctrl(ctrl=ctrl, joint=joint)
 
     def set_ib_pose_by_targets(self, value):
-        ADPoses.set_pose_by_targets(self.list.selected_targets(), self.list.get_targets(), value)
+        ADPoses.set_pose_by_targets(self.list.selected_targets(), [], value)
         pm.refresh()
 
     def apply(self):

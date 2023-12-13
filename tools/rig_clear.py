@@ -100,24 +100,12 @@ def clear_frozen():
     """
     查询场景中的模型和组是否有未冻结的属性。
     """
-    obj = mc.ls(sl=True)
-    trans_lis = []
-    for inf in obj:
-        if mc.listRelatives(inf, s=1):
-            if mc.nodeType(mc.listRelatives(inf, s=1)[0]) == "mesh":
-                trans_lis.append(inf)
-            elif len(mc.listRelatives(inf, ad=True)) > 1:
-                trans_lis.append(inf)
     erro_lis = []
-    for trans_obj in trans_lis:
-        for attr in [
-            "translateX",
-            "translateY",
-            "translateZ",
-            "rotateX",
-            "rotateY",
-            "rotateZ",
-        ]:
+    for trans_obj in mc.ls(typ='transform'):
+        if trans_obj in ['persp', 'top', 'front', 'side']:
+            continue
+
+        for attr in ["translateX", "translateY", "translateZ", "rotateX", "rotateY", "rotateZ"]:
             if mc.getAttr("{}.{}".format(trans_obj, attr)):
                 erro_lis.append([trans_obj, attr])
                 continue

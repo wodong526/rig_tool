@@ -6,20 +6,29 @@ import maya.OpenMayaAnim as omain
 from feedback_tool import Feedback_info as fb_print, LIN as lin
 
 
-def getApiNode(obj, dag=True):
+def getApiNode(obj=None, dag=True, com=False):
     """
     获取对象的MDagPath
+    :param com: 如果需要获取的是组件，则返回组件的dagPath
     :param dag: 是否只返回dag节点
     :param obj:(str) 要获取的对象
     :return:
     """
     sel = om.MSelectionList()
-    sel.add(obj)
+    if obj:
+        sel.add(obj)
+    else:
+        om.MGlobal.getActiveSelectionList(sel)
 
     if dag:
         m_dag = om.MDagPath()
-        sel.getDagPath(0, m_dag)
-        return m_dag
+        if com:
+            component = om.MObject()
+            sel.getDagPath(0, m_dag, component)
+            return m_dag, component
+        else:
+            sel.getDagPath(0, m_dag)
+            return m_dag
     else:
         mobject = om.MObject()
         sel.getDependNode(0, mobject)
@@ -144,7 +153,7 @@ def get_skinModelType(skin_cluster_fn):
             dg_iterator.next()
 
 
-def fromObjGetRigNode(obj, skin=True, blend_shape=False, path_name=True):
+def fromObjGetRigNode(obj=None, skin=True, blend_shape=False, path_name=True):
     """
     从字符串的transform对象获取该模型的绑定相关类型节点
     :param blend_shape: 获取bs节点
@@ -153,7 +162,11 @@ def fromObjGetRigNode(obj, skin=True, blend_shape=False, path_name=True):
     :param path_name: 返回时是否返回api对象列表，为真（默认）时返回节点名字列表
     :return:绑定相关节点列表
     """
-    dagNode = getApiNode(obj)
+    if not isinstance(obj, om.MDagPath):
+        dagNode = getApiNode(obj)
+    else:
+        dagNode = obj
+
     try:
         dagNode.extendToShape()
     except RuntimeError:

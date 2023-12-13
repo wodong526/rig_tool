@@ -74,7 +74,7 @@ class Export_SM(QtWidgets.QDialog):
         self.lst_jnts.itemSelectionChanged.connect(self.create_modItems)
         self.lst_jnts.customContextMenuRequested.connect(self.contextMenu_jnt)
         self.lst_mods.customContextMenuRequested.connect(self.contextMenu_mod)
-        self.lst_jnts.itemSelectionChanged.connect(self.select_jnt)
+        #self.lst_jnts.itemSelectionChanged.connect(self.select_jnt)
         self.lst_mods.itemSelectionChanged.connect(self.select_mod)
         self.but_export.clicked.connect(self.exportSM)
 
@@ -134,11 +134,11 @@ class Export_SM(QtWidgets.QDialog):
                     fb_print('关节{}没有对应的模型。'.format(sel_item[0].data(QtCore.Qt.UserRole)))
 
     def contextMenu_jnt(self, pos):
-        '''
+        """
         关节列表视图中在项上右键生成的菜单
         :param pos: 鼠标右键时的位置在整个窗口布局的位置
         :return:
-        '''
+        """
         menu = QtWidgets.QMenu()
         action_addJnt = menu.addAction(u'添加选中关节')
         action_addJnt.triggered.connect(self.add_JntItem)
@@ -329,7 +329,7 @@ class Export_SM(QtWidgets.QDialog):
         for jnt in export_lis:
             sm_nam = self.export_nam_dir[jnt]
             i += 1
-            mid = '---'.center(15)
+            mid = '---'
 
             txt = txt + jnt + mid + sm_nam + '\n'
 

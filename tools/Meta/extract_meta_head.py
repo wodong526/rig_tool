@@ -1,13 +1,9 @@
 # -*- coding:GBK -*-
+import os
+
 import maya.cmds as mc
 import maya.mel as mel
-
-import os
-import logging
-
-logging.basicConfig()
-log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
+from feedback_tool import Feedback_info as fp
 
 class EXTRACT_META(object):
     def __init__(self):
@@ -34,8 +30,11 @@ class EXTRACT_META(object):
 
     def delete_useless(self):
         # 删除无用组和模型，包括灯光和一些set集、显示层，并把头的非lod0的组删除
-        del_lis = ['Lights', 'DHIbody:root', 'export_geo_GRP', 'root_drv', 'PSD', 'Body_joints']
-        mc.delete(del_lis)
+        for obj in ['Lights', 'DHIbody:root', 'export_geo_GRP', 'root_drv', 'PSD', 'Body_joints', 'FacialControls']:
+            if mc.objExists(obj):
+                mc.delete(obj)
+            else:
+                fp('场景中没有对象{}'.format(obj), warning=True)
 
         mc.parent('head_grp', w=True)
         mc.delete('rig')
@@ -47,7 +46,7 @@ class EXTRACT_META(object):
             if i == 0:
                 continue
             mc.delete('head_lod{}_grp'.format(i))
-        log.info('已清理无用大纲、显示层、LOD。')
+        fp('已清理无用大纲、显示层、LOD。', info=True)
 
     def set_scene(self):
         # 将摄像机轴向放正,将场景转为Y轴向上，显示关节
@@ -55,7 +54,7 @@ class EXTRACT_META(object):
             mc.setAttr('persp.rotate{}'.format(aix), 0)
         mel.eval('setUpAxis "y";')
         mc.modelEditor('modelPanel4', e=True, j=True)
-        log.info('已掰直摄像机、场景换为Y轴向上、显示场景中的关节。')
+        fp('已掰直摄像机、场景换为Y轴向上、显示场景中的关节。', info=True)
 
     def del_nameSpace(self):
         # 通过遍历场景所有空间名并删除非默认空间名
@@ -64,7 +63,7 @@ class EXTRACT_META(object):
         pool = [item for item in nsLs if item not in defaultNs]
         for ns in pool:
             mc.namespace(rm=ns, mnr=1, f=1)
-            log.info('已清理空间名{}。'.format(ns))
+            fp('已清理空间名{}。'.format(ns), info=True)
 
     def rotate_headJoint(self):
         # 用一个新的组将骨架掰直，头的模型会因为蒙皮也一起被掰直
@@ -74,7 +73,7 @@ class EXTRACT_META(object):
         mc.setAttr('LOC_world.rx', -90)
         mc.parent('spine_04', w=True)
         mc.delete('grp_rotHead_001')
-        log.info('已掰直蒙皮骨架。')
+        fp('已掰直蒙皮骨架。', info=True)
 
     def save_scene(self):
         # 另存场景，并保存一份target文件用于后面拷贝权重
@@ -84,7 +83,7 @@ class EXTRACT_META(object):
         mc.select(self.mod_lis)
         mc.select('spine_04', add=True)
         mc.file(self.target_path, f=True, es=True, typ='mayaBinary', op='v = 1', pr=True)
-        log.info('已另存场景并保存目标权重文件。')
+        fp('已另存场景并保存目标权重文件。', info=True)
 
     def get_dir(self):
         # 获取两个字典，模型名：对该模型蒙皮的关节列表、模型名：cluster节点名，并删除蒙皮节点
@@ -97,7 +96,7 @@ class EXTRACT_META(object):
             cls_dir[trs] = jnt
             cls_name_dir[trs] = clst
             mc.delete(clst)
-        log.info('已获取蒙皮关节与蒙皮节点名的字典。')
+        fp('已获取蒙皮关节与蒙皮节点名的字典。', info=True)
         return cls_dir, cls_name_dir
 
     def rot_headMode(self):
@@ -113,7 +112,7 @@ class EXTRACT_META(object):
         mc.makeIdentity('grp_rotMod_001', a=True, r=True, n=False, pn=True)
         mc.parent(self.mod_lis, 'head_lod0_grp')
         mc.delete('grp_rotMod_001')
-        log.info('已掰直头的模型。')
+        fp('已掰直头的模型。', info=True)
 
     def set_skinCluster(self, cls_dir, cls_name_dir):
         # 将模型与关节重新做蒙皮，蒙皮节点名和原来一样
@@ -123,7 +122,7 @@ class EXTRACT_META(object):
                 jnt_lis.append(jnt)
             jnt_lis.append(clst)
             mc.skinCluster(jnt_lis, tsb=True, n=cls_name_dir[clst])
-        log.info('已重给蒙皮。')
+        fp('已重给蒙皮。', info=True)
 
     def copy_weights(self, cls_name_dir):
         # 将保存的target文件引用进来对现在的蒙皮进行拷贝，通过蒙皮节点进行拷贝
@@ -131,7 +130,7 @@ class EXTRACT_META(object):
         for obj in cls_name_dir:
             mc.copySkinWeights(ss='tst:{}'.format(cls_name_dir[obj]), ds=cls_name_dir[obj], nm=True, sa='closestPoint',
                                ia='closestJoint')
-            log.info('已传递{}蒙皮。'.format(cls_name_dir[obj]))
+            fp('已传递{}蒙皮。'.format(cls_name_dir[obj]), info=True)
             mc.select(obj)
             mc.BakeNonDefHistory()
         mc.file(self.target_path, rr=True)
@@ -153,7 +152,7 @@ class EXTRACT_META(object):
                 mc.skinPercent('head_lod0_mesh_skinCluster', tv=[(jnt, 0)])
                 mc.skinCluster('head_lod0_mesh_skinCluster', e=True, ri=jnt)
             else:
-                log.warning('{}不在蒙皮中。'.format(jnt))
+                fp('{}不在蒙皮中。'.format(jnt), warning=True)
             mc.delete(jnt)
         mc.setAttr('neck_01.liw', True)
 
@@ -164,12 +163,12 @@ class EXTRACT_META(object):
                 mc.skinPercent('head_lod0_mesh_skinCluster', tv=[(jnt, 0)])
                 mc.skinCluster('head_lod0_mesh_skinCluster', e=True, ri=jnt)
             else:
-                log.warning('{}不在蒙皮中。'.format(jnt))
+                fp('{}不在蒙皮中。'.format(jnt), warning=True)
             mc.delete(jnt)
         mc.setAttr('neck_02.liw', True)
 
         mc.delete('FACIAL_C_Neck2Root', 'FACIAL_C_Neck1Root')
-        log.info('脖子关节权重转换完成。')
+        fp('脖子关节权重转换完成。', info=True)
 
     def clear_scene(self):
         # 将显示贴图和灯光、显示阴影关掉，将无用材质节点删除 
@@ -178,11 +177,11 @@ class EXTRACT_META(object):
         mc.DisplayShaded()
         mc.setAttr('CTRL_faceGUIfollowHead.ty', True)
         mc.setAttr('CTRL_eyesAimFollowHead.ty', True)
-        log.info('扣头完毕。')
+        fp('扣头完毕。', info=True)
 
         try:
             if os.path.exists(self.target_path):
                 os.remove(self.target_path)
         except:
-            log.error('文档中备份蒙皮文件夹仍然存在，因为删除时出错了。')
+            fp('文档中备份蒙皮文件夹仍然存在，因为删除时出错了。', error=True)
 

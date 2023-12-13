@@ -2,9 +2,8 @@
 import math
 import re
 import pymel.core as pm
-import bs
-import config
-reload(bs)
+from . import bs
+from . import config
 
 
 def create_group(n="|FaceGroup|SkeletonGroup", d=False, v=None, i=None):
@@ -27,7 +26,6 @@ def create_group(n="|FaceGroup|SkeletonGroup", d=False, v=None, i=None):
 
 
 def free_joints():
-    print 2414
     polygons = get_selected_polygons()
     skins = []
     for polygon in polygons:
@@ -46,7 +44,6 @@ def free_joints():
             has_rotate_joints.append(joint)
     for joint in has_rotate_joints:
         matrix = joint.getMatrix()
-        print matrix
         trans = pm.datatypes.TransformationMatrix(matrix)
         rotate = trans.getRotation()
         joint.jointOrient.set(rotate[0]/math.pi*180.0, rotate[1]/math.pi*180.0, rotate[2]/math.pi*180.0)
@@ -80,48 +77,12 @@ def get_selected_polygons():
     return polygons
 
 
-UI_JOINT = None
-UI_CTRL = None
-
-
-def find_ui_ctrl(joint):
-    global UI_JOINT, UI_CTRL
-    if UI_JOINT is None:
-        return
-    if UI_CTRL is None:
-        return
-    if joint.name() != UI_JOINT:
-        return
-    ctrl_list = pm.ls(UI_CTRL)
-    if len(ctrl_list) != 1:
-        return
-    return ctrl_list[0]
-
-
-def update_ui_ctrl(joint, ctrl):
-    global UI_JOINT, UI_CTRL
-    UI_JOINT, UI_CTRL = None, None
-    if not isinstance(joint, (str, unicode)):
-        return
-    if not isinstance(ctrl, (str, unicode)):
-        return
-    if joint == u"":
-        return
-    if ctrl == u"":
-        return
-    print "up date"
-    UI_JOINT = joint
-    UI_CTRL = ctrl
-
-
 def find_ctrl_by_joint(joint):
     if "Part" in joint.name():
         return
     ctrl_list = pm.ls(config.get_ctrl_names(joint.name().split("|")[-1].split(":")[-1]), type="transform")
     if len(ctrl_list) == 1:
         return ctrl_list[0]
-    else:
-        return find_ui_ctrl(joint)
 
 
 def find_mirror_joint(joint):
@@ -133,7 +94,11 @@ def find_mirror_joint(joint):
 
 def create_node(typ, n):
     if pm.objExists(n):
-        pm.delete(n)
+        # 防止引用的情况发生
+        node = pm.PyNode(n)
+        if node.isReferenced():
+            return create_node(typ, n+"_reference")
+        pm.delete(node)
     return pm.createNode(typ, n=n)
 
 
@@ -186,7 +151,7 @@ def get_sorted_poses(poses):
         direction_angles.setdefault(direction, []).append(angle)
     for direction, angles in direction_angles.items():
         direction_angles[direction] = list(sorted(angles))
-    directions = sorted(direction_angles.keys())
+    directions = list(sorted(list(direction_angles.keys())))
     poses = []
     for direction in directions:
         for angle in direction_angles[direction]:
@@ -209,8 +174,10 @@ def target_is_ib(target_name):
 def dup_target(target_name, polygons):
     create_group("|adPoses").v.set(1)
     group = create_group("|adPoses|edit_" + target_name, d=True, v=True)
+    dup_polygons = []
     for polygon in polygons:
         polygon.v.set(0)
+        polygon.getShape().v.set(1)
         dup = polygon.duplicate()[0]
         for shape in dup.getShapes():
             if shape.io.get():
@@ -221,11 +188,16 @@ def dup_target(target_name, polygons):
         for shape in dup.getShapes():
             shape.overrideEnabled.set(True)
             shape.overrideColor.set(13)
+        dup_polygons.append(dup)
     panels = pm.getPanel(all=True)
     for panel in panels:
         if pm.modelPanel(panel, ex=1):
-            pm.modelEditor(panel, e=1, wireframeOnShaded=True)
+            try:
+                pm.modelEditor(panel, e=1, wireframeOnShaded=True)
+            except RuntimeError:
+                pass
     pm.select(cl=1)
+    return dup_polygons
 
 
 class ADPoses(object):
@@ -258,9 +230,9 @@ class ADPoses(object):
                 target_name = ad.target_name(pose)
                 targets.append(target_name)
                 comb_name = "COMB_" + target_name
-                if not ad.joint.hasAttr(comb_name):
+                if not ad.reference.hasAttr(comb_name):
                     continue
-                for node in ad.joint.attr(comb_name).outputs(type="combinationShape"):
+                for node in ad.reference.attr(comb_name).outputs(type="combinationShape"):
                     if target_name not in node.name():
                         continue
                     for attr in node.listAttr(ud=1):
@@ -343,19 +315,33 @@ class ADPoses(object):
             self.joint.addAttr("angle_direction_scale", at="double", k=1)
             self.joint.angle_direction_scale.set(scale)
 
+    def to_zero(self):
+        rotate = self.control.rotate.get()
+        if not all([abs(i) < 0.00001 for i in rotate]):
+            self.control.setMatrix(pm.datatypes.Matrix())
+
+    @classmethod
+    def all_to_zero(cls):
+        for joint in pm.ls(type="joint"):
+            if not joint.hasAttr("angle"):
+                continue
+            ctrl = find_ctrl_by_joint(joint)
+            if ctrl is None:
+                continue
+            rotate = ctrl.rotate.get()
+            if not all([abs(i) < 0.00001 for i in rotate]):
+                ctrl.setMatrix(pm.datatypes.Matrix())
+
     @classmethod
     def set_pose_by_targets(cls, pose_targets, all_targets=None, ib=None):
         if all_targets is None:
-            all_targets = cls.get_targets()
+            cls.all_to_zero()
         if ib is None:
             ib = 60
             for target in pose_targets:
                 if target[-5:-2] == "_IB":
                     ib = int(target[-2:])
         pose_targets = comb_target_to_targets(pose_targets)
-        all_targets = comb_target_to_targets(all_targets)
-        for ad, _ in cls.targets_to_ad_poses(all_targets):
-            ad.set_pose([0, 0])
         for ad, poses in cls.targets_to_ad_poses(pose_targets):
             angle, direction = poses[-1]
             angle = float(angle) * ib / 60.0
@@ -364,27 +350,31 @@ class ADPoses(object):
     # add
     def add_comb(self, pose):
         comb_name = "COMB_" + self.target_name(pose)
-        if not self.joint.hasAttr(comb_name):
-            self.joint.addAttr(comb_name, k=1, at="double", min=0, max=1)
+        if not self.reference.hasAttr(comb_name):
+            self.reference.addAttr(comb_name, k=1, at="double", min=0, max=1)
         angle, direction = pose
-        direction_attr = self.joint.attr("direction_%i" % direction)
+        direction_attr = self.reference.attr("direction_%i" % direction)
         dvs = [[0, 0], [pose[0], 1], [180, 1]]
-        angle_attr = self.update_sdk(dvs, self.joint.angle, "angle_%i_%i_%i" % (dvs[0][0], dvs[1][0], dvs[2][0]), True)
+        angle_attr = self.update_sdk(dvs, self.reference.angle, "angle_%i_%i_%i" % (dvs[0][0], dvs[1][0], dvs[2][0]), True)
         bw = create_node("blendWeighted", n=self.prefix+comb_name)
         angle_attr.connect(bw.input[0])
         direction_attr.connect(bw.weight[0])
-        bw.output.connect(self.joint.attr(comb_name))
+        bw.output.connect(self.reference.attr(comb_name), f=1)
 
     @classmethod
     def add_combs(cls, comb_poses):
         comb_name = cls.comb_name(comb_poses)
         if pm.objExists(comb_name):
-            return find_node_by_name(comb_name).attr(comb_name)
+            node = find_node_by_name(comb_name)
+            if node.hasAttr(comb_name):
+                return node.attr(comb_name)
+            else:
+                pm.delete(pm.ls(comb_name, type="combinationShape"))
         comb = create_node("combinationShape", comb_name)
         comb.combinationMethod.set(1)
         for i, (ad, pose) in enumerate(comb_poses):
             ad.add_comb(pose)
-            ad.joint.attr("COMB_" + ad.target_name(pose)).connect(comb.inputWeight[i])
+            ad.reference.attr("COMB_" + ad.target_name(pose)).connect(comb.inputWeight[i], f=1)
         dvs = [[0, 0], [1, 1]]
         update_sdk(comb, dvs, comb.attr("outputWeight"), comb_name, True)
         return comb.attr(comb_name)
@@ -429,7 +419,7 @@ class ADPoses(object):
             poses.append(pose)
             self.update_poses(poses)
         name = self.target_name(pose)
-        return self.joint.attr(name)
+        return self.reference.attr(name)
 
     @classmethod
     def add_by_target(cls, target):
@@ -478,7 +468,7 @@ class ADPoses(object):
             if pose not in old_poses:
                 continue
             name = self.target_name(pose)
-            for bs_node in self.joint.attr(name).outputs(type="blendShape"):
+            for bs_node in self.reference.attr(name).outputs(type="blendShape"):
                 bs.delete_target(bs_node.attr(name))
             old_poses.remove(pose)
         self.update_poses(old_poses)
@@ -540,17 +530,20 @@ class ADPoses(object):
             return
         src, dst = polygons
         bs.bridge_connect_edit(attr, src, dst)
+        return attr
 
     @staticmethod
     def edit_by_duplicate(duplicate, attr, edit=True):
         target_name = attr.name().split(".")[-1]
         src_polygons = bs.get_name_polygon_by_short_name(bs.get_child_polygons(duplicate))
         src_polygons = {k[len(target_name)+1:]: v for k, v in src_polygons.items()}
-        dst_polygons = bs.get_name_polygon_by_short_name(pm.ls(src_polygons.keys()))
+        dst_polygons = bs.get_name_polygon_by_short_name(pm.ls(list(src_polygons.keys())))
         for src, dst in bs.get_polygon_matrix_by_map([src_polygons, dst_polygons]):
             dst.v.set(True)
             if edit:
                 bs.bridge_connect_edit(attr, src, dst)
+            pm.cutKey(src, clear=1, time=":")
+            pm.cutKey(dst, clear=1, time=":")
         duplicate.v.set(0)
         duplicate.getParent().v.set(0)
         pm.select(cl=True)
@@ -569,6 +562,9 @@ class ADPoses(object):
             attr = cls.add_by_target(target_name)
             cls.set_pose_by_targets([target_name], all_targets=all_targets)
             cls.edit_by_duplicate(duplicate, attr, edit)
+            for ad, _ in cls.targets_to_ad_poses([target_name]):
+                pm.cutKey(ad.control, clear=1, time=":")
+        bs.LEditTargetJob.del_job()
 
     def get_max_pose(self):
         poses = self.get_poses()
@@ -581,7 +577,7 @@ class ADPoses(object):
         return max_poses
 
     def on_pose(self):
-        if not self.joint.hasAttr("angle"):
+        if not self.reference.hasAttr("angle"):
             return False
         pose = self.get_control_pose(init=False)
         poses = self.get_max_pose()
@@ -591,19 +587,21 @@ class ADPoses(object):
             return False
 
     def comb_pose_ib(self):
-        if not self.joint.hasAttr("angle"):
+        if not self.reference.hasAttr("angle"):
             return None, None
+
         poses = self.get_poses()
         direction_angles = {}
         for angle, direction in poses:
             direction_angles.setdefault(direction, []).append(angle)
-        direction = int(round(self.joint.direction.get()))
+        # direction = int(round(self.reference.direction.get()))
+        angle, direction = self.get_control_pose(init=False)
         if direction not in direction_angles:
             return None, None
         angle = max(direction_angles[direction])
         comb_target_name = "COMB_" + self.target_name((angle, direction))
-        if self.joint.hasAttr(comb_target_name):
-            ib = int(round(self.joint.attr(comb_target_name).get()*60.0))
+        if self.reference.hasAttr(comb_target_name):
+            ib = int(round(self.reference.attr(comb_target_name).get()*60.0))
             return (angle, direction), ib
         else:
             return None, None
@@ -639,16 +637,16 @@ class ADPoses(object):
         for ad in ads:
             pose, ib = ad.comb_pose_ib()
             ib_poses.setdefault(ib, []).append([ad, pose])
-        if len(ib_poses.keys()) != 1:
+        if len(list(ib_poses.keys())) != 1:
             return pm.warning("can not find ib pose")
-        if ib_poses.keys()[0] is None:
+        if list(ib_poses.keys())[0] is None:
             return pm.warning("can not find ib pose")
-        comb_poses = ib_poses.values()[0]
+        comb_poses = list(ib_poses.values())[0]
         comb_name = cls.comb_name(comb_poses)
         comb_node = find_node_by_name(comb_name)
         if comb_node is None:
             return pm.warning("can not find ib pose")
-        ib = ib_poses.keys()[0]
+        ib = list(ib_poses.keys())[0]
         return cls.ib_name(comb_name, ib)
 
     @classmethod
@@ -701,7 +699,41 @@ class ADPoses(object):
         if target_name is None:
             return
         cls.set_pose_by_targets([target_name], [], None)
-        dup_target(target_name, polygons)
+        dup_polygons = dup_target(target_name, polygons)
+        pm.playbackOptions(e=1, min=1, max=64)
+        for src, dst in zip(dup_polygons, polygons):
+            pm.select(src, dst)
+            cls.edit_by_selected_target(target_name)
+            pm.setKeyframe(src, t=59, v=0, at='v')
+            pm.setKeyframe(src, t=60, v=1, at='v')
+            pm.setKeyframe(dst, t=59, v=1, at='v')
+            pm.setKeyframe(dst, t=60, v=0, at='v')
+            bs.LEditTargetJob(src, dst, target_name)
+        pose_targets = comb_target_to_targets([target_name])
+        for ad, poses in cls.targets_to_ad_poses(pose_targets):
+            ctrl = find_ctrl_by_joint(ad.joint)
+            if ctrl is None:
+                continue
+            pm.setKeyframe(ctrl, t=1, v=0, at='rx')
+            pm.setKeyframe(ctrl, t=1, v=0, at='ry')
+            pm.setKeyframe(ctrl, t=1, v=0, at='rz')
+            for pose in poses:
+                matrix = pose_to_matrix(pose)
+                trans_matrix = pm.datatypes.TransformationMatrix(matrix)
+                rotate = trans_matrix.getRotation()
+                rotate.setDisplayUnit("degrees")
+                rotate.reorderIt(ctrl.rotateOrder.get())
+                pm.setKeyframe(ctrl, t=60, v=rotate.x, at='rx')
+                pm.setKeyframe(ctrl, t=60, v=rotate.y, at='ry')
+                pm.setKeyframe(ctrl, t=60, v=rotate.z, at='rz')
+        pm.currentTime(64)
+        pm.select(cl=1)
+        for src, dst in zip(dup_polygons, polygons):
+            pm.delete(src.getShape().v.inputs(type="animCurveTU"))
+            src.getShape().v.set(True)
+            pm.delete(dst.getShape().v.inputs(type="animCurveTU"))
+            dst.getShape().v.set(True)
+        pm.refresh()
 
     @classmethod
     def dup_targets(cls, targets):
@@ -716,6 +748,14 @@ class ADPoses(object):
 
     @classmethod
     def auto_apply(cls, joints=None):
+        """
+from adPose2_FKSdk.adPose2 import ADPose
+reload(ADPose)
+cmds.select("Low")
+ADPose.auto_apply(["Elbow_L"])
+        :param joints:
+        :return:
+        """
         selected = pm.selected()
         if not pm.objExists("|adPoses"):
             create_group("|adPoses").v.set(0)
@@ -773,24 +813,53 @@ class ADPoses(object):
             return pm.warning("please selected two polygon")
         targets = [t for t in targets if "_COMB_" not in t]+[t for t in targets if "_COMB_" in t]
         src, dst = polygons
-        cls.set_pose_by_targets([])
+        cls.all_to_zero()
         pm.refresh()
         warp = dst.duplicate()[0]
         bs.get_orig(warp)
         pm.select(warp, src)
         pm.mel.CreateWrap()
         for target in targets:
-            cls.set_pose_by_targets([target])
+            cls.set_pose_by_targets([target], all_targets=[])
             pm.select(warp, dst)
             cls.edit_by_selected_target(target)
-            pm.refresh()
+            cls.set_pose_by_targets([target], all_targets=[], ib=0)
+        cls.all_to_zero()
         pm.delete(warp)
 
     def __init__(self, joint, control):
         self.joint = joint
         self.control = control
+        self.reference = joint
         self.prefix = joint.name().split("|")[-1]
-        self.convert_old_to_new()
+        self.update_reference()
+        # self.convert_old_to_new()
+
+    def update_reference(self):
+        u"""
+        :return:
+        在骨骼引用的情况下，创建一个组来代替骨骼。
+        """
+        reference_name = self.joint.name()+"_Reference"
+        nodes = pm.ls(reference_name)
+        if len(nodes) >= 1:
+            self.reference = nodes[0]
+            return
+        if not self.joint.isReferenced():
+            return
+        poses = self.get_poses()
+        self.reference = pm.group(em=1, n=reference_name)
+        self.reference.addAttr("angle", k=1, at="double", min=0, max=180)
+        self.reference.addAttr("direction", k=1, at="double", min=0, max=360)
+        self.update_angle_direction()
+        self.joint.angle.connect(self.reference.angle)
+        self.joint.direction.connect(self.reference.direction)
+        self.update_poses(poses)
+        for src, dst in self.joint.outputs(type="blendShape", p=1, c=1):
+            if dst.node().isReferenced():
+                continue
+            target_name = src.name().split(".")[-1]
+            self.reference.attr(target_name).connect(dst, f=1)
 
     def convert_old_to_new(self):
         old_ads = []
@@ -881,7 +950,7 @@ class ADPoses(object):
         condition.outColorR.connect(self.joint.direction)
 
     def update_sdk(self, dvs, cd, name, keep=1):
-        return update_sdk(self.joint, dvs, cd, name, keep)
+        return update_sdk(self.reference, dvs, cd, name, keep)
 
     def update_poses(self, poses):
         self.update_angle_direction()
@@ -890,16 +959,16 @@ class ADPoses(object):
             direction_angles.setdefault(direction, []).append(angle)
         for direction, angles in direction_angles.items():
             direction_angles[direction] = list(sorted(angles))
-        directions = sorted(direction_angles.keys())
+        directions = list(sorted(list(direction_angles.keys())))
         _sdk_ds = list(sorted(set([direction+offset for direction in directions for offset in [-360, 0, 360]])))
-        use_attr_list = [self.joint.angle, self.joint.direction]
+        use_attr_list = [self.reference.angle, self.reference.direction]
         for direction in directions:
             if direction == 360:
                 direction = 0
             sdk_ds = list(sorted(set(_sdk_ds+[direction+90, direction-90])))
             index = sdk_ds.index(direction)
             dvs = [[sdk_ds[index+i]+o, v] for i, v in [[-1, 0], [0, 1], [1, 0]] for o in [-360, 0, 360]]
-            direction_attr = self.update_sdk(dvs, self.joint.direction, "direction_%i" % direction, False)
+            direction_attr = self.update_sdk(dvs, self.reference.direction, "direction_%i" % direction, False)
             angles = direction_angles[direction]
             sdk_as = list(sorted(set(angles+[-1, 0, 180])))
             use_attr_list.append(direction_attr)
@@ -908,18 +977,20 @@ class ADPoses(object):
                 dvs = [[sdk_as[index + i], v] for i, v in [[-1, 0], [0, 1], [1, 0]]]
                 if dvs[-1][0] == 180:
                     dvs[-1][1] = 1
-                angle_attr = self.update_sdk(dvs, self.joint.angle,
+                angle_attr = self.update_sdk(dvs, self.reference.angle,
                                              "angle_%i_%i_%i" % (dvs[0][0], dvs[1][0], dvs[2][0]), True)
                 name = self.target_name([angle, direction])
-                if not self.joint.hasAttr(name):
-                    self.joint.addAttr(name, k=1, at="double", min=0, max=1)
-                pm.delete(self.joint.attr(name).inputs(type="blendWeighted"))
-                bw = create_node("blendWeighted",  n=name)
+                if not self.reference.hasAttr(name):
+                    self.reference.addAttr(name, k=1, at="double", min=0, max=1)
+                pm.delete(self.reference.attr(name).inputs(type="blendWeighted"))
+                # 将bw节点名从name改为name+BW,防止出现bs目标体同名节点。
+                pm.delete(pm.ls(name, type="blendWeighted"))
+                bw = create_node("blendWeighted",  n=name+"BW")
                 angle_attr.connect(bw.input[0])
                 direction_attr.connect(bw.weight[0])
-                bw.output.connect(self.joint.attr(name))
-                use_attr_list.extend([angle_attr, self.joint.attr(name)])
-        for attr in self.joint.listAttr(ud=1):
+                bw.output.connect(self.reference.attr(name))
+                use_attr_list.extend([angle_attr, self.reference.attr(name)])
+        for attr in self.reference.listAttr(ud=1):
             if attr in use_attr_list:
                 continue
             if not any([field in attr.name(includeNode=False) for field in [self.prefix, "angle", "direction"]]):
@@ -929,7 +1000,7 @@ class ADPoses(object):
 
     def get_control_pose(self, init=True, int_round=True):
         self.update_angle_direction()
-        angle, direction = self.joint.angle.get(), self.joint.direction.get()
+        angle, direction = self.reference.angle.get(), self.reference.direction.get()
         if int_round:
             angle, direction = int(round(angle)), int(round(direction))
         if abs(direction - 360) < 0.0001:
@@ -942,17 +1013,56 @@ class ADPoses(object):
 
     def get_poses(self):
         poses = []
-        for attr in self.joint.listAttr(ud=1):
+        for attr in self.reference.listAttr(ud=1):
             name = attr.name(includeNode=False)
             if self.prefix not in name:
                 continue
             pattern = re.match("^%s_a([0-9]{1,3})_d([0-9]{1,3})$" % self.prefix, name)
             if pattern is None:
                 continue
-            if not self.joint.hasAttr(name):
+            if not self.reference.hasAttr(name):
                 continue
             angle, direction = pattern.groups()
             angle, direction = int(angle), int(direction)
             poses.append(tuple([angle, direction]))
         return get_sorted_poses(poses)
+
+    @classmethod
+    def load_targets(cls, target_names):
+        data = {}
+        comb_ib_target_names = []
+        for target_name in target_names:
+            if target_name[-5:-2] == "_IB":
+                comb_ib_target_names.append(target_name)
+                continue
+            if "_COMB_" in target_name:
+                comb_ib_target_names.append(target_name)
+                continue
+            match = re.match("(.+)_a([0-9]{1,3})_d([0-9]{1,3})", target_name)
+            if match is None:
+                continue
+            joint_name, angle, direction = match.groups()
+            angle, direction = int(angle), int(direction)
+            data.setdefault(joint_name, []).append((angle, direction))
+        ad_poses = []
+        for joint_name, poses in data.items():
+            joint = find_node_by_name(joint_name)
+            if joint is None:
+                continue
+            ctrl = find_ctrl_by_joint(joint)
+            if ctrl is None:
+                continue
+            ad = cls(joint, ctrl)
+            ad_poses.append([ad, poses])
+        result_attr_list = []
+        for ad, poses in ad_poses:
+            for pose in ad.get_poses():
+                if pose not in poses:
+                    poses.append(pose)
+            ad.update_poses(poses)
+            for pose in poses:
+                result_attr_list.append(ad.reference.attr(ad.target_name(pose)))
+        for comb_ib_target_name in comb_ib_target_names:
+            result_attr_list.append(cls.add_by_target(comb_ib_target_name))
+        return result_attr_list
 

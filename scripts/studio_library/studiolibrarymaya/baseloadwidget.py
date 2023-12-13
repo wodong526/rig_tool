@@ -103,7 +103,7 @@ class BaseLoadWidget(QtWidgets.QWidget):
         :rtype: QtWidgets.QFrame
         """
         class UI(object):
-            """Proxy class for attaching ui widgets as properties."""
+            """Proxy class for attaching tool_ui widgets as properties."""
             pass
 
         titleWidget = QtWidgets.QFrame(self)
@@ -164,7 +164,7 @@ class BaseLoadWidget(QtWidgets.QWidget):
         return menu.exec_(point)
 
     def loadUi(self):
-        """Convenience method for loading the .ui file."""
+        """Convenience method for loading the .tool_ui file."""
         studioqt.loadUi(self, cls=BaseLoadWidget)
 
     def formWidget(self):

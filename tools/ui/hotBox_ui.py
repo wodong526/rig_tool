@@ -48,12 +48,12 @@ class Rig_HotBox(object):
                                                 'reload(pushScence_tool);'
                                                 'pushScence_tool.push_rig();')
         mc.menuItem(d=True, p=menu)
-        mc.menuItem(p=menu, l='加载meta脚本', c='import pulg_ins;'
-                                                'reload(pulg_ins);'
-                                                'pulg_ins.add_metaToMata_plug();')
-        mc.menuItem(p=menu, l='加载adPose', c='import pulg_ins;'
-                                              'reload(pulg_ins);'
-                                              'pulg_ins.add_adPose_ui();')
+        mc.menuItem(p=menu, l='加载meta脚本', c='import reload_tools;'
+                                                'reload(reload_tools);'
+                                                'reload_tools.add_metaToMata_plug();')
+        mc.menuItem(p=menu, l='加载adPose', c='import reload_tools;'
+                                              'reload(reload_tools);'
+                                              'reload_tools.add_adPose_ui();')
         mc.menuItem(p=menu, l='打开插件管理器', c="mm.eval('PluginManager;')")
         mc.menuItem(p=menu, l='绑脸工具', c='from ui import faceUi;'
                                             'reload(faceUi);')

@@ -645,7 +645,7 @@ global proc brSmoothWeightsLockInfluence( int $choice, int $state )
 //
 global proc brSmoothWeightsInfluenceList()
 {
-    frameLayout -label "Influences"
+    frameLayout -label "影响"
                 -labelIndent 3
                 -collapsable 1
                 -collapse (`optionVar -query "brSmoothWeightsInfluenceFrameState"`)
@@ -656,14 +656,14 @@ global proc brSmoothWeightsInfluenceList()
         string $influenceForm = `formLayout`;
 
             textFieldGrp -label ""
-                         -placeholderText "Enter search string. Use + for combinations"
+                         -placeholderText "输入搜索字符串。使用+组合。"
                          -columnWidth2 0 135
                          -columnAttach2 "left" "right"
                          -columnOffset2 0 0
                          -adjustableColumn2 2
                          -tcc brSmoothWeightsSearchJointString
                          brSmoothWeightsSearchField;
-            string $clearButton = `button -label "Clear"
+            string $clearButton = `button -label "清除"
                                           -width 46
                                           -command
                                           brSmoothWeightsClearSearch`;

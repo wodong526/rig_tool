@@ -23,7 +23,7 @@ FILE_PATH = __file__
 def metaHead_to_adv():
     if mc.objExists('NeckPart1_M') and not mc.objExists('NeckPart2_M'):
         hide_adv_ctrlAndJoint()
-        set_advJoint_pos()
+        #set_advJoint_pos()#这里的代码似乎有误，并不需要将adv的关节链匹配到meta的关节链上
         transform_skin()
         transform_neck_weight()
         arrangement_scence()
@@ -45,10 +45,10 @@ def hide_adv_ctrlAndJoint():
 
 
 def set_advJoint_pos():
-    '''
+    """
     匹配adv脊椎关节到meta的关节位置
     :return: None
-    '''
+    """
     #获取meta脊椎的关节位置
     meta_neck_01_pos = mc.xform('neck_01', q=True, ws=True, t=True)
     meta_neck_02_pos = mc.xform('neck_02', q=True, ws=True, t=True)
@@ -69,10 +69,10 @@ def set_advJoint_pos():
 
 
 def transform_skin():
-    '''
-    将meta关节上需要移植到adv关节上的权重传递过去
+    """
+    将meta肩膀关节上需要移植到adv关节上的权重传递过去
     :return: None
-    '''
+    """
     add_joint_dir = {'Scapula_L': ['clavicle_out_l', 'clavicle_scap_l', 'clavicle_l'],
                      'Scapula_R': ['clavicle_out_r', 'clavicle_scap_r', 'clavicle_r'],
                      'Chest_M': ['spine_04', 'clavicle_pec_l', 'clavicle_pec_r', 'spine_04_latissimus_l',
@@ -88,10 +88,10 @@ def transform_skin():
 
 
 def transform_neck_weight():
-    '''
+    """
     将meta脖子上的子关节权重移植到颈椎关节上
     :return: None
-    '''
+    """
     neck_2_subJoint = mc.listRelatives('FACIAL_C_Neck2Root')  # 获取FACIAL_C_Neck2Root下的所有关节
     neck_1_subJoint = mc.listRelatives('FACIAL_C_Neck1Root')  # 获取FACIAL_C_Neck1Root下的所有关节
 
@@ -103,8 +103,8 @@ def transform_neck_weight():
     skinUtils.transform_jnt_skin(['head'], 'Head_M', 'head_lod0_mesh')
     skinUtils.add_skinJnt('eyeEdge_lod0_mesh_skinCluster', 'Head_M')
     skinUtils.transform_jnt_skin(['head'], 'Head_M', 'eyeEdge_lod0_mesh')
-    skinUtils.add_skinJnt('cartilage_lod0_mesh_skinCluster', 'Head_M')
-    skinUtils.transform_jnt_skin(['head'], 'Head_M', 'cartilage_lod0_mesh')
+    # skinUtils.add_skinJnt('cartilage_lod0_mesh_skinCluster', 'Head_M')#该模型目前不在流程范围内
+    # skinUtils.transform_jnt_skin(['head'], 'Head_M', 'cartilage_lod0_mesh')
     skinUtils.add_skinJnt('eyeshell_lod0_mesh_skinCluster', 'Head_M')
     skinUtils.transform_jnt_skin(['head'], 'Head_M', 'eyeshell_lod0_mesh')
     mc.parent(mc.listRelatives('head'), 'Head_M')
@@ -114,15 +114,19 @@ def transform_neck_weight():
 
 
 def arrangement_scence():
-    '''
+    """
     收尾工作，删除无用的对象，重命名驱动关节为原本的名字，以便meta插件加载时有对象可以链接
     :return:
-    '''
+    """
     mc.delete('spine_05')
     if mc.objExists('drv_spine_04'):
+        mc.parentConstraint('FKXHead_M', 'drv_head', mo=True)
         for jnt in mc.listRelatives('grp_moveDrvJnt_001', ad=True):
             if not mc.objExists(jnt.replace('drv_', '')):
                 mc.rename(jnt, jnt.replace('drv_', ''))
         mc.parent('head', 'grp_moveDrvJnt_001')
+        mc.setAttr('grp_moveDrvJnt_001.v', 0)
+    else:
+        mc.parentConstraint('FKXHead_M', 'head', mo=True)
     mm.eval('hyperShadePanelMenuCommand("hyperShadePanel1", "deleteUnusedNodes");')
     fb_print('转换完成', info=True, path=FILE_PATH, line=LIN(), viewMes=True)

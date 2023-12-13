@@ -7,6 +7,7 @@ import sys
 import os
 
 from feedback_tool import Feedback_info as fb_print
+from dutils import toolUtils
 
 if sys.version_info.major == 3:
     #当环境为py3时
@@ -150,6 +151,7 @@ class Rig_Menu(object):
             import svn_tool
             svn_tool.svn_logs()
 
-        pm.menuItem(to=True, p=p_menu, l=u'同步工具架', i='svn_synchronization.png', c=upData_rigMenu)
+        if toolUtils.get_native_iP() != '123.120.55.47':
+            pm.menuItem(to=True, p=p_menu, l=u'同步工具架', i='svn_synchronization.png', c=upData_rigMenu)
         pm.menuItem(to=True, p=p_menu, l=u'打印本地工具架版本信息', i='svn_info.png', c=edition_info)
         pm.menuItem(to=True, p=p_menu, l=u'打印服务器提交日志', i='svn_log.png', c=get_logs)

@@ -65,7 +65,7 @@ class PoseWrangler(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
             raise RuntimeError("Unable to load valid RBF plugin version")
 
         # Load the UI file
-        file_path = os.path.dirname(__file__) + "/poseWranglerUI.ui"
+        file_path = os.path.dirname(__file__) + "/poseWranglerUI.tool_ui"
         if os.path.exists(file_path):
             ui_file = QtCore.QFile(file_path)
             # Attempt to open and load the UI

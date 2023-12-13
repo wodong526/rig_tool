@@ -65,7 +65,7 @@ def app():
 
 def uiPath(cls):
     """
-    Return the ui path for the given widget class.
+    Return the tool_ui path for the given widget class.
     
     :type cls: type
     :rtype: str
@@ -74,13 +74,13 @@ def uiPath(cls):
     path = inspect.getfile(cls)
     dirname = os.path.dirname(path)
 
-    path = dirname + "/resource/ui/" + name + ".ui"
+    path = dirname + "/resource/tool_ui/" + name + ".tool_ui"
 
     if not os.path.exists(path):
-        path = dirname + "/ui/" + name + ".ui"
+        path = dirname + "/tool_ui/" + name + ".tool_ui"
 
     if not os.path.exists(path):
-        path = dirname + "/" + name + ".ui"
+        path = dirname + "/" + name + ".tool_ui"
 
     return path
 

@@ -337,23 +337,23 @@ global proc brSmoothWeightsProperties()
                                 brSmoothWeightsNarrowButton;
             setParent ..;
 
-            floatSliderGrp -label "Size"
+            floatSliderGrp -label "尺寸"
                            -precision 3
                            -maxValue 100
                            brSmoothWeightsSize;
-            floatSliderGrp -label "Strength"
+            floatSliderGrp -label "强度"
                            -precision 3
                            brSmoothWeightsStrength;
-            checkBoxGrp -label "Affect Selected" brSmoothWeightsAffectSelectedCheck;
-            checkBoxGrp -label "Ignore Influence Lock" brSmoothWeightsIgnoreLockCheck;
+            checkBoxGrp -label "影响选定对象" brSmoothWeightsAffectSelectedCheck;
+            checkBoxGrp -label "忽略影响锁" brSmoothWeightsIgnoreLockCheck;
 
             separator -style "none";
 
-            intSliderGrp -label "Oversampling"
+            intSliderGrp -label "过采样"
                          -minValue 1
                          -maxValue 10
                          brSmoothWeightsOversampling;
-            checkBoxGrp -label "Fraction Oversampling" brSmoothWeightsFractionOversamplingCheck;
+            checkBoxGrp -label "分数过采样" brSmoothWeightsFractionOversamplingCheck;
 
             separator -style "none";
 
@@ -445,7 +445,7 @@ global proc brSmoothWeightsProperties()
 
         setParent ..;
 
-        frameLayout -label "Hotkeys"
+        frameLayout -label "快捷键"
                     -labelIndent 3
                     -collapsable 1
                     -collapse (`optionVar -query "brSmoothWeightsHotkeyFrameState"`)
@@ -458,8 +458,8 @@ global proc brSmoothWeightsProperties()
                             -columnWidth 2 260
                             -columnSpacing 2 10;
 
-                text -align "right" -font boldLabelFont -label "LMB:";
-                text -align "left" -label "Drag to smooth" -wordWrap true;
+                text -align "right" -font boldLabelFont -label "左键:";
+                text -align "left" -label "拖动以平滑" -wordWrap true;
 
                 // For some reason the separation is off between the
                 // first and second row. Using the blank text as an
@@ -467,23 +467,23 @@ global proc brSmoothWeightsProperties()
                 text -label "" -height 7;
                 text -label "" -height 7;
 
-                text -align "right" -font boldLabelFont -label "MMB:";
-                text -align "left" -label "Drag left/right to adjust brush size" -wordWrap true;
+                text -align "right" -font boldLabelFont -label "中键:";
+                text -align "left" -label "向左/向右拖动以调整笔刷大小" -wordWrap true;
 
-                text -align "right" -font boldLabelFont -label "MMB:";
-                text -align "left" -label "Drag up/down to adjust brush strength" -wordWrap true;
+                text -align "right" -font boldLabelFont -label "中键:";
+                text -align "left" -label "向上/向下拖动可调整笔刷强度" -wordWrap true;
 
-                text -align "right" -font boldLabelFont -label "Ctrl + MMB:";
-                text -align "left" -label "Fine control for adjusting size and strength" -wordWrap true;
+                text -align "right" -font boldLabelFont -label "Ctrl + 中键:";
+                text -align "left" -label "微调尺寸和强度" -wordWrap true;
 
-                text -align "right" -font boldLabelFont -label "Shift + LMB:";
-                text -align "left" -label "Drag to select vertices" -wordWrap true;
+                text -align "right" -font boldLabelFont -label "Shift + 左键:";
+                text -align "left" -label "拖动以选择顶点" -wordWrap true;
 
-                text -align "right" -font boldLabelFont -label "Ctrl + LMB:";
-                text -align "left" -label "Drag to deselect vertices" -wordWrap true;
+                text -align "right" -font boldLabelFont -label "Ctrl + 左键:";
+                text -align "left" -label "拖动以取消选择顶点" -wordWrap true;
 
-                text -align "right" -font boldLabelFont -label "Shift + Ctrl + LMB:";
-                text -align "left" -label "Click to clear vertex selection" -wordWrap true;
+                text -align "right" -font boldLabelFont -label "Shift + Ctrl + 左键:";
+                text -align "left" -label "单击以清除顶点选择" -wordWrap true;
 
             setParent ..;
 

@@ -12,6 +12,7 @@ import cPickle as pickle
 import os
 
 from dutils import apiUtils, fileUtils
+reload(apiUtils)
 from feedback_tool import Feedback_info as fp
 
 
@@ -99,6 +100,9 @@ class TransforSkinWeightWindow(QtWidgets.QDialog):
         self.line_h_b.setFrameShape(QtWidgets.QFrame.HLine)
         self.line_h_b.setFrameShadow(QtWidgets.QFrame.Raised)
 
+        self.but_getPoint = QtWidgets.QPushButton(u'获取一个点的权重')
+        self.but_setPoint = QtWidgets.QPushButton(u'设置点权重')
+
     def create_layout(self):
         layout_jntNam = QtWidgets.QHBoxLayout()
         layout_jntNam.addWidget(self.lin_prefix)
@@ -108,16 +112,23 @@ class TransforSkinWeightWindow(QtWidgets.QDialog):
         layout_jntNam.addWidget(self.line_h_b)
         layout_jntNam.addWidget(self.lin_suffix)
 
+        layout_transPointWeight = QtWidgets.QHBoxLayout()
+        layout_transPointWeight.addWidget(self.but_getPoint)
+        layout_transPointWeight.addWidget(self.but_setPoint)
+
         layout_main = QtWidgets.QVBoxLayout(self)
         layout_main.setSpacing(3)
         layout_main.setContentsMargins(3, 3, 3, 3)
         layout_main.addWidget(self.but_outSkin)
         layout_main.addLayout(layout_jntNam)
         layout_main.addWidget(self.but_imptSkin)
+        layout_main.addLayout(layout_transPointWeight)
 
     def create_connections(self):
         self.but_outSkin.clicked.connect(self.exportSkin)
         self.but_imptSkin.clicked.connect(self.importSkin)
+        self.but_getPoint.clicked.connect(self.get_select_point_weight)
+        self.but_setPoint.clicked.connect(self.set_select_point_weight)
 
     def exportSkin(self, file_path=''):
         nod = mc.ls(sl=True, fl=True)
@@ -165,8 +176,8 @@ class TransforSkinWeightWindow(QtWidgets.QDialog):
         """
         weights = apiUtils.getCurrentWeights(fn_skin, dag_path, components)
         influencePaths = om.MDagPathArray()
-        numInfluences = fn_skin.influenceObjects(influencePaths)  #当前影响关节对象的容器，已包含关节对象可迭代
-        numComponentsPerInfluence = weights.length() / numInfluences  #当前影响对象的点数
+        fn_skin.influenceObjects(influencePaths)  #当前影响关节对象的容器，已包含关节对象可迭代
+        numComponentsPerInfluence = weights.length() / influencePaths.length()  #当前影响对象的点数
 
         if len(data['weights'].keys()) != influencePaths.length():
             fp('导入的蒙皮关节数量与选中的关节数量不对应', error=True, viewMes=True)
@@ -178,12 +189,13 @@ class TransforSkinWeightWindow(QtWidgets.QDialog):
                 influenceName = influencePaths[ii].partialPathName()  #当前关节名
                 if influenceName == jnt:
                     for jj in range(numComponentsPerInfluence):  #每个点
-                        weights.set(dataWeights[jj], jj * numInfluences + ii)
+                        weights.set(dataWeights[jj], jj * influencePaths.length() + ii)
                     break
             else:
                 fp('字典中的关节{}对应的场景关节{}在蒙皮节点{}中找不到对应项,这可能导致一些点的权重总量不为1'.format(
                     data_jnt, jnt, fn_skin.name()), warning=True)
-        apiUtils.setCurrentWeights(fn_skin, weights, numInfluences, dag_path, components)
+
+        apiUtils.setCurrentWeights(fn_skin, weights, influencePaths.length(), dag_path, components)
 
 
     def reJointName(self, jnt):
@@ -205,6 +217,57 @@ class TransforSkinWeightWindow(QtWidgets.QDialog):
             jnt = jnt + suffix
 
         return jnt
+
+    def get_select_point_weight(self):
+        """
+        获取选中的一个点的权重
+        :return: None
+        """
+        dag, com = apiUtils.getApiNode(com=True)
+        skin = apiUtils.fromObjGetRigNode(dag, path_name=False)[0]
+        skin_lis = apiUtils.getCurrentWeights(skin, *apiUtils.getGeometryComponents(skin))#权重列表
+        influencePaths = om.MDagPathArray()#影响关节列表
+        skin.influenceObjects(influencePaths)
+
+        it_vtx = om.MItMeshVertex(dag, com)#选中的点id迭代器
+        if it_vtx.count() == 1:
+            vtx_id = it_vtx.count()
+        else:
+            fp('选中的点数量应为1，实际为{}'.format(it_vtx.count()), error=True, viewMes=True)
+        self.skin_dir = {}
+        for i in range(influencePaths.length()):
+            self.skin_dir[influencePaths[i].partialPathName()] = skin_lis[vtx_id * influencePaths.length() + i]
+        fp('获取点权重完成', info=True, viewMes=True)
+
+    def set_select_point_weight(self):
+        """
+        将获取的点权重设置给选中的点或选中的模型
+        :return:None
+        """
+        dag, com = apiUtils.getApiNode(com=True)
+        skin = apiUtils.fromObjGetRigNode(dag, path_name=False)[0]
+        weight_lis = apiUtils.getCurrentWeights(skin, *apiUtils.getGeometryComponents(skin))  #权重列表
+
+        influencePaths = om.MDagPathArray()  #影响关节列表
+        skin.influenceObjects(influencePaths)
+
+        it_vtx = om.MItMeshVertex(dag, com)  #选中的点id迭代器
+        if it_vtx.count() == 0:
+            fp('选中的点数量应大于等于1，实际为{}'.format(it_vtx.count()), error=True, viewMes=True)
+        vtx_lis = []
+        while not it_vtx.isDone():
+            vtx_lis.append(it_vtx.index())
+            it_vtx.next()
+        for i in range(len(weight_lis)/influencePaths.length()):
+            if i in vtx_lis:
+                for n in range(influencePaths.length()):
+                    if influencePaths[n].partialPathName() in self.skin_dir.keys():
+                        weight_lis[i*influencePaths.length()+n] = self.skin_dir[influencePaths[n].partialPathName()]
+                    else:
+                        fp('关节{}不在选中对象{}的蒙皮中'.format(influencePaths[n].partialPathName(), dag.partialPathName()), error=True)
+
+        apiUtils.setCurrentWeights(skin, weight_lis, influencePaths.length(), *apiUtils.getGeometryComponents(skin))
+        fp('设置点权重完成', info=True, viewMes=True)
 
 
 try:

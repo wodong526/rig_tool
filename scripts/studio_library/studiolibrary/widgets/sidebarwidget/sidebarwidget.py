@@ -195,7 +195,7 @@ class SidebarWidget(QtWidgets.QWidget):
         """
 
         class UI(object):
-            """Proxy class for attaching ui widgets as properties."""
+            """Proxy class for attaching tool_ui widgets as properties."""
             pass
 
         titleWidget = QtWidgets.QFrame(self)

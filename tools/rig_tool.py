@@ -48,19 +48,28 @@ def freeze_rotation():
             continue
 
 
-def select_skinJoint():
+def select_skinJoint(obj=None):
     """
     通过选中的模型获取该模型的蒙皮关节
     :return:
     """
-    sel_lis = mc.ls(sl=1)
+    if obj:
+        sel_lis = [obj]
+    else:
+        sel_lis = mc.ls(sl=1)
     jnt_lis = []
     for mod in sel_lis:
-        fn_skin = apiUtils.fromObjGetRigNode(mod, path_name=False)[0]
+        fn = apiUtils.fromObjGetRigNode(mod, path_name=False)
+        if fn:
+            fn_skin = apiUtils.fromObjGetRigNode(mod, path_name=False)[0]
+        else:
+            fp('模型{}没有合理的蒙皮节点。'.format(mod), warning=True)
+            continue
         jnt_lis = jnt_lis+apiUtils.fromSkinGetInfluence(fn_skin)
     if jnt_lis:
         mc.select(jnt_lis)
         fp('已选中蒙皮关节。', info=True)
+        return jnt_lis
     else:
         fp('选中对象没有蒙皮关节。', error=True)
 
@@ -102,7 +111,7 @@ def selectSameName():
                 fp('没有与{}同名的对象'.format(obj_tag), info=True)
 
 
-def exportSelectToFbx():
+def exportSelectToFbx(totpose=True):
     """
     将选中的对象导出为fbx，切断开关节与控制器的链接。
     """
@@ -149,14 +158,15 @@ def exportSelectToFbx():
             else:
                 return None
         #################掰直手臂
-        resout = mc.confirmDialog(title='导出设置：', button=['导出为TPose', '直接导出当前姿势', '取消'],
-                                  message='是否将APose以TPose姿势导出？')#将APose绑定以TPose姿势导出
-        if resout == u'导出为TPose':
-            to_Tpose()
-        elif resout == u'直接导出当前姿势':
-            pass
-        else:
-            return None
+        if totpose:
+            resout = mc.confirmDialog(title='导出设置：', button=['导出为TPose', '直接导出当前姿势', '取消'],
+                                      message='是否将APose以TPose姿势导出？')#将APose绑定以TPose姿势导出
+            if resout == u'导出为TPose':
+                to_Tpose()
+            elif resout == u'直接导出当前姿势':
+                pass
+            else:
+                return None
 
         file_path = mc.file(exn=True, q=True)
         file_nam = file_path.split('/')[-1].split('.')[0]
