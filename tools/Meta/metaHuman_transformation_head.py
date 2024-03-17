@@ -311,14 +311,14 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
                                at='double', p=attr, k=False)
 
         for i in range(3):
-            mc.setAttr('{}.head_translate_{}'.format(self.head_mod, aix_lis[i]), pos[i], cb=True)
-            mc.setAttr('{}.head_rotate_{}'.format(self.head_mod, aix_lis[i]), rot[i], cb=True)
-            mc.setAttr('{}.head_scale_{}'.format(self.head_mod, aix_lis[i]), scl[i], cb=True)
+            mc.setAttr('{}.head_translate_{}'.format(self.head_mod, aix_lis[i]), pos[i], cb=True, l=True)
+            mc.setAttr('{}.head_rotate_{}'.format(self.head_mod, aix_lis[i]), rot[i], cb=True, l=True)
+            mc.setAttr('{}.head_scale_{}'.format(self.head_mod, aix_lis[i]), scl[i], cb=True, l=True)
 
     def closeEvent(self, event):
-        '''
+        """
         qt窗口关闭是触发的该函数
-        '''
+        """
         try:
             if os.path.exists(self.target_path):
                 os.remove(self.target_path)

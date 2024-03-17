@@ -4,11 +4,14 @@ import maya.OpenMayaMPx as ompx
 
 import math
 
-nodeName = 'dongDong'  #节点类型名也是节点名，文件名是插件的名字
+nodeName = 'cuttingImages'  #节点类型名也是节点名，文件名是插件的名字
 nodeId = om.MTypeId(0x00004)  #管理 Maya 对象类型标识符。
 
 
 class WoDongNode(ompx.MPxNode):
+    outputU = None
+    outputV = None
+
     @classmethod
     def creatorNode(cls):
         return ompx.asMPxPtr(cls())
@@ -19,56 +22,27 @@ class WoDongNode(ompx.MPxNode):
         初始化节点
         :return:
         """
-        nAttr = om.MFnMatrixAttribute()
-        cls.output = nAttr.create('output', 'out', om.MFnMatrixAttribute.kDouble)  #属性长名、短名、值类型、默认值
-        nAttr.setStorable(False)  #可储存
-        #nAttr.setWritable(False)#可写
-        cls.addAttribute(cls.output)
+        nAttr = om.MFnNumericAttribute()
+        cls.outputU = nAttr.create('outputU', 'outu', om.MFnNumericData.kDouble, 0.0)  #属性长名、短名、值类型、默认值
+        nAttr.setStorable(False)#可储存
+        nAttr.writable = False
+        cls.addAttribute(cls.outputU)
 
-        cls.input = nAttr.create('input', 'in', om.MFnMatrixAttribute.kDouble)  #属性长名、短名、值类型、默认值
-        nAttr.setArray(True)
-        nAttr.setStorable(True)  #可储存
+        cls.outputV = nAttr.create('outputV', 'outv', om.MFnNumericData.kDouble, 0.0)  #属性长名、短名、值类型、默认值
+        nAttr.setStorable(False)  #可储存
+        nAttr.writable = False
+        cls.addAttribute(cls.outputV)
+
+        cls.input = nAttr.create('inputValue', 'inV', om.MFnNumericData.kInt, 0.0)  #属性长名、短名、值类型、默认值
         nAttr.setConnectable(True)  #可链接
         nAttr.setWritable(True)  #可写
-        nAttr.setKeyable(True)  #可k帧
+        nAttr.setKeyable(True)#可k帧
         cls.addAttribute(cls.input)
 
         #当输入属性发生变化时，只计算指定的输出属性。输出属性不能被设置为可k帧，否则该方法失效。
         # 如果节点初始化没有使用该方法，则不会调用compute函数,即该输入属性发生改变不会刷新compute
-        cls.attributeAffects(cls.input, cls.output)
-
-    @classmethod
-    def compute_center_matrix(cls, matrix_array):
-        """
-        计算MMatrixArray的中心点，但旋转与缩放有误，只能计算正确位移
-        :param matrix_array:MMatrixArray
-        :return:
-        """
-        num_matrices = matrix_array.length()  #数组长度
-        if num_matrices < 2:
-            return matrix_array[0]
-
-        total = om.MMatrix()
-        for i in range(num_matrices):
-            total *= matrix_array[i]
-
-        total = total * (1.0 / num_matrices)
-        cls.get_mat(total)  #打印矩阵
-        return total
-
-    @staticmethod
-    def get_mat(mat):
-        """
-        打印MMatrix矩阵
-        :param mat: 被打印的MMatrix
-        :return:
-        """
-        for row in range(4):
-            row_values = []
-            for col in range(4):
-                element_value = mat(row, col)
-                row_values.append(element_value)
-            print(row_values)
+        cls.attributeAffects(cls.input, cls.outputU)
+        cls.attributeAffects(cls.input, cls.outputV)
 
     def __init__(self):
         super(WoDongNode, self).__init__()
@@ -80,22 +54,18 @@ class WoDongNode(ompx.MPxNode):
         :param dataBlok:包含节点属性存储的数据块
         :return:kSuccess计算成功;kFailure计算失败
         """
-        if plug == self.output:
-            inputValue = dataBlok.inputArrayValue(self.input)
-            outHandle = dataBlok.outputValue(self.output)
+        if plug == self.outputU or plug == self.outputV:
+            inputValue = dataBlok.inputValue(self.input).asInt()
+            outU = dataBlok.outputValue(self.outputU)
+            outV = dataBlok.outputValue(self.outputV)
 
-            mat_arr = om.MMatrixArray()
-            for i in range(inputValue.elementCount()):
-                inputValue.jumpToElement(i)
-                val = inputValue.inputValue().asMatrix()
-                mat_arr.append(val)
+            u = (inputValue+5)%5*0.2
+            v = (4-inputValue/5)*0.2
 
-            center = self.compute_center_matrix(mat_arr)
-            outHandle.setMMatrix(center)
+            outU.setDouble(u)
+            outV.setDouble(v)
+
             dataBlok.setClean(plug)
-            return True
-        else:
-            return om.kUnknownParameter
 
 
 def initializePlugin(mobject):

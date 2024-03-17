@@ -250,7 +250,7 @@ class TrainingApparatus(QtWidgets.QDialog):
         :return: 
         '''
         if self.RL4_path and self.RL4_nam and self.RL4_val_dir:
-            mm.eval('source "Z:/Library/rig_plug_in/maya_plug/custom_tools/sx_toolBOX/SX_rig/Meta/create_RL4node.mel"')
+            mm.eval('source "C:/Rig_Tools/tools/Meta/create_RL4node.mel"')
             mm.eval('MHCreateRL4node "{}" {};'.format(self.RL4_path, self.RL4_nam))
             for attr, val in self.RL4_val_dir.items():
                 mc.setAttr('{}.{}'.format(self.RL4_nam, attr), val)

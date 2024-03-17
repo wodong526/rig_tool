@@ -1,13 +1,115 @@
 # -*- coding:GBK -*-
 import maya.cmds as mc
 import maya.mel as mel
-import maya.OpenMaya as om
-import copy
-import logging
+import maya.api.OpenMaya as oma
 
-logging.basicConfig()
-log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
+import os
+from collections import Counter
+import re
+import stat
+
+from feedback_tool import Feedback_info as fp
+
+class ProtectiveTools(object):
+    """
+    清理文件贼健康
+    """
+    @classmethod
+    def clear_pyFile(cls):
+        def dele_file(py_path):
+            os.chmod(py_path, stat.S_IWRITE)
+            os.remove(py_path)
+
+        py_path = mc.internalVar(uad = True)+'scripts/vaccine.py'
+        pyc_path = mc.internalVar(uad = True)+'scripts/vaccine.pyc'
+        userSetUp_path = mc.internalVar(uad=True) + 'scripts/userSetUp.py'
+        if os.path.exists(py_path):
+            dele_file(pyc_path)
+        if os.path.exists(pyc_path):
+            dele_file(pyc_path)
+
+        if os.path.exists(userSetUp_path):
+            tag_txt_lis = ['leukocyte.occupation()', 'leukocyte = vaccine.phage()']
+            is_vaccine = False
+            with open(userSetUp_path, 'r') as file_obj:
+                for line in file_obj.readlines():
+                    for tag in tag_txt_lis:
+                        if tag in line:
+                            is_vaccine = True
+                            break
+                    if is_vaccine:
+                        break
+            if is_vaccine:
+                dele_file(userSetUp_path)
+
+    @classmethod
+    def get_dubious_scriptNodes(cls):
+        del_script_lis = []
+        rfenc_script_lis = []
+        script_nodes = mc.ls(type='script')
+        for script_node in script_nodes:
+            script_before_string = mc.getAttr('{}.before'.format(script_node))
+            script_after_string = mc.getAttr('{}.after'.format(script_node))
+            for script_string in [script_before_string, script_after_string]:
+                if not script_string:
+                    continue
+                if 'internalVar' in script_string or 'userSetup' in script_string:
+                    if mc.referenceQuery(script_node, inr=True):
+                        rfenc_script_lis.append(script_node)
+                    else:
+                        del_script_lis.append(script_node)
+
+        return del_script_lis, rfenc_script_lis
+
+    @classmethod
+    def get_dubious_scriptJob(cls):
+        dangerous_jobs = ['leukocyte.antivirus()']
+
+        del_scriptJob_lis = []
+        script_jobs = mc.scriptJob(lj=True)
+        for script_job in script_jobs:
+            for bad_job in dangerous_jobs:
+                if bad_job in script_job:
+                    del_scriptJob_lis.append(script_job)
+        return del_scriptJob_lis
+
+    def __init__(self):
+        self.clear_pyFile()
+        self.create_callback()
+
+    def del_scriptNode(self, *args):
+        self.clear_pyFile()
+
+        del_lis, rfenc_lis = self.get_dubious_scriptNodes()
+        if del_lis:
+            for del_script_node in del_lis:
+                mc.lockNode(del_script_node, l=False)
+                mc.delete(del_script_node)
+                print('已删除scriptNode：{}'.format(del_script_node))
+
+        if rfenc_lis:
+            dubious_lis = []
+            for node in dict(Counter(rfenc_lis)):
+                dubious_lis.append(node)
+            mes = '以下可疑script节点无法被删除，因为他们来自引用文件：\n    {}'.format('\n    '.join(dubious_lis))
+            mc.confirmDialog(title='警告', message=mes, button=['确定'])
+
+    def del_scriptJob(self, *args):
+        self.clear_pyFile()
+
+        JOB_INDEX_REGEX = re.compile(r'^(\d+):')
+        del_lis = self.get_dubious_scriptJob()
+        if del_lis:
+            for script_job in del_lis:
+                bad_script_job_index = int(JOB_INDEX_REGEX.findall(script_job)[0])
+                mc.scriptJob(kill=bad_script_job_index, force=True)
+                print('已删除scriptJob：{}'.format(script_job))
+
+    def create_callback(self):
+        oma.MSceneMessage.addCallback(oma.MSceneMessage.kAfterOpen, self.del_scriptNode)
+        oma.MSceneMessage.addCallback(oma.MSceneMessage.kBeforeSave, self.del_scriptJob)
+        print('防护效果已建立。')
+
 
 
 def clear_name():
@@ -29,9 +131,9 @@ def clear_name():
                 error_lis.append(sel_lis[i])
 
     if error_lis:
-        log.info("重命名对象有{}个：{}。".format(error_lis.__len__()/2, ', '.join(error_lis)))
+        fp("重命名对象有{}个：{}。".format(error_lis.__len__()/2, ', '.join(error_lis)), info=True)
         return True
-    log.info("场景中没有重名物体对象。")
+    fp("场景中没有重名物体对象。", info=True)
     return False
 
 
@@ -58,13 +160,13 @@ def clear_face():
             mel.eval("maintainActiveChangeSelectMode {} 1;".format(inf))
             continue
         else:
-            log.warning("{}不是多边形模型。".format(inf))
+            fp("{}不是多边形模型。".format(inf), warning=True)
     mc.select(triangle_lis, r=True)
     if triangle_lis:
-        log.warning("大于四边面的有{}".format(Multiple_lis))
-        log.warning("小于四边面的有{}".format(triangle_lis))
+        fp("大于四边面的有{}".format(Multiple_lis), warning=True)
+        fp("小于四边面的有{}".format(triangle_lis), warning=True)
     else:
-        log.info('选中对象全是四边面。')
+        fp('选中对象全是四边面。', warning=True)
 
 
 def clear_boundary():
@@ -81,19 +183,19 @@ def clear_boundary():
                     for edge in mc.ls(sl=True):
                         error_lis.append(edge)
                 else:
-                    log.warning("{}不是多边形模型，已跳过。".format(inf))
+                    fp("{}不是多边形模型，已跳过。".format(inf), warning=True)
                     continue
             else:
-                log.warning("{}不是多边形模型，已跳过。".format(inf))
+                fp("{}不是多边形模型，已跳过。".format(inf), warning=True)
                 continue
     else:
-        log.error('没有选中对象。')
+        fp('没有选中对象。', error=True)
         return False
     mc.select(error_lis)
     if error_lis:
-        log.info("边界边有{}".format(error_lis))
+        fp("边界边有{}".format(error_lis), warning=True)
     else:
-        log.info("选中对象没有边界边。")
+        fp("选中对象没有边界边。", info=True)
 
 
 def clear_frozen():
@@ -115,12 +217,9 @@ def clear_frozen():
                 continue
     if erro_lis:
         for i in range(len(erro_lis)):
-            log.warning(
-                "{}有未冻结的属性{}。".format(erro_lis[i][0], erro_lis[i][1]))
+            fp("{}有未冻结的属性{}。".format(erro_lis[i][0], erro_lis[i][1]), warning=True)
     else:
-        log.info(
-            "场景中的组和模型都已冻结。"
-        )
+        fp("场景中的组和模型都已冻结。", info=True)
 
 
 def clear_history():
@@ -144,9 +243,9 @@ def clear_history():
     if his_dir:
         for inf in his_dir:
             if his_dir[inf]:
-                log.warning("{}有历史{}".format(inf, his_dir[inf]))
+                fp("{}有历史{}".format(inf, his_dir[inf]), warning=True)
     else:
-        log.info('场景中所有模型都没有历史。')
+        fp('场景中所有模型都没有历史。', info=True)
 
 
 def clear_minimum():
@@ -161,17 +260,17 @@ def clear_minimum():
             pos_y = mc.xform("{}.vtx[{}]".format(obj[0], v), q=1, ws=1, t=1)[1]
             pos_lis.append(pos_y)
     else:
-        log.warning("没有选中任何对象。")
+        fp("没有选中任何对象。", warning=True)
         return False
     if min(pos_lis) < -0.001 or min(pos_lis) >0.001:
-        log.warning("{}的最低点为{}".format(obj[0], min(pos_lis)))
+        fp("{}的最低点为{}".format(obj[0], min(pos_lis)), warning=True)
     else:
-        log.info("{}的最低点在地平面上。".format(obj[0]))
+        fp("{}的最低点在地平面上。".format(obj[0]), info=True)
 
 def clear_uv(i):
-    '''
-   通过判断引用进来的模型文件里每个物体的uvbbox对比，查找有差异的rig文件
-   '''
+    """
+    通过判断引用进来的模型文件里每个物体的uvbbox对比，查找有差异的rig文件
+    """
     mc.CreateReference()
     ref_file = mc.file(q=True, reference=True)[0]
     ref_name = ref_file.split("/")[-1].split(".")[0]
@@ -179,11 +278,11 @@ def clear_uv(i):
     for mesh in mc.ls(typ="mesh"):
         trs = mc.listRelatives(mesh, p=1)[0]
         if ref_name in trs or mc.polyEvaluate(trs, b2=1) != mc.polyEvaluate(trs.split(":")[-1], b2=1):
-            log.warning("模型{}的uv位置不匹配。".format(trs.split(":")[-1]))
+            fp("模型{}的uv位置不匹配。".format(trs.split(":")[-1]), warning=True)
             uv_bol = 1
     if uv_bol == 0 and i == 0:
         mc.file(ref_file, rr=1)
-        log.info("引用模型与场景模型位置匹配，建议再手动检查。")
+        fp("引用模型与场景模型位置匹配，建议再手动检查。", info=True)
         return False
     if uv_bol == 1 and i == 1:
         mc.file(ref_file, rr=1)

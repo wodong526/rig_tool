@@ -210,7 +210,7 @@ class TransforSkinWeightWindow(QtWidgets.QDialog):
         suffix = self.lin_suffix.text()
 
         if prefix:
-            jnt = prefix + prefix
+            jnt = prefix + jnt
         if repIn:
             jnt = jnt.replace(repIn, repOut)
         if suffix:

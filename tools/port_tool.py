@@ -74,8 +74,8 @@ class Export_SM(QtWidgets.QDialog):
         self.lst_jnts.itemSelectionChanged.connect(self.create_modItems)
         self.lst_jnts.customContextMenuRequested.connect(self.contextMenu_jnt)
         self.lst_mods.customContextMenuRequested.connect(self.contextMenu_mod)
-        #self.lst_jnts.itemSelectionChanged.connect(self.select_jnt)
-        self.lst_mods.itemSelectionChanged.connect(self.select_mod)
+        self.lst_jnts.itemDoubleClicked.connect(self.select_jnt)
+        self.lst_mods.itemDoubleClicked.connect(self.select_mod)
         self.but_export.clicked.connect(self.exportSM)
 
     def get_data(self):
@@ -209,7 +209,7 @@ class Export_SM(QtWidgets.QDialog):
         为模型列表视图中添加新的模型项
         :return:
         """
-        sel_lis = mc.ls(sl=True)
+        sel_lis = mc.ls(sl=True, typ='transform')
         if sel_lis:
             jnt_item = self.lst_jnts.selectedItems()
             if jnt_item:
@@ -219,12 +219,11 @@ class Export_SM(QtWidgets.QDialog):
                 append_lis = []
 
                 for obj in sel_lis:
-                    shape = None
-                    if mc.listRelatives(obj, s=True):
-                        shape = mc.listRelatives(obj, s=True)[0]
-                    if obj not in self.jnt_dir[jnt] and mc.nodeType(shape) == 'mesh':
-                        self.jnt_dir[jnt].append(obj)
-                        append_lis.append(obj)
+                    if mc.listRelatives(obj, ad=True, typ='mesh'):
+                    #for shape in mc.listRelatives(obj, ad=True, typ='mesh'):
+                        if obj not in self.jnt_dir[jnt] and mc.nodeType(mc.listRelatives(obj, ad=True, typ='mesh')[0]) == 'mesh':
+                            self.jnt_dir[jnt].append(obj)
+                            append_lis.append(obj)
 
                 if append_lis:
                     self.create_modItems(i)
@@ -251,6 +250,10 @@ class Export_SM(QtWidgets.QDialog):
             if add_lis:
                 self.create_jntItems()
                 fb_print('已添加关节{}'.format(add_lis), info=True)
+                for i in range(self.lst_jnts.count()):
+                    if self.lst_jnts.item(i).text().split(' ', 1)[0] == add_lis[0]:
+                        self.lst_jnts.item(i).setSelected(True)
+                        break
             else:
                 fb_print('选择列表中没有有效关节', error=True, path=FILE_PATH, line=lin())
 

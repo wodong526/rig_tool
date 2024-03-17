@@ -20,7 +20,9 @@ from data_path import icon_dir as ic, projectPath_xxtt as pojpt_xt
 from dutils import cgtUtils as cgt
 from qt_widgets import SeparatorAction as menl, set_font
 from rig_tool import exportSelectToFbx
-reload(cgt)
+import folder_widget
+reload(folder_widget)
+import folder_widget as flw
 
 
 def maya_main_window():
@@ -94,8 +96,10 @@ class ClearItem(QtWidgets.QWidget):
         fun = getattr(clearUtils, self.fun)  #将模块与函数组装起来形成一个新的函数，该函数可用于直接执行
         if not fun():  #清理发生在此处
             self.on_toggled(True)
+            return True#清理成功
         else:
             self.on_toggled(False)
+            return False#清理失败
 
     def on_toggled(self, checked=None):
         """
@@ -146,9 +150,10 @@ class PushWindow(QtWidgets.QDialog):
         self.area_clear_lis.setWidget(self.wdg_clear_lis)
         clear_layout = QtWidgets.QVBoxLayout(self.wdg_clear_lis)
         clear_layout.setContentsMargins(2, 2, 2, 2)
-        for fun in zip(['clear_name', 'clear_nameSpace', 'clear_key', 'clear_hik', 'clear_animLayer', 'inspect_weight'],
-                       [u'查询场景重名', u'清理空间名称', u'清理关键帧', u'清理humanIK', u'清理动画层',
-                        u'检查权重总量']):
+        for fun in zip(['clear_name', 'clear_nameSpace', 'clear_key', 'clear_hik', 'clear_animLayer', 'inspect_weight',
+                        'clear_unknown_node', 'clear_unknown_plug'],
+                       [u'查询场景重名', u'清理空间名称', u'清理关键帧', u'清理humanIK', u'清理动画层', u'检查权重总量',
+                        u'清理未知节点', u'清理未知插件']):
             wdg = ClearItem(fun[0], fun[1], parent=self.area_clear_lis)
             self.clearWgt_lis.append(wdg)
             clear_layout.addWidget(wdg)
@@ -161,6 +166,8 @@ class PushWindow(QtWidgets.QDialog):
         self.but_clearName.setFixedSize(35, 35)
         self.but_clearName.setIcon(QtGui.QIcon(ic['delete']))
         self.but_clearName.setIconSize(QtCore.QSize(35, 35))
+        self.but_localAsset = QtWidgets.QPushButton(u'->')
+        self.but_localAsset.setFixedSize(35, 35)
 
         self.lst_asset = QtWidgets.QListWidget()
         self.lst_asset.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -170,14 +177,19 @@ class PushWindow(QtWidgets.QDialog):
         self.comb_typ.addItems([u'模型', u'绑定', u'ueFBX'])
         self.but_push = QtWidgets.QPushButton(u'上传')
 
+        self.wid_folder = flw.FolderWidget()
+        self.wid_folder.setVisible(False)
+
     def create_layout(self):
         layout_clear = QtWidgets.QVBoxLayout()
         layout_clear.addWidget(self.but_clearScence)
         layout_clear.addWidget(self.area_clear_lis)
 
         layout_search = QtWidgets.QHBoxLayout()
+        layout_search.setSpacing(3)
         layout_search.addWidget(self.lin_searchName)
         layout_search.addWidget(self.but_clearName)
+        layout_search.addWidget(self.but_localAsset)
 
         layout_pushBut = QtWidgets.QHBoxLayout()
         layout_pushBut.addWidget(self.comb_typ)
@@ -190,13 +202,15 @@ class PushWindow(QtWidgets.QDialog):
 
         wdt_left = QtWidgets.QWidget()
         wdt_left.setLayout(layout_clear)
+        wdt_left.setMaximumWidth(300)
         wdt_reght = QtWidgets.QWidget()
-        wdt_reght.setMinimumWidth(400)
+        wdt_reght.setMinimumWidth(270)
         wdt_reght.setLayout(layout_push)
 
         spt_layout = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
         spt_layout.addWidget(wdt_left)
         spt_layout.addWidget(wdt_reght)
+        spt_layout.addWidget(self.wid_folder)
 
         main_layout = QtWidgets.QVBoxLayout(self)
         main_layout.addWidget(spt_layout)
@@ -205,6 +219,7 @@ class PushWindow(QtWidgets.QDialog):
         self.but_clearScence.clicked.connect(self.autoClearScence)
         self.but_clearScence.clickedRightSig.connect(self.restoreItemCheckBox)
         self.but_clearName.clicked.connect(self.lin_searchName.clear)
+        self.but_localAsset.clicked.connect(self.local_asset_widget_vis)
         self.lst_asset.itemDoubleClicked.connect(partial(self.menu_function, 'openRigFile'))
         self.lst_asset.customContextMenuRequested.connect(self.create_contextMenu)
         self.lin_searchName.returnPressed.connect(self.refresh_Item)
@@ -215,8 +230,10 @@ class PushWindow(QtWidgets.QDialog):
         自动清理所有清理项
         :return:
         """
+        self.but_clearScence.setStyleSheet("background-color: green")
         for wdg in self.clearWgt_lis:
-            wdg.run_function()
+            if not wdg.run_function():
+                self.but_clearScence.setStyleSheet("background-color: red")
 
     def restoreItemCheckBox(self):
         """
@@ -436,11 +453,19 @@ class PushWindow(QtWidgets.QDialog):
                 fp('文件{}上传成功！！'.format(path), info=True, viewMes=True) \
                     if cgt.set_status(pojpt_xt[1], sel_item.data(QtCore.Qt.UserRole)) \
                     else fp('文件{}上传成功但状态未修改成功'.format(path), warning=True, viewMes=True)
+                self.but_push.setText(u'{}上传成功'.format(sel_item.data(QtCore.Qt.UserRole+6)))
             elif not res:
                 fp('文件{}上传失败！！'.format(path), error=True, viewMes=True)
             else:
                 fp('未知的结果。', warning=True, viewMes=True)
 
+    def local_asset_widget_vis(self):
+        if self.wid_folder.isVisible():
+            self.wid_folder.setVisible(False)
+            self.but_localAsset.setText(u'->')
+        else:
+            self.wid_folder.setVisible(True)
+            self.but_localAsset.setText(u'<-')
 
 
 def push_rig():

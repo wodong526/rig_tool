@@ -51,7 +51,7 @@ def freeze_rotation():
 def select_skinJoint(obj=None):
     """
     通过选中的模型获取该模型的蒙皮关节
-    :return:
+    :return:模型的蒙皮关节列表
     """
     if obj:
         sel_lis = [obj]

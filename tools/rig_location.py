@@ -4,7 +4,7 @@ import maya.cmds as mc
 from feedback_tool import Feedback_info as fb_print, LIN as lin
 
 
-def get_core(get_pos=False):
+def get_core(get_pos=False, to_typ = 'locator'):
     """
     在选择对象的中心创建定位器。
     """
@@ -20,7 +20,12 @@ def get_core(get_pos=False):
 
         crv = mc.curve(d=1, p=pos_lis)
         clst = mc.cluster()
-        loc = mc.spaceLocator()[0]
+        if to_typ == 'locator':
+            loc = mc.spaceLocator()[0]
+        elif to_typ == 'joint':
+            loc = mc.createNode('joint')
+        else:
+            fb_print('未知的节点类型', error=True, line=lin())
         mc.matchTransform(loc, clst)
         if get_pos:
             pos = mc.xform(loc, q=True, ws=True, t=True)

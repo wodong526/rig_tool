@@ -39839,6 +39839,9 @@ print ("// Opening:\""+$exampleFile+"\"\n");
 if (`file -q -ex $exampleFile`)
 	{
 	if (`saveChanges ""`)
+		print "aaa";
+		print $exampleFile;
+		print "bbb";
 		file -f -o $exampleFile;
 	}
 else

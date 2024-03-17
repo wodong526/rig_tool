@@ -126,6 +126,7 @@ def fromObjCreateGroup(objs, name='', num=1, rename_ctl=True):
     for obj in objs:
         for i in range(num):
             i += 1
+            print(obj)
             pos = mc.xform(obj, t=True, q=True, ws=True)
             rot = mc.xform(obj, ro=True, q=True, ws=True)
             scl = mc.xform(obj, s=True, q=True, ws=True)
@@ -139,13 +140,14 @@ def fromObjCreateGroup(objs, name='', num=1, rename_ctl=True):
                     nam = obj
 
             grp = mc.group(em=True, n='zero_{}_{:03d}'.format(nam, i), w=True)
-            grpOffset = mc.group(em=True, p=grp, n='offset_{}_{:03d}'.format(nam, i))
+            num = grp.split('_')[-1]
+            grpOffset = mc.group(em=True, p=grp, n='offset_{}_{}'.format(nam, num))
             mc.xform(grp, t=pos, ro=rot, s=scl, ws=True)
             if mc.listRelatives(obj, p=True):
                 mc.parent(grp, mc.listRelatives(obj, p=True)[0])
             mc.parent(obj, grpOffset)
             if rename_ctl:
-                ctl = mc.rename(obj, 'ctrl_{}_{:03d}'.format(nam, i))
+                ctl = mc.rename(obj, 'ctrl_{}_{}'.format(nam, num))
                 if mc.listRelatives(ctl, s=True):
                     mc.rename(mc.listRelatives(ctl, s=True)[0], '{}Shape'.format(ctl))
 

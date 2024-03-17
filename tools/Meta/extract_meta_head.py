@@ -6,6 +6,21 @@ import maya.mel as mel
 from feedback_tool import Feedback_info as fp
 
 class EXTRACT_META(object):
+
+    @classmethod
+    def restoration_camera(cls):
+        """
+        将默认相机的旋转放到合适的位置
+        :return: None
+        """
+        cam_dir = {'top':([0, 1000.1, 0], [-90, 0, 0]), 'front':([0, 0, 1000.1], [0, 0, 0]),
+                   'side':([1000.1, 0, 0], [0, 90, 0])}
+        for cam, val in cam_dir.items():
+            for i, aix in enumerate(['x', 'y', 'z']):
+                mc.setAttr('{}.t{}'.format(cam, aix), val[0][i])
+                mc.setAttr('{}.r{}'.format(cam, aix), val[1][i])
+        mc.FrameSelectedWithoutChildren()
+
     def __init__(self):
 
         now_path = mc.internalVar(uad=True) + mc.about(v=True)
@@ -178,6 +193,7 @@ class EXTRACT_META(object):
         mc.setAttr('CTRL_faceGUIfollowHead.ty', True)
         mc.setAttr('CTRL_eyesAimFollowHead.ty', True)
         fp('扣头完毕。', info=True)
+        self.restoration_camera()
 
         try:
             if os.path.exists(self.target_path):

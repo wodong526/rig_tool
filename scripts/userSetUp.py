@@ -96,6 +96,9 @@ class RIG_setUp(object):
             if path not in sys.path:
                 sys.path.append(path) if os.path.exists(path) else fp('Â·¾¶{}²»´æÔÚ'.format(path), warning=True)
 
+        from rig_clear import ProtectiveTools
+        ProtectiveTools()
+
     @staticmethod
     def create_menu():
         import reload_tools

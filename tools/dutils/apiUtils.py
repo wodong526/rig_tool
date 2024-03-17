@@ -183,9 +183,11 @@ def fromObjGetRigNode(obj=None, skin=True, blend_shape=False, path_name=True):
     ret_lis = []
     while not itDG.isDone():
         item = itDG.currentItem()
+
         skin = omain.MFnSkinCluster(item) if skin else omain.MFnBlendShapeDeformer(item)
         ret_lis.append(skin)
         itDG.next()
+
 
     if path_name:
         return [node.name() for node in ret_lis]

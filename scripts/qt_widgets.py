@@ -11,28 +11,31 @@ class SeparatorAction(QtWidgets.QWidgetAction):
 
     def __init__(self, txt="      ", p=None):
         QtWidgets.QWidgetAction.__init__(self, p)
-        self._widget = QtWidgets.QFrame(p)
 
-        self._label = QtWidgets.QLabel(self._widget)
-        self._label.setText(txt)
-        fontMetrics = QtGui.QFontMetrics(QtGui.QFont(u'Î¢ÈíÑÅºÚ', 7, QtGui.QFont.Bold))
-        textWidth = fontMetrics.width(txt)
-        textHeigth = fontMetrics.height()
-        self._label.setFixedSize(textWidth, textHeigth)
+        self._label = QtWidgets.QLabel(txt)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(1)
+        sizePolicy.setVerticalStretch(1)
+        self._label.setSizePolicy(sizePolicy)
 
-        self._line = QtWidgets.QFrame(self._widget)
+        self._line = QtWidgets.QFrame()
+        lineSizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+        self._line.setSizePolicy(lineSizePolicy)
         self._line.setFrameShape(QtWidgets.QFrame.HLine)
         self._line.setFrameShadow(QtWidgets.QFrame.Raised)
 
-    def createWidget(self, menu):
-        actionLayout = QtWidgets.QHBoxLayout(self._widget)
+        self.createLayout()
+
+    def createLayout(self):
+        wid = QtWidgets.QWidget()
+
+        actionLayout = QtWidgets.QHBoxLayout(wid)
         actionLayout.setContentsMargins(0, 0, 0, 0)
         actionLayout.setSpacing(0)
         actionLayout.addWidget(self._label)
-        actionLayout.addWidget(self._line)
-        self._widget.setLayout(actionLayout)
+        actionLayout.addWidget(self._line, 1)
+        self.setDefaultWidget(wid)
 
-        return self._widget
 
 
 def set_font(num):

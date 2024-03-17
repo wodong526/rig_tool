@@ -5,10 +5,7 @@ import maya.OpenMaya as om
 import maya.OpenMayaAnim as omain
 
 from dutils import apiUtils
-from feedback_tool import Feedback_info as fb_print, LIN as lin
-
-reload(apiUtils)
-FILE_PATH = __file__
+from feedback_tool import Feedback_info as fp
 
 
 def clear_nameSpace(q=False):
@@ -26,12 +23,12 @@ def clear_nameSpace(q=False):
         for ns in pool:
             try:
                 mc.namespace(rm=ns, mnr=1, f=1)
-                fb_print('已删除空间名{}。'.format(ns), info=True)
+                fp('已删除空间名{}。'.format(ns), info=True)
             except:
-                fb_print('余空间名{}，删除失败。'.format(ns), error=True)
+                fp('余空间名{}，删除失败。'.format(ns), error=True)
         clear_nameSpace()
     else:
-        fb_print('已清理场景内所有空间名。', info=True)
+        fp('已清理场景内所有空间名。', info=True)
         return False
 
 
@@ -42,7 +39,7 @@ def clear_key():
     sel_lis = mc.ls(sl=True)
     mc.select('persp')
     mm.eval('doClearKeyArgList 3 { "1","0:10","keys","none","0","1","0","1","animationList","0","noOptions","0","0" };')
-    fb_print('已删除场景中所有关键帧。', info=True)
+    fp('已删除场景中所有关键帧。', info=True)
     mc.select(sel_lis)
     return False
 
@@ -56,9 +53,9 @@ def clear_hik():
         for hik in hik_lis:
             del_lis = mc.listConnections(hik, d=False)
             mc.delete(del_lis)
-            fb_print('已删除HIK{}。'.format(hik), info=True)
+            fp('已删除HIK{}。'.format(hik), info=True)
     else:
-        fb_print('场景里没有HIK。', info=True)
+        fp('场景里没有HIK。', info=True)
     return False
 
 
@@ -69,10 +66,10 @@ def clear_animLayer():
     for ani in mc.ls(type='animLayer'):
         try:
             mc.delete(ani)
-            fb_print('已删除动画层{}。'.format(ani), info=True)
+            fp('已删除动画层{}。'.format(ani), info=True)
         except:
-            fb_print('动画层{}删除失败，可能是因为它是其它层的子级，所以在删除父层时自动删除了子级层。'.format(ani), warning=True)
-    fb_print('已删除所有动画层', info=True)
+            fp('动画层{}删除失败，可能是因为它是其它层的子级，所以在删除父层时自动删除了子级层。'.format(ani), warning=True)
+    fp('已删除所有动画层', info=True)
     return False
 
 
@@ -87,9 +84,9 @@ def clear_name():
             error_lis.append(obj)
 
     if error_lis:
-        fb_print("重命名对象有{}个：{}".format(error_lis.__len__() / 2, ', '.join(error_lis)), info=True)
+        fp("重命名对象有{}个：{}".format(error_lis.__len__() / 2, ', '.join(error_lis)), info=True)
         return True
-    fb_print("场景中没有重名物体对象", info=True)
+    fp("场景中没有重名物体对象", info=True)
     return False
 
 
@@ -121,15 +118,40 @@ def inspect_weight():
                     else:
                         error_dir[skin_mod] = [str(i / 2)]
         else:
-            fb_print('蒙皮节点{}的被蒙皮对象是{}类型的{}，已跳过'.format(fn.name(), apiUtils.get_skinModelType(fn),
+            fp('蒙皮节点{}的被蒙皮对象是{}类型的{}，已跳过'.format(fn.name(), apiUtils.get_skinModelType(fn),
                                                                         ','.join(apiUtils.get_skinModelName(fn))),
                      warning=True)
     else:
         if error_dir:
-            fb_print('点总权重不为1的点有：{}'.format(''.join(
+            fp('点总权重不为1的点有：{}'.format(''.join(
                 ['\n{}.vtx[{}]'.format(mod, ','.join(vtx_lis)) for mod, vtx_lis in error_dir.items()])),
                 info=True, viewMes=True)
             return True
         else:
-            fb_print('场景中所有模型的点权重都近似为1', info=True, viewMes=True)
+            fp('场景中所有模型的点权重都近似为1', info=True, viewMes=True)
             return False
+
+def clear_unknown_node():
+    """
+    清理未知节点
+    :return:清理后场景中的未知节点
+    """
+    nuk_lis = mc.ls(typ='unknown')
+    if nuk_lis:
+        for node in nuk_lis:
+            if mc.objExists(node):
+                mc.lockNode(node, l=False)
+                mc.delete(node)
+                fp('已清理未知节点{}'.format(node), info=True)
+
+    return mc.ls(typ='unknown')
+
+def clear_unknown_plug():
+    """
+    清理未知插件
+    :return: 清理后场景中的未知插件
+    """
+    [mc.unknownPlugin(p, r=True) for p in mc.unknownPlugin(q=True, l=True)] if mc.unknownPlugin(q=True, l=True) else None
+
+
+    return mc.unknownPlugin(q=True, l=True)

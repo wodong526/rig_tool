@@ -200,11 +200,11 @@ class create_ctl(QtWidgets.QDialog):  # 使该窗口为控件
         mc.createNode('nurbsCurve', p=trs)
         mel.eval(con)
 
-        if mc.objExists('Sets'):
-            if 'AllSet' in mc.listConnections('Sets', d=False):
-                mc.sets(trs, e=True, fe='AllSet')
-            if 'ControlSet' in mc.listConnections('Sets', d=False):
-                mc.sets(trs, e=True, fe='ControlSet')
+        # if mc.objExists('Sets'):
+        #     if 'AllSet' in mc.listConnections('Sets', d=False):
+        #         mc.sets(trs, e=True, fe='AllSet')
+        #     if 'ControlSet' in mc.listConnections('Sets', d=False):
+        #         mc.sets(trs, e=True, fe='ControlSet')
 
         mc.select(trs)
 
