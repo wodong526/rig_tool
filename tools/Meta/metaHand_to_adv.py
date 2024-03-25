@@ -3,15 +3,10 @@ import maya.cmds as mc
 import maya.mel as mm
 
 import sys
-import traceback
 
 from feedback_tool import Feedback_info as fb_print
 from dutils import skinUtils
 
-
-def LIN():
-    line_number = traceback.extract_stack()[-2][1]
-    return line_number
 
 if sys.version_info.major == 3:
     #当环境为py3时
@@ -28,8 +23,7 @@ def metaHead_to_adv():
         transform_neck_weight()
         arrangement_scence()
     else:
-        fb_print('当且仅当adv的颈椎twist关节数量为1时该工具才有效，请重建adv骨架', error=True, path=FILE_PATH,
-                 line=LIN(), viewMes=True)
+        fb_print('当且仅当adv的颈椎twist关节数量为1时该工具才有效，请重建adv骨架', error=True, path=True, viewMes=True)
 
 
 def hide_adv_ctrlAndJoint():
@@ -41,7 +35,7 @@ def hide_adv_ctrlAndJoint():
     for obj in hide_lis:
         if mc.objExists(obj):
             mc.setAttr('{}.v'.format(obj), False)
-    fb_print('已隐藏adv头部无关控制器与关节', info=True, path=FILE_PATH, line=LIN())
+    fb_print('已隐藏adv头部无关控制器与关节', info=True, path=True)
 
 
 def set_advJoint_pos():
@@ -59,13 +53,13 @@ def set_advJoint_pos():
     mc.xform('FKPS2NeckPart1_M', ws=True, t=meta_neck_02_pos)
     mc.xform('FKPS2Head_M', ws=True, t=meta_head_pos)
     mc.xform('Head', ws=True, t=meta_head_pos)
-    fb_print('已匹配adv骨架到meta', info=True, path=FILE_PATH, line=LIN())
+    fb_print('已匹配adv骨架到meta', info=True, path=True)
 
     if mc.objExists('drv_spine_04'):  #当被头部变换工具操作过，adv的头的控制器需要控制的关节链为驱动关节链
         mc.parentConstraint('FKXHead_M', 'drv_head', mo=True)
     else:
         mc.parentConstraint('FKXHead_M', 'head', mo=True)
-    fb_print('adv头控制器已约束meta头关节', info=True, path=FILE_PATH, line=LIN())
+    fb_print('adv头控制器已约束meta头关节', info=True, path=True)
 
 
 def transform_skin():
@@ -110,7 +104,7 @@ def transform_neck_weight():
     mc.parent(mc.listRelatives('head'), 'Head_M')
 
     mc.delete('FACIAL_C_Neck2Root', 'FACIAL_C_Neck1Root')
-    fb_print('脖子关节权重转换完成', info=True, path=FILE_PATH, line=LIN())
+    fb_print('脖子关节权重转换完成', info=True, path=True)
 
 
 def arrangement_scence():
@@ -129,4 +123,4 @@ def arrangement_scence():
     else:
         mc.parentConstraint('FKXHead_M', 'head', mo=True)
     mm.eval('hyperShadePanelMenuCommand("hyperShadePanel1", "deleteUnusedNodes");')
-    fb_print('转换完成', info=True, path=FILE_PATH, line=LIN(), viewMes=True)
+    fb_print('转换完成', info=True, path=True, viewMes=True)

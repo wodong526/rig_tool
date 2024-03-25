@@ -3,7 +3,7 @@ import maya.cmds as mc
 
 from ast import literal_eval
 
-from feedback_tool import Feedback_info as fb_print, LIN as lin
+from feedback_tool import Feedback_info as fb_print
 
 FINE_PATH = __file__
 

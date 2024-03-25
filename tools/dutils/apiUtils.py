@@ -3,7 +3,7 @@ import maya.cmds as mc
 import maya.OpenMaya as om
 import maya.OpenMayaAnim as omain
 
-from feedback_tool import Feedback_info as fb_print, LIN as lin
+from feedback_tool import Feedback_info as fb_print
 
 
 def getApiNode(obj=None, dag=True, com=False):

@@ -12,7 +12,7 @@ import os
 import math
 import functools
 
-from feedback_tool import Feedback_info as fb_print, LIN as lin
+from feedback_tool import Feedback_info as fb_print
 from dutils import ctrlUtils
 import data_path
 
@@ -235,7 +235,7 @@ class create_ctl(QtWidgets.QDialog):  # 使该窗口为控件
                     fb_print('{}不是曲线，已跳过。'.format(obj), warning=True)
                     continue
         else:
-            fb_print('没有选择对象。', error=True, path=FILE_PATH, line=lin())
+            fb_print('没有选择对象。', error=True, path=True)
             return False
         if bol == True:
             return cv_lis

@@ -1,4 +1,8 @@
-import maya.cmds as mc
+import feedback_tool
 
-mc.showHelp('https://help.autodesk.com/view/MAYAUL/2018/CHS/?guid=__PyMel_index_html')
 
+reload(feedback_tool)
+from feedback_tool import Feedback_info as fp
+
+
+fp('fwaeg', path=True, error=True, viewMes=True)

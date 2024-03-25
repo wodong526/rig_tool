@@ -9,18 +9,8 @@ import maya.OpenMayaUI as omui
 from PySide2 import QtWidgets
 from shiboken2 import wrapInstance
 
-import traceback
-
 from feedback_tool import Feedback_info as fp
 from dutils import clearUtils, toolUtils, attrUtils, ctrlUtils, apiUtils
-
-FILE_PATH = __file__
-
-
-def LIN():
-    line_number = traceback.extract_stack()[-2][1]
-    return line_number
-
 
 def maya_main_window():
     main_window_ptr = omui.MQtUtil.mainWindow()

@@ -1,19 +1,47 @@
 # -*- coding:GBK -*-
+import traceback
+
 import maya.OpenMaya as om
 import maya.cmds as mc
 
-import traceback
+import sys
+import os
 
+def caller_info():
+    """
+    获取有关当前函数调用方的信息。
+
+    Returns:
+        tuple：包含调用方文件路径和行号的元组。
+    """
+    back_frame = sys._getframe().f_back.f_back
+    back_path = back_frame.f_code.co_filename
+    back_file = os.path.basename(back_path)
+    back_lin = back_frame.f_lineno
+
+    return back_path, back_lin
 
 class Feedback_info(object):
-    def __init__(self, tex, path=None, line=None, info=False, warning=False, error=False, viewMes=False, block=True, time=3):
+    def __init__(self, tex, path=False, info=False, warning=False, error=False, viewMes=False, block=True, time=3):
+        """
+        使用提供的参数初始化类。
+
+        Args:
+        tex (str): 要打印的文本。
+        path (bool): 是否包含调用方的文件路径和行号。
+        info (bool): 是否将文本打印为信息消息。
+        warning (bool): 是否将文本打印为警告消息。
+        error (bool): 是否将文本打印为错误消息。
+        viewMes (bool): 是否在Maya视窗内显示消息。
+        block (bool): 是否在显示消息时阻止程序执行。
+        time (int): 显示消息的时间（以秒为单位）。
+        """
         if path:
-            self.line = line
-            self.path = path
+            self.path, self.line = caller_info()
         else:
             self.line = None
-            self.path = None
-            self.vieMes = None
+            self.path = False
+            self.vieMes = False
         self.time = time*1000
         self.vieMes = viewMes
         self.block = block
@@ -32,6 +60,7 @@ class Feedback_info(object):
             mc.inViewMessage(amg='<font color="lightcyan">{}</font>'.format(txt), pos='midCenterBot', f=True, fst=self.time)
 
         if self.path:
+            print(caller_info())
             om.MGlobal.displayInfo('文件{}:{}'.format('{}第{}行'.format(
                 self.path, self.line) if self.line else self.path, txt))
         else:
@@ -63,7 +92,3 @@ class Feedback_info(object):
                 raise RuntimeError(txt)
             else:
                 om.MGlobal.displayError(txt)
-
-
-def LIN():
-    return traceback.extract_stack()[-2][1]

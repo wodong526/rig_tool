@@ -4,7 +4,7 @@ import maya.mel as mm
 import maya.api.OpenMaya as oma
 import maya.api.OpenMayaAnim as omaa
 
-from feedback_tool import Feedback_info as fb_print, LIN as lin
+from feedback_tool import Feedback_info as fb_print
 from dutils import attrUtils, toolUtils, fileUtils
 
 reload(attrUtils)

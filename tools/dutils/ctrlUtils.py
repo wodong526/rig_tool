@@ -6,7 +6,7 @@ import maya.OpenMayaUI as omui
 import os
 
 import data_path
-from feedback_tool import Feedback_info as fb_print, LIN as lin
+from feedback_tool import Feedback_info as fb_print
 
 FILE_PATH = __file__
 
@@ -47,7 +47,7 @@ def create_ctl(nam, num=1, cid='D00', color=None):
         else:
             return ctl_lis[0]
     else:
-        fb_print('控制器库路径不存在，请将电脑链接到服务器。', error=True, path=FILE_PATH, line=lin())
+        fb_print('控制器库路径不存在，请将电脑链接到服务器。', error=True, path=True)
 
 
 def replace_controller_shape(ctl_lis, cid=None, color=None):

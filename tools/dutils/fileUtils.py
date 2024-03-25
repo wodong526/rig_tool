@@ -1,5 +1,5 @@
 # coding=gbk
-from PySide2 import QtCore
+import stat
 from PySide2 import QtWidgets
 from shiboken2 import wrapInstance
 
@@ -10,7 +10,7 @@ import os
 import re
 import json
 
-from feedback_tool import Feedback_info as fb_print, LIN as lin
+from feedback_tool import Feedback_info as fp
 
 
 def maya_main_window():
@@ -18,20 +18,20 @@ def maya_main_window():
     return wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
 
 
-def create_folder(path, folder_name):
+def create_folder(path, folder_name=''):
     """
     通过路径与文件名生成文件夹
     :param path: 文件所在路径
-    :param folder_name: 文件的名字，必须加上后缀名
+    :param folder_name: 文件的名字，不加后缀名
     :return: 文件路径
     """
     folder = "{}/{}".format(path, folder_name)
     if not os.path.exists(folder):
         try:
             os.mkdir(folder)
-            fb_print("已创建文件夹{}".format(folder), info=True)
+            fp("已创建文件夹{}".format(folder), info=True)
         except OSError:
-            fb_print("创建文件夹{}失败".format(folder), error=True)
+            fp("创建文件夹{}失败".format(folder), error=True)
 
     return folder
 
@@ -129,7 +129,7 @@ def fromFileReadInfo(path, user_file):
                 data = f.read()
         return data
     else:
-        fb_print('文件{}/{}不存在'.format(path, user_file), warning=True)
+        fp('文件{}/{}不存在'.format(path, user_file), warning=True)
         return None
 
 
@@ -165,7 +165,7 @@ def saveFilePath(title='', path='', file_typ=''):
     if file_path[0]:
         return file_path[0]
     else:
-        fb_print('没有选择有效路径', error=True)
+        fp('没有选择有效路径', error=True)
 
 
 def getFilePath(title='', path='', file_typ=''):
@@ -185,4 +185,30 @@ def getFilePath(title='', path='', file_typ=''):
     if file_path[0]:
         return file_path[0]
     else:
-        fb_print('没有选择有效文件', error=True)
+        fp('没有选择有效文件', error=True)
+
+def remove_readonly(func, path, _):
+    """
+    错误处理函数，尝试移除文件的只读属性然后重新调用删除函数。
+    """
+    os.chmod(path, stat.S_IWRITE)  # 移除只读属性
+    func(path)
+
+def delete_files(path, force=True):
+    """
+    删除文件
+    """
+    if not os.path.exists(path):
+        return
+    if not os.access(path, os.W_OK):#当文件为只读时
+        if force:
+            os.chmod(path, stat.S_IWRITE)
+        else:
+            fp('文件{}属性为只读，取消删除'.format(path.encode('gbk')), warning=True)
+            return
+    if os.path.isdir(path):
+        shutil.rmtree(path, onerror=remove_readonly)
+    elif os.path.isfile(path):
+        os.remove(path)
+    fp('已删除文件：{}'.format(path.encode('gbk')), info=True)
+

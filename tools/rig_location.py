@@ -1,7 +1,7 @@
 # -*- coding:GBK -*-
 import maya.cmds as mc
 
-from feedback_tool import Feedback_info as fb_print, LIN as lin
+from feedback_tool import Feedback_info as fb_print
 
 
 def get_core(get_pos=False, to_typ = 'locator'):
@@ -25,7 +25,7 @@ def get_core(get_pos=False, to_typ = 'locator'):
         elif to_typ == 'joint':
             loc = mc.createNode('joint')
         else:
-            fb_print('未知的节点类型', error=True, line=lin())
+            fb_print('未知的节点类型', error=True, path=True)
         mc.matchTransform(loc, clst)
         if get_pos:
             pos = mc.xform(loc, q=True, ws=True, t=True)

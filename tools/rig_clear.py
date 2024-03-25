@@ -6,9 +6,9 @@ import maya.api.OpenMaya as oma
 import os
 from collections import Counter
 import re
-import stat
 
 from feedback_tool import Feedback_info as fp
+from dutils import fileUtils as fu
 
 class ProtectiveTools(object):
     """
@@ -16,17 +16,14 @@ class ProtectiveTools(object):
     """
     @classmethod
     def clear_pyFile(cls):
-        def dele_file(py_path):
-            os.chmod(py_path, stat.S_IWRITE)
-            os.remove(py_path)
-
-        py_path = mc.internalVar(uad = True)+'scripts/vaccine.py'
-        pyc_path = mc.internalVar(uad = True)+'scripts/vaccine.pyc'
+        """
+        清理贼健康脚本文件
+        :return:
+        """
+        py_path_lis = ['scripts/vaccine', 'scripts/fuckVirus']
         userSetUp_path = mc.internalVar(uad=True) + 'scripts/userSetUp.py'
-        if os.path.exists(py_path):
-            dele_file(pyc_path)
-        if os.path.exists(pyc_path):
-            dele_file(pyc_path)
+        for path in py_path_lis:
+            map(fu.delete_files, [mc.internalVar(uad=True) + path + typ for typ in ['.py', '.pyc']])
 
         if os.path.exists(userSetUp_path):
             tag_txt_lis = ['leukocyte.occupation()', 'leukocyte = vaccine.phage()']
@@ -40,7 +37,7 @@ class ProtectiveTools(object):
                     if is_vaccine:
                         break
             if is_vaccine:
-                dele_file(userSetUp_path)
+                map(fu.delete_files, [userSetUp_path])
 
     @classmethod
     def get_dubious_scriptNodes(cls):

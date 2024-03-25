@@ -6,7 +6,7 @@ import os
 import shutil
 import sys
 
-from feedback_tool import Feedback_info as fp, LIN
+from feedback_tool import Feedback_info as fp
 
 
 def reload_hot_ui():
@@ -56,8 +56,7 @@ def open_studioLibrary():
     :return:
     """
     if not os.path.exists('C:/Rig_Tools/scripts/studio_library'):
-        fp('C:/Rig_Tools/scripts/studio_library"路径不存在', error=True, path=__file__, line=LIN(),
-                 viewMes=True)
+        fp('C:/Rig_Tools/scripts/studio_library"路径不存在', error=True, path=True, viewMes=True)
 
     if 'C:/Rig_Tools/scripts/studio_library' not in sys.path:
         sys.path.insert(0, 'C:/Rig_Tools/plug_ins/studio_library')
@@ -72,7 +71,7 @@ def add_metaToMaya_plug():
     """
     try:
         if mc.pluginInfo('embeddedRL4', q=True, r=True):
-            fp('bridgeToMaya已经加载', info=True, path=__file__, line=LIN(), viewMes=True)
+            fp('bridgeToMaya已经加载', info=True, path=True, viewMes=True)
         else:
             if 'C:/Rig_Tools/scripts/Bridge_To_Maya' in sys.path:
                 pass
@@ -84,7 +83,7 @@ def add_metaToMaya_plug():
             DHIPluginLoader.load()#添加meta脚本插件
             # Installer.createMSshelf()#将shelf栏的meta按钮刷新
             initLiveLink()#打开实时链接与加载材质的窗口ui（已关闭加载浮动窗口代码）
-            fp('已加载bridgeToMaya插件集', info=True, path=__file__, line=lin.f_lineno, viewMes=True)
+            fp('已加载bridgeToMaya插件集', info=True, path=True, viewMes=True)
     except:
         rest = mc.confirmDialog(title='插件加载失败：', message='请注意，你的metaToMaya插件加载可能失败。',
                                 button=['确定', '检查插件管理器'])
@@ -94,4 +93,4 @@ def add_metaToMaya_plug():
 def add_adPose_ui():
     from adPose import ui
     ui.show_in_maya()
-    fp('已加载adPose窗口', info=True, path=__file__, line=LIN())
+    fp('已加载adPose窗口', info=True, path=True)

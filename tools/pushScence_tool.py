@@ -20,9 +20,8 @@ from data_path import icon_dir as ic, projectPath_xxtt as pojpt_xt
 from dutils import cgtUtils as cgt
 from qt_widgets import SeparatorAction as menl, set_font
 from rig_tool import exportSelectToFbx
-import folder_widget
-reload(folder_widget)
-import folder_widget as flw
+import folder_widget as fw
+reload(fw)
 
 
 def maya_main_window():
@@ -166,7 +165,7 @@ class PushWindow(QtWidgets.QDialog):
         self.but_clearName.setFixedSize(35, 35)
         self.but_clearName.setIcon(QtGui.QIcon(ic['delete']))
         self.but_clearName.setIconSize(QtCore.QSize(35, 35))
-        self.but_localAsset = QtWidgets.QPushButton(u'->')
+        self.but_localAsset = QtWidgets.QPushButton(u'···-->')
         self.but_localAsset.setFixedSize(35, 35)
 
         self.lst_asset = QtWidgets.QListWidget()
@@ -177,7 +176,7 @@ class PushWindow(QtWidgets.QDialog):
         self.comb_typ.addItems([u'模型', u'绑定', u'ueFBX'])
         self.but_push = QtWidgets.QPushButton(u'上传')
 
-        self.wid_folder = flw.FolderWidget()
+        self.wid_folder = fw.FolderWidget()
         self.wid_folder.setVisible(False)
 
     def create_layout(self):
@@ -205,6 +204,7 @@ class PushWindow(QtWidgets.QDialog):
         wdt_left.setMaximumWidth(300)
         wdt_reght = QtWidgets.QWidget()
         wdt_reght.setMinimumWidth(270)
+        wdt_reght.setMaximumWidth(350)
         wdt_reght.setLayout(layout_push)
 
         spt_layout = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
@@ -462,10 +462,10 @@ class PushWindow(QtWidgets.QDialog):
     def local_asset_widget_vis(self):
         if self.wid_folder.isVisible():
             self.wid_folder.setVisible(False)
-            self.but_localAsset.setText(u'->')
+            self.but_localAsset.setText(u'···-->')
         else:
             self.wid_folder.setVisible(True)
-            self.but_localAsset.setText(u'<-')
+            self.but_localAsset.setText(u'<--···')
 
 
 def push_rig():

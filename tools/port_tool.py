@@ -9,9 +9,7 @@ import maya.OpenMayaUI as omui
 
 import os
 
-from feedback_tool import Feedback_info as fb_print, LIN as lin
-
-FILE_PATH = __file__
+from feedback_tool import Feedback_info as fb_print
 
 
 def maya_main_window():
@@ -97,7 +95,7 @@ class Export_SM(QtWidgets.QDialog):
             self.create_jntItems()
             self.spn_faces.clearFocus()  #在点击查询场景按钮后使输入框失去焦点
         else:
-            fb_print('场景中没有超过{}面数的模型'.format(clamp_num), warning=True, path=FILE_PATH)
+            fb_print('场景中没有超过{}面数的模型'.format(clamp_num), warning=True, path=True)
 
     def create_jntItems(self, *itm):
         """
@@ -231,7 +229,7 @@ class Export_SM(QtWidgets.QDialog):
                 else:
                     fb_print('选择列表中没有可加入SM文件的有效模型', error=True, viewMes=True)
             else:
-                fb_print('没有选择有效的关节项。', error=True, path=FILE_PATH, line=lin())
+                fb_print('没有选择有效的关节项。', error=True, path=True)
 
     def add_JntItem(self):
         """
@@ -255,7 +253,7 @@ class Export_SM(QtWidgets.QDialog):
                         self.lst_jnts.item(i).setSelected(True)
                         break
             else:
-                fb_print('选择列表中没有有效关节', error=True, path=FILE_PATH, line=lin())
+                fb_print('选择列表中没有有效关节', error=True, path=True)
 
     def remove_jntItem(self):
         """
@@ -315,12 +313,12 @@ class Export_SM(QtWidgets.QDialog):
                 mc.select(self.jnt_dir[jnt])
                 mc.file(fbx_path, f=True, typ='FBX export', pr=True, es=True)
                 export_lis.append(jnt)
-                fb_print('已导出模型{}'.format(self.jnt_dir[jnt]), info=True, path=FILE_PATH, line=lin())
+                fb_print('已导出模型{}'.format(self.jnt_dir[jnt]), info=True, path=True)
             else:
                 fb_print('关节{}没有对应的模型可供导出'.format(jnt), warning=True)
 
         n, path = self.write_txt(export_lis)
-        fb_print('共导出静态模型{}个，生成对应文件{}。'.format(n, path), info=True, path=FILE_PATH, line=lin(), viewMes=True)
+        fb_print('共导出静态模型{}个，生成对应文件{}。'.format(n, path), info=True, path=True, viewMes=True)
 
     def write_txt(self, export_lis):
         '''
@@ -338,7 +336,7 @@ class Export_SM(QtWidgets.QDialog):
 
         with open(self.scence_path.replace('.ma', '.txt'), "w") as f:
             f.write(txt)
-        fb_print('对应文件写入完毕', path=FILE_PATH, line=lin(), info=True)
+        fb_print('对应文件写入完毕', path=True, info=True)
 
         return i, self.scence_path.replace('.ma', '.txt')
 
@@ -404,7 +402,7 @@ class Export_SM(QtWidgets.QDialog):
         if error_lis:
             for key, itme in error_lis.items():
                 fb_print('模型{}的蒙皮关节应为一个，实际为{}个'.format(key, itme),
-                         warning=True, path=FILE_PATH, line=lin(), viewMes=True)
+                         warning=True, path=True, viewMes=True)
         return jnt_dir
 
     def get_modJoint(self, mod):

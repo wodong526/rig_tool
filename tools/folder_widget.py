@@ -1,4 +1,5 @@
 # coding=gbk
+import stat
 import shutil
 import os
 import subprocess
@@ -10,8 +11,12 @@ import maya.cmds as mc
 import maya.mel as mm
 import maya.OpenMayaUI as omui
 
+from feedback_tool import Feedback_info as fp
 from data_path import icon_dir as ic
 from qt_widgets import SeparatorAction as menl
+from dutils import fileUtils as fu
+reload(fu)
+
 def maya_main_window():
     main_window_ptr = omui.MQtUtil.mainWindow()
     return wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
@@ -19,6 +24,7 @@ def maya_main_window():
 
 class FolderWidget(QtWidgets.QWidget):
     default_path = 'E:/'
+    sub_index = 5
 
     @classmethod
     def is_hidden(cls, filepath):
@@ -113,7 +119,10 @@ class FolderWidget(QtWidgets.QWidget):
         for obj in self.list_folder(drive_ltter, no_hidden=True):
             if os.path.isdir(os.path.join(drive_ltter, obj)):
                 self.cob_file.addItem(obj)
-        self.cob_file.setCurrentIndex(self.cob_file.count() - 1)
+        try:
+            self.cob_file.setCurrentIndex(FolderWidget.sub_index)
+        except:
+            self.cob_file.setCurrentIndex(self.cob_file.count() - 1)
         self.refresh_item()
 
     def find_and_scroll_to_item(self, tree, itm_body, itm_parent):
@@ -237,59 +246,86 @@ class FolderWidget(QtWidgets.QWidget):
 
     def obj_existence(func):
         def wrapper(self, *args, **kwargs):
-            itm_lis = [itm.data(0, QtCore.Qt.UserRole) for itm in self.tree.selectedItems() if
-                       os.path.exists(itm.data(0, QtCore.Qt.UserRole))]
-            if itm_lis:
-                return func(self, itm_lis)
+            itm_dir = {itm: itm.data(0, QtCore.Qt.UserRole) for itm in self.tree.selectedItems() if
+                       os.path.exists(itm.data(0, QtCore.Qt.UserRole))}#返回item本身
+            if itm_dir:
+                return func(self, itm_dir)
             else:
                 return None
 
         return wrapper
 
+    def delete_item(self, item):
+        """
+        从树结构中删除给定项。
+        Args:
+            item: 要删除的项。
+        """
+        if item.parent():
+            parent_item = item.parent()
+            parent_item.removeChild(item)
+        else:
+            index = self.tree.indexOfTopLevelItem(item)
+            self.tree.takeTopLevelItem(index)
+
+    def query_item(self, target_data):
+        for i in range(self.tree.topLevelItemCount()):
+            top_level_item = self.tree.topLevelItem(i)
+            if top_level_item is not None:
+                ret = self.check_item(top_level_item, target_data)
+                if ret is not None:
+                    return ret
+
+    def check_item(self, item, target_data):
+        if item.data(0, QtCore.Qt.UserRole) == target_data:
+            return item
+
+        for j in range(item.childCount()):
+            child_item = item.child(j)
+            ret = self.check_item(child_item, target_data)
+            if ret is not None:
+                return ret
+
     @obj_existence
-    def delete_file(self, itms):
+    def delete_file(self, itm_dir):
         """
         删除当前项
         """
-        bol = QtWidgets.QMessageBox.warning(self, u'警告', u'是否删除\n{}'.format('\n'.join(itms)),
+        bol = QtWidgets.QMessageBox.warning(self, u'警告', u'是否删除\n{}'.format('\n'.join(itm_dir.values())),
                                             QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
         if bol == QtWidgets.QMessageBox.No:
             return None
-        for path in itms:
-            if not os.path.exists(path):
-                continue
-            if os.path.isdir(path):
-                os.rmdir(path)
-            elif os.path.isfile(path):
-                os.remove(path)
-        self.refresh_item()
+        map(fu.delete_files, itm_dir.values())
+        map(self.delete_item, itm_dir.keys())
 
     @obj_existence
-    def duplicate_path(self, itms):
+    def duplicate_path(self, itm_dir):
         """
         复制路径
         """
-        QtWidgets.QApplication.clipboard().setText(itms[-1])
+        path = itm_dir.values()[-1]
+        QtWidgets.QApplication.clipboard().setText(path)
+        fp('已复制路径：{}'.format(path), info=True)
 
     @obj_existence
-    def duplicate_file_name(self, itms):
+    def duplicate_file_name(self, itm_dir):
         """
         复制文件名
         """
-        QtWidgets.QApplication.clipboard().setText(os.path.basename(itms[-1]))
+        path = itm_dir.values()[-1]
+        QtWidgets.QApplication.clipboard().setText(os.path.basename(path))
+        fp('已复制文件名：{}'.format(os.path.basename(path).encode('gbk')), info=True)
 
     @obj_existence
-    def duplicate_file(self, itms):
+    def duplicate_file(self, itm_dir):
         """
         复制文件
         """
-        path = itms[-1]
+        path = itm_dir.values()[-1]
         md = QtCore.QMimeData()
-        if os.path.isfile(path):
-            md.setUrls([QtCore.QUrl.fromLocalFile(path)])
-        elif os.path.isdir(path):
-            md.setUrls([QtCore.QUrl.fromLocalFile(path)])
+        md.setUrls([QtCore.QUrl.fromLocalFile(path)])
         QtWidgets.QApplication.clipboard().setMimeData(md)
+        fp('已复制文件：{}'.format(path.encode('gbk')), info=True)
 
     def paste_file(self):
         """
@@ -297,78 +333,128 @@ class FolderWidget(QtWidgets.QWidget):
         """
         itms = self.tree.selectedItems()
         path = itms[-1].data(0, QtCore.Qt.UserRole) if itms else os.path.join(self.lin_dir.text(),
-                                                                              self.cob_file.currentText())
+                                                                              self.cob_file.currentText())#被复制到的文件夹
         md = QtWidgets.QApplication.clipboard().mimeData()
+        if itms:#获取要创建新项的父级项
+            if os.path.isdir(path):
+                p_itm = itms[-1]
+            elif itms[-1].parent():
+                p_itm = itms[-1].parent()
+            else:
+                p_itm = self.tree.invisibleRootItem()
+        elif not itms:
+            p_itm = self.tree.invisibleRootItem()
+
         if md.hasUrls():
             for url in md.urls():
                 if os.path.isfile(path):
                     path = os.path.dirname(path)
-                if os.path.isdir(url.toLocalFile()) or os.path.isfile(url.toLocalFile()):
-                    shutil.copy(url.toLocalFile(), path)
 
-            self.refresh_item()
+                tag_path = os.path.join(path, os.path.basename(url.toLocalFile()))#被复制成的文件路径
+                if os.path.normcase(os.path.abspath(url.toLocalFile())) == os.path.normcase(os.path.abspath(tag_path)):
+                    fp('复制的文件与目标文件在同一目录：{}'.format(url.toLocalFile().encode('gbk')), warning=True)
+                    continue
+
+                if os.path.exists(tag_path):
+                    rest = mc.confirmDialog(title=u'警告', message=u'{}下已有文件\n{}\n是否替换?'.format(
+                        path, os.path.basename(url.toLocalFile())), button=[u'替换', u'另存为', u'取消'])
+                    if rest == u'替换':
+                        map(fu.delete_files, [tag_path])
+                        itm = self.query_item(tag_path)
+                        self.delete_item(itm)
+                    elif rest == u'另存为':
+                        i = 1
+                        suffix = ''
+                        p, typ = os.path.splitext(tag_path)
+                        while os.path.exists(p+suffix+typ):
+                            i += 1
+                            suffix = '({})'.format(i)
+                        tag_path = p+suffix+typ
+                    elif rest == u'取消':
+                        continue
+
+                shutil.copy(url.toLocalFile(), tag_path)
+                fp('已粘贴文件{}到{}'.format(os.path.basename(url.toLocalFile()).encode('gbk'), tag_path.encode('gbk')), info=True)
+                self.create_sub_item(p_itm, tag_path)
 
     @obj_existence
-    def rename_item(self, itms):
+    def rename_item(self, itm_dir):
         """
         重命名当前项
         """
-        path = itms[-1]
+        itm = itm_dir.keys()[-1]
+        path = itm_dir[itm]
         base_name = os.path.basename(path)
         new_name = QtWidgets.QInputDialog.getText(self, u'重命名窗口', u'将{}\n重命名为:'.format(base_name),
                                                   text=os.path.splitext(base_name)[0])
         if new_name[1]:
             new_path = os.path.join(os.path.dirname(path), new_name[0])
             os.rename(path, new_path)
-            self.refresh_item()
+            itm.setText(0, new_name[0])
+            fp('已重命名为：{}'.format(new_path.encode('gbk')), info=True)
         else:
-            print('取消重命名')
+            fp('已取消重命名', info=True)
 
     def new_folder(self):
         """
         新建文件夹
         """
         itms = self.tree.selectedItems()
-        path = os.path.dirname(itms[-1].data(0, QtCore.Qt.UserRole)) if itms else os.path.join(self.lin_dir.text(),
+
+        path = itms[-1].data(0, QtCore.Qt.UserRole) if itms else os.path.join(self.lin_dir.text(),
                                                                               self.cob_file.currentText())
+        if itms:#获取要创建新项的父级项
+            if os.path.isfile(path):
+                p = itms[-1].parent()
+                path = os.path.dirname(path)
+            elif itms[-1].parent():
+                p = itms[-1]
+            else:
+                path = os.path.dirname(path)
+                p = self.tree.invisibleRootItem()
+        elif not itms:
+            p = self.tree.invisibleRootItem()
+
         new_name = QtWidgets.QInputDialog.getText(self, u'新建文件夹窗口', u'在{}\n下新建文件夹:'.format(path), text=u'新建文件夹')
         if new_name[1]:
             new_path = os.path.join(path, new_name[0])
             i = 1
             suffix = ''
             while os.path.exists(new_path + suffix):
-                i += 1
                 suffix = '({})'.format(i)
+                i += 1
             os.mkdir(new_path + suffix)
-            self.refresh_item()
+            os.chmod(new_path + suffix, stat.S_IWRITE)
+            self.create_sub_item(p, new_path + suffix)
+            fp('已新建文件夹：{}{}'.format(new_path.encode('gbk'), suffix), info=True)
 
     @obj_existence
-    def open_file(self, itms):
+    def open_file(self, itm_dir):
         """
         在树视图中打开当前项的路径
         """
-        path = itms[-1]
+        path = itm_dir.values()[-1]
         if os.path.isfile(path) and os.path.splitext(path)[-1] in ['.ma', '.mb']:
             if mc.file(mf=True, q=True):
                 rest = mc.confirmDialog(title='警告', message='当前场景已被更改，是否保存后打开？',
                                         button=['保存', '不保存', '另存为', '取消'])
                 if rest == u'保存':
                     mc.file(s=True)
-                elif rest == u'取消':
+                elif rest == u'另存为':
                     mm.eval('SaveSceneAs;')
                 elif rest == u'取消':
                     return None
-                mc.file(itms[-1], o=True, f=True)
+            mc.file(path, o=True, f=True)
 
     @obj_existence
-    def open_folder(self, itms):
+    def open_folder(self, itm_dir):
         """
        打开包含指定项的文件夹。
 
        Args:
-           itms(list)：项目列表，最后一项是要打开文件夹的项目。
+           itm_dir(list)：项目列表，最后一项是要打开文件夹的项目。
        """
-        os.system('explorer /select, {}'.format(itms[-1].replace('/', '\\')))
+        os.system('explorer /select, {}'.format(itm_dir.values()[-1].replace('/', '\\')))
 
 def show_window():
     try:

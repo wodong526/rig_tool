@@ -10,7 +10,7 @@ from shiboken2 import wrapInstance
 import data_path
 import reload_tools
 reload(data_path)
-from feedback_tool import Feedback_info as fb_print, LIN as lin
+from feedback_tool import Feedback_info as fb_print
 
 tool_nam = __file__.split('\\')[1]
 
@@ -86,10 +86,9 @@ def svn_chectOut():
     txt, code = set_svn(['svn', 'checkout', data_path.rigToolWarehouseURL, data_path.localPath])
     #resout = os.system('svn checkout {} {}'.format(data_path.serverSubmitsTheLogs, data_path.localPath))
     if code == 0:
-        fb_print('工具架签出成功。', info=True, viewMes=True, path=__file__, line=lin())
+        fb_print('工具架签出成功。', info=True, viewMes=True, path=True)
     else:
-        fb_print('工具架签出失败\n返回码：{}运行信息：{}。'.format(code, txt), error=True, viewMes=True, path=__file__,
-                 line=lin())
+        fb_print('工具架签出失败\n返回码：{}运行信息：{}。'.format(code, txt), error=True, viewMes=True, path=True)
     try:
         reload_tools.reload_mod()
         fb_print('mod文件已替换。', info=True)
@@ -116,10 +115,10 @@ def svn_info():
     loca_version = output_info(loca_info) if server_code == 0 else fb_print('获取本地版本失败。', error=True, viewMes=True)
     if server_version != loca_version:
         fb_print('你的版本是{}，当前最新版本是{}。点击同步工具架更新到最新版本。'.format(loca_version, server_version),
-                 warning=True, viewMes=True, path=__file__, line=lin())
+                 warning=True, viewMes=True, path=True)
     else:
         fb_print('你的版本是{}，当前版本是{}。你已经是最新版本。'.format(loca_version, server_version), info=True,
-                 viewMes=True, path=__file__, line=lin())
+                 viewMes=True, path=True)
 
 
 def svn_upData():
@@ -130,9 +129,9 @@ def svn_upData():
     txt, code = set_svn(['svn', 'update', data_path.localPath])
     #resout = os.system('pushd "{}" && svn update'.format(data_path.localPath))
     if code == 0:
-        fb_print('工具架同步成功', info=True, viewMes=True, path=__file__, line=lin())
+        fb_print('工具架同步成功', info=True, viewMes=True, path=True)
     else:
-        fb_print('工具架同步失败', error=True, viewMes=True, path=__file__, line=lin())
+        fb_print('工具架同步失败', error=True, viewMes=True, path=True)
 
 
 def svn_logs():

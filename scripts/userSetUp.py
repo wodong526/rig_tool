@@ -91,10 +91,15 @@ class RIG_setUp(object):
 
     @staticmethod
     def add_toolScript_path():
-        sys_path = ['C:/Rig_Tools/tools', 'C:/cgteamwork/bin/base']
+        sys_path = ['C:/Rig_Tools/tools', 'C:/cgteamwork/bin/base', 'C:/Rig_Tools/scripts/ngSkinTools/scripts']
         for path in sys_path:
             if path not in sys.path:
                 sys.path.append(path) if os.path.exists(path) else fp('Â·¾¶{}²»´æÔÚ'.format(path), warning=True)
+
+        plug_path = ['C:/Rig_Tools/scripts/ngSkinTools/plug-ins/{}'.format(mc.about(v=True))]
+        for path in plug_path:
+            if path not in os.environ["MAYA_PLUG_IN_PATH"]:
+                os.environ["MAYA_PLUG_IN_PATH"] = path + os.pathsep + os.environ.get("MAYA_PLUG_IN_PATH", "")
 
         from rig_clear import ProtectiveTools
         ProtectiveTools()

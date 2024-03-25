@@ -2,7 +2,7 @@
 import maya.cmds as mc
 import maya.mel as mm
 
-from feedback_tool import Feedback_info as fb_print, LIN as lin
+from feedback_tool import Feedback_info as fb_print
 
 FILE_PATH = __file__
 
@@ -45,7 +45,7 @@ def transform_jnt_skin(outSkin_lis, obtain_jnt, mod, delete=False):
             mc.skinPercent(cluster, tv=[(jnt, 0)])
             mc.skinCluster(cluster, e=True, ri=jnt)
         else:
-            fb_print('{}不在蒙皮中'.format(jnt), warning=True, path=FILE_PATH, line=lin())
+            fb_print('{}不在蒙皮中'.format(jnt), warning=True, path=True)
 
         if delete:  #当关节不在世界下时放到世界下，将子级p给父级再把关节放到世界下，当关节在世界下时，当关节有子级时，将子级对象p到世界下
             if mc.listRelatives(jnt, p=True):
