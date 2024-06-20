@@ -10,20 +10,23 @@ import maya.OpenMayaUI as omui
 
 import os
 import glob
+import sys
 from pathlib import PurePath
 from functools import partial
+if sys.version_info.major == 3:
+    from importlib import reload
 
 from feedback_tool import Feedback_info as fp
-import data_path
-reload(data_path)
-from data_path import icon_dir as ic, projectPath_xxtt as pojpt_xt
+from data_path import icon_dir as ic
 from dutils import cgtUtils as cgt
 from qt_widgets import SeparatorAction as menl, set_font
 from rig_tool import exportSelectToFbx
+from userConfig import Conf
 import folder_widget as fw
 reload(fw)
+reload(cgt)
 
-
+cf = Conf()
 def maya_main_window():
     main_window_ptr = omui.MQtUtil.mainWindow()
     return wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
@@ -118,24 +121,15 @@ class PushWindow(QtWidgets.QDialog):
 
     def __init__(self, parent=maya_main_window()):
         super(PushWindow, self).__init__(parent)
-
         self.setWindowTitle(u'上传rig到CGT')
         self.setWindowIcon(QtGui.QIcon(ic['cgt_logo']))
 
-        if mc.about(ntOS=True):  #判断系统类型
-            self.setWindowFlags(self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint)  #删除窗口上的帮助按钮
-        elif mc.about(macOS=True):
-            self.setWindowFlags(QtCore.Qt.Tool)
-
+        self.proj = ''
         self.clearWgt_lis = []
-        if os.path.exists(pojpt_xt[0]):
-            self.project_name = pojpt_xt[0].split('/')[2]
-        else:
-            fp('导入服务器路径出错，请检查服务器映射是否成功.。', error=True, block=True)
-
         self.create_widgets()
         self.create_layout()
         self.create_connections()
+        self.refresh_projs()
         self.refresh_Item()
 
     def create_widgets(self):
@@ -150,15 +144,20 @@ class PushWindow(QtWidgets.QDialog):
         clear_layout = QtWidgets.QVBoxLayout(self.wdg_clear_lis)
         clear_layout.setContentsMargins(2, 2, 2, 2)
         for fun in zip(['clear_name', 'clear_nameSpace', 'clear_key', 'clear_hik', 'clear_animLayer', 'inspect_weight',
-                        'clear_unknown_node', 'clear_unknown_plug'],
+                        'clear_unknown_node', 'clear_unknown_plug', 'conn_custom_blendshape'],
                        [u'查询场景重名', u'清理空间名称', u'清理关键帧', u'清理humanIK', u'清理动画层', u'检查权重总量',
-                        u'清理未知节点', u'清理未知插件']):
+                        u'清理未知节点', u'清理未知插件', u'链接自定义目标体']):
             wdg = ClearItem(fun[0], fun[1], parent=self.area_clear_lis)
             self.clearWgt_lis.append(wdg)
             clear_layout.addWidget(wdg)
         self.area_clear_lis.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         self.area_clear_lis.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
 
+        self.cbox_proj = QtWidgets.QComboBox()
+        self.cbox_proj.setFixedSize(90, 35)
+        self.cbox_proj.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
+        self.cbox_proj.setFont(set_font(10))
+        self.cbox_proj.addItems(cf.get_all_value('project'))
         self.lin_searchName = QtWidgets.QLineEdit()
         self.lin_searchName.setMinimumHeight(35)
         self.but_clearName = QtWidgets.QPushButton()
@@ -173,28 +172,38 @@ class PushWindow(QtWidgets.QDialog):
         self.comb_typ = QtWidgets.QComboBox()
         self.comb_typ.setMaximumSize(65, 25)
         self.comb_typ.setFont(set_font(10))
-        self.comb_typ.addItems([u'模型', u'绑定', u'ueFBX'])
+        self.comb_typ.addItems([u'绑定', u'ueFBX'])
         self.but_push = QtWidgets.QPushButton(u'上传')
+        self.cbox_version = QtWidgets.QCheckBox(u'迭代版本')
+        self.cbox_version.setMaximumWidth(65)
 
         self.wid_folder = fw.FolderWidget()
         self.wid_folder.setVisible(False)
 
     def create_layout(self):
         layout_clear = QtWidgets.QVBoxLayout()
+        layout_clear.setSpacing(2)
+        layout_clear.setContentsMargins(5, 5, 5, 5)
         layout_clear.addWidget(self.but_clearScence)
         layout_clear.addWidget(self.area_clear_lis)
 
         layout_search = QtWidgets.QHBoxLayout()
         layout_search.setSpacing(3)
+        layout_search.addWidget(self.cbox_proj)
         layout_search.addWidget(self.lin_searchName)
         layout_search.addWidget(self.but_clearName)
         layout_search.addWidget(self.but_localAsset)
 
         layout_pushBut = QtWidgets.QHBoxLayout()
+        layout_pushBut.setSpacing(2)
+        layout_pushBut.setContentsMargins(0, 0, 0, 0)
         layout_pushBut.addWidget(self.comb_typ)
         layout_pushBut.addWidget(self.but_push)
+        layout_pushBut.addWidget(self.cbox_version)
 
         layout_push = QtWidgets.QVBoxLayout()
+        layout_push.setSpacing(2)
+        layout_push.setContentsMargins(5, 5, 5, 5)
         layout_push.addLayout(layout_search)
         layout_push.addWidget(self.lst_asset)
         layout_push.addLayout(layout_pushBut)
@@ -203,8 +212,8 @@ class PushWindow(QtWidgets.QDialog):
         wdt_left.setLayout(layout_clear)
         wdt_left.setMaximumWidth(300)
         wdt_reght = QtWidgets.QWidget()
-        wdt_reght.setMinimumWidth(270)
-        wdt_reght.setMaximumWidth(350)
+        wdt_reght.setMinimumWidth(350)
+        wdt_reght.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
         wdt_reght.setLayout(layout_push)
 
         spt_layout = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
@@ -213,17 +222,68 @@ class PushWindow(QtWidgets.QDialog):
         spt_layout.addWidget(self.wid_folder)
 
         main_layout = QtWidgets.QVBoxLayout(self)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setMenuBar(self.create_menu())
         main_layout.addWidget(spt_layout)
+
 
     def create_connections(self):
         self.but_clearScence.clicked.connect(self.autoClearScence)
         self.but_clearScence.clickedRightSig.connect(self.restoreItemCheckBox)
+        self.cbox_proj.currentIndexChanged.connect(self.refresh_projs)
         self.but_clearName.clicked.connect(self.lin_searchName.clear)
         self.but_localAsset.clicked.connect(self.local_asset_widget_vis)
         self.lst_asset.itemDoubleClicked.connect(partial(self.menu_function, 'openRigFile'))
         self.lst_asset.customContextMenuRequested.connect(self.create_contextMenu)
         self.lin_searchName.returnPressed.connect(self.refresh_Item)
         self.but_push.clicked.connect(self.push_file)
+
+    def create_menu(self):
+        menu_bar = QtWidgets.QMenuBar(self)
+        menu_preferences = menu_bar.addMenu('首选项')
+        action_login_info = QtWidgets.QAction('查看当前cgt登录信息', self)
+
+        action_login_info.triggered.connect(self.login_window)
+        menu_preferences.addAction(action_login_info)
+        return menu_bar
+
+    def login_window(self):
+        self.login = QtWidgets.QDialog(self)
+        self.login.setWindowIcon(QtGui.QIcon(ic['cgt_logo']))
+
+        lab_ip = QtWidgets.QLabel(cf.get_value('personal_CgtInfo', 'ip'))
+        lab_account = QtWidgets.QLabel(cf.get_value('personal_CgtInfo', 'account'))
+        lab_password = QtWidgets.QLabel(cf.get_value('personal_CgtInfo', 'password'))
+        lab_account_id = QtWidgets.QLabel(cf.get_value('personal_CgtInfo', 'account_id'))
+
+        layout = QtWidgets.QFormLayout(self.login)
+        layout.addRow(u'服务器ip:', lab_ip)
+        layout.addRow(u'账号:', lab_account)
+        layout.addRow(u'密码:', lab_password)
+        layout.addRow(u'账号id:', lab_account_id)
+
+        self.login.show()
+
+    def refresh_projs(self):
+        """
+        当项目改变时，更新配置文件中记录的项目，并修改项目变量
+        :return:
+        """
+        if not self.proj:
+            proj = cf.get_value('personal_CgtInfo', 'project_data')
+            index = self.cbox_proj.findText(proj)
+            if index >= 0:
+                self.cbox_proj.setCurrentIndex(index)
+                self.proj = proj
+            else:
+                self.cbox_proj.setCurrentIndex(0)
+                self.proj = self.cbox_proj.currentText()
+                cf.set_value('personal_CgtInfo', 'project_data', self.cbox_proj.currentText())
+        else:
+            cf.set_value('personal_CgtInfo', 'project_data', self.cbox_proj.currentText())
+            self.proj = self.cbox_proj.currentText()
+        self.refresh_Item()
 
     def autoClearScence(self):
         """
@@ -274,10 +334,11 @@ class PushWindow(QtWidgets.QDialog):
 
         self.lst_asset.clear()
         searchInfo = self.lin_searchName.text()
-        mod_dir = cgt.get_asset_dir(pojpt_xt[1])
-        mod_id_lis = cgt.get_id_lis(pojpt_xt[1], 'asset')
-        folder_dir = cgt.get_asset_folder(pojpt_xt[1], mod_id_lis)
-        typ_dir = cgt.get_asset_type(pojpt_xt[1], mod_id_lis)
+        mod_dir = cgt.get_asset_dir(self.proj)
+        mod_id_lis = cgt.get_id_lis(self.proj, 'asset')
+        folder_dir = cgt.get_asset_folder(self.proj, mod_id_lis)
+        typ_dir = cgt.get_asset_type(self.proj, mod_id_lis)
+
         for i in mod_id_lis:  #返回的是所有id的文件夹列表
             if searchInfo:
                 if searchInfo.lower() in mod_dir[i][1].lower() or searchInfo in mod_dir[i][0]:
@@ -296,6 +357,7 @@ class PushWindow(QtWidgets.QDialog):
         if self.lst_asset.itemAt(pos):
             action_openRigFile = menu.addAction(u'打开该资产rig文件')
             action_openModFile = menu.addAction(u'打开该资产mod文件')
+            action_importFbxFile = menu.addAction(u'导入该资产fbx文件')
 
             menu.addAction(menl(p=menu))
             action_copyRigFile = menu.addAction(u'复制该资产的rig文件')
@@ -309,6 +371,7 @@ class PushWindow(QtWidgets.QDialog):
             #------------------------------------------------------------------------------
             action_openRigFile.triggered.connect(partial(self.menu_function, 'openRigFile'))
             action_openModFile.triggered.connect(partial(self.menu_function, 'openModFile'))
+            action_importFbxFile.triggered.connect(partial(self.menu_function, 'importFbxFile'))
 
             action_copyRigFile.triggered.connect(partial(self.menu_function, 'copyRigFile'))
             action_copyModFile.triggered.connect(partial(self.menu_function, 'copyModFile'))
@@ -366,6 +429,16 @@ class PushWindow(QtWidgets.QDialog):
                     mc.file(mod_path[0], o=True, iv=True, typ='mayaAscii', op='v=0')
             else:
                 oma.MGlobal.displayError('资产{}没有mod文件'.format(sel_item.data(QtCore.Qt.UserRole + 6)))
+        elif inf == 'importFbxFile':
+            rig_id = cgt.from_id_get_stage_id(self.proj, sel_item.data(QtCore.Qt.UserRole), 'Rig')
+            fbx_box_info = cgt.get_filebox_info(self.proj, rig_id, 'rig_fbx', ['path', 'rule_view'])
+            path = fbx_box_info['path']
+            file_name = fbx_box_info['rule_view'][0]
+            fbx_path = os.path.join(path, file_name)#服务器上fbx的绝对路径
+            if fbx_path and os.path.exists(fbx_path):
+                mc.file(fbx_path, i=True, typ='FBX')
+            else:
+                fp('资产{}没有fbx文件'.format(sel_item.data(QtCore.Qt.UserRole + 6)),error=True, viewMes=True)
         #----------------------------------------------------
         elif inf == 'copyRigFile':
             if file_path and os.path.exists(file_path[0]):
@@ -425,21 +498,25 @@ class PushWindow(QtWidgets.QDialog):
         else:
             fp('没有选择有效项', error=True, viewMes=True)
 
-        push_typ = {0: 'mod_body', 1: 'rig_body', 2: 'rig_fbx'}[self.comb_typ.currentIndex()]
+        #push_typ = {0: 'mod_body', 1: 'rig_body', 2: 'rig_fbx'}[self.comb_typ.currentIndex()]
+        push_typ = {0: 'rig_body', 1: 'rig_fbx'}[self.comb_typ.currentIndex()]
         if push_typ in ['rig_body', 'rig_fbx']:#当为rig模块时
-            ids = cgt.get_id_lis(pojpt_xt[1], stage='Rig')
-            for uid, val in cgt.get_asset_dir(pojpt_xt[1], ids, ['asset.entity']).items():#通过资产名匹配获得rig阶段的id
+            ids = cgt.get_id_lis(self.proj, stage='Rig')
+            for uid, val in cgt.get_asset_dir(self.proj, ids, ['asset.entity']).items():#通过资产名匹配获得rig阶段的id
                 if val[0] == sel_item.data(QtCore.Qt.UserRole+6):
                     res = None#提交结果。true:提交成功/false:提交失败
                     path = None#提交到的目录文件路径，包含文件本身
                     if push_typ == 'rig_body':
-                        res, path = cgt.push_file_to_teamWork(pojpt_xt[1], uid, push_typ, mc.file(exn=True, q=True))
+                        res, path = cgt.push_file_to_teamWork(self.proj, uid, push_typ, mc.file(exn=True, q=True),
+                                                              version=self.cbox_version.isChecked())
+                        self.wid_folder.refresh_item()
                     elif push_typ == 'rig_fbx':
                         fbx_path = exportSelectToFbx() if sel_item.data(
                             QtCore.Qt.UserRole + 5) == 'CHR' else exportSelectToFbx(totpose=False)  #fbx保存的文件路径
-                        res, path = cgt.push_file_to_teamWork(pojpt_xt[1], uid, push_typ, fbx_path, save=False)
+                        if fbx_path:
+                            res, path = cgt.push_file_to_teamWork(self.proj, uid, push_typ, fbx_path, version=False)
                     if res:
-                        fp('文件{}上传成功！！'.format(path), info=True, viewMes=True) if cgt.set_status(pojpt_xt[1], uid) \
+                        fp('文件{}上传成功！！'.format(path), info=True, viewMes=True) if cgt.set_status(self.proj, uid) \
                             else fp('文件{}上传成功但状态未修改成功'.format(path), warning=True, viewMes=True)
                     elif not res:
                         fp('文件{}上传失败！！'.format(path), error=True, viewMes=True)
@@ -447,11 +524,12 @@ class PushWindow(QtWidgets.QDialog):
                         fp('未知的结果。', warning=True, viewMes=True)
                     break
         elif push_typ in ['mod_body']:#当为mod模块时，因为当前项储存的id就是mod.id，所以不需要检测rig的id
-            res, path = cgt.push_file_to_teamWork(pojpt_xt[1], sel_item.data(QtCore.Qt.UserRole), push_typ,
-                                                  mc.file(exn=True, q=True))
+            res, path = cgt.push_file_to_teamWork(self.proj, sel_item.data(QtCore.Qt.UserRole), push_typ,
+                                                  mc.file(exn=True, q=True), version=True)
+            self.wid_folder.refresh_item()
             if res:
                 fp('文件{}上传成功！！'.format(path), info=True, viewMes=True) \
-                    if cgt.set_status(pojpt_xt[1], sel_item.data(QtCore.Qt.UserRole)) \
+                    if cgt.set_status(self.proj, sel_item.data(QtCore.Qt.UserRole)) \
                     else fp('文件{}上传成功但状态未修改成功'.format(path), warning=True, viewMes=True)
                 self.but_push.setText(u'{}上传成功'.format(sel_item.data(QtCore.Qt.UserRole+6)))
             elif not res:

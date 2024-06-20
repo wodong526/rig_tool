@@ -3,7 +3,6 @@ import os
 
 import maya.cmds as mc
 import maya.mel as mm
-import pymel.core as pm
 import maya.OpenMayaUI as omui
 
 from PySide2 import QtWidgets
@@ -18,24 +17,10 @@ def maya_main_window():
 
 
 def freeze_rotation():
-    objs = pm.selected()
+    objs = mc.ls(sl=True)
     for obj in objs:
-        if isinstance(obj, pm.nt.Joint):
-            rot = obj.rotate.get()
-            ra = obj.rotateAxis.get()
-            jo = obj.jointOrient.get()
-            rotMatrix = pm.dt.EulerRotation(rot, unit='degrees').asMatrix()
-            raMatrix = pm.dt.EulerRotation(ra, unit='degrees').asMatrix()
-            joMatrix = pm.dt.EulerRotation(jo, unit='degrees').asMatrix()
-            rotationMatrix = rotMatrix * raMatrix * joMatrix
-            tmat = pm.dt.TransformationMatrix(rotationMatrix)
-            newRotation = tmat.eulerRotation()
-            newRotation = [pm.dt.degrees(x) for x in newRotation.asVector()]
-            obj.rotate.set(0, 0, 0)
-            obj.rotateAxis.set(0, 0, 0)
-            obj.jointOrient.set(newRotation)
-            fp('{}的旋转已冻结。'.format(obj), info=True)
-            continue
+        if mc.nodeType(obj) == 'joint':
+            mc.makeIdentity(obj, apply=True, r=1, n=0)
 
 
 def select_skinJoint(obj=None):
@@ -76,7 +61,7 @@ def selectSameName():
     :return: None
     """
     try:
-        obj_tag = raw_input()
+        obj_tag = input()
     except EOFError:
         fp('没有输入有效对象', warning=True)
     else:

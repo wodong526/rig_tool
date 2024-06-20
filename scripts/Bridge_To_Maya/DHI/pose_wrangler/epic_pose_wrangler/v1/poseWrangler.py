@@ -2,10 +2,16 @@
 import traceback
 import math
 import json
-from PySide2 import QtWidgets
+
 import maya.cmds as cmds
 import maya.api.OpenMaya as api
 
+if cmds.about(version = 1) < 2024:
+    from PySide2 import QtCore, QtWidgets, QtGui
+    from shiboken2 import wrapInstance
+else:
+    from PySide6 import QtCore, QtWidgets, QtGui
+    from shiboken6 import wrapInstance
 
 class UE4PoseDriver(object):
     '''

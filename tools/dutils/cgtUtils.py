@@ -1,4 +1,6 @@
 # coding=gbk
+import re
+
 from PySide2 import QtCore
 from PySide2 import QtWidgets
 from PySide2 import QtGui
@@ -11,10 +13,9 @@ import cgtw2 as cgt
 from data_path import icon_dir
 from feedback_tool import Feedback_info as fp
 from dutils import fileUtils
+from userConfig import Conf
 
 import os
-import ConfigParser
-
 
 class CGTLoginWindow(QtWidgets.QDialog):
     @staticmethod
@@ -80,9 +81,9 @@ class CGTLoginWindow(QtWidgets.QDialog):
             global tw, cfg, ini_path
             tw = cgt.tw(ip, account, password)
 
-            cfg.set('personal_CgtInfo', 'ip', ip)
-            cfg.set('personal_CgtInfo', 'account', account)
-            cfg.set('personal_CgtInfo', 'password', password)
+            cfg.set_value('personal_CgtInfo', 'ip', ip)
+            cfg.set_value('personal_CgtInfo', 'account', account)
+            cfg.set_value('personal_CgtInfo', 'password', password)
             with open(ini_path, 'w') as f:
                 cfg.write(f)
 
@@ -93,19 +94,18 @@ class CGTLoginWindow(QtWidgets.QDialog):
 
 
 ini_path = '{}/data/user_data.ini'.format(os.path.dirname(os.path.dirname(__file__)))
-cfg = ConfigParser.RawConfigParser()
-cfg.read(ini_path)
+cfg = Conf(ini_path)
 tw = None
 
 try:
     tw = cgt.tw()
-    cfg.set('personal_CgtInfo', 'ip', tw.login.http_server_ip())
-    cfg.set('personal_CgtInfo', 'account', tw.login.account())
-    cfg.set('personal_CgtInfo', 'account_id', tw.login.account_id())
+    cfg.set_value('personal_CgtInfo', 'ip', tw.login.http_server_ip())
+    cfg.set_value('personal_CgtInfo', 'account', tw.login.account())
+    cfg.set_value('personal_CgtInfo', 'account_id', tw.login.account_id())
 except:
-    ini_ip = cfg.get('personal_CgtInfo', 'ip')
-    ini_account = cfg.get('personal_CgtInfo', 'account')
-    ini_password = cfg.get('personal_CgtInfo', 'password')
+    ini_ip = cfg.get_value('personal_CgtInfo', 'ip')
+    ini_account = cfg.get_value('personal_CgtInfo', 'account')
+    ini_password = cfg.get_value('personal_CgtInfo', 'password')
     if ini_ip and ini_account and ini_password:
         tw = cgt.tw(ini_ip, ini_account, ini_password)
     else:
@@ -133,8 +133,9 @@ def get_id_lis(proj, model='asset', cla='task', stage='Mod'):
     if cla == 'info':
         return tw.info.get_id(proj, model, [])
     elif cla == 'task':
-        return tw.task.get_id(proj, model, [['pipeline.entity', '=', stage], 'and', ['asset.epshowup', '=', 'EP003']])
-
+        if proj == 'proj_xxtt':
+            return tw.task.get_id(proj, model, [['pipeline.entity', '=', stage], 'and', ['asset.epshowup', '=', 'EP003']])
+        return tw.task.get_id(proj, model, [['pipeline.entity', '=', stage]])
 
 def get_all_project():
     """
@@ -147,16 +148,17 @@ def get_all_project():
     return project_lis
 
 
-def get_asset_dir(project, ids=[], field=['asset.cn_name', 'asset.entity']):
+def get_asset_dir(project, ids=[], field=['asset.cn_name', 'asset.entity'], model='asset'):
     """
     获取指定项目的所有资产的信息字典。
+    :param model: 模块
     :param ids: 要查询的id列表
     :param field: 过滤器
     :param project: 要查询的项目
     :return: 资产信息字典。资产id：[资产中文名， 资产英文名]
     """
     asset_dir = {}
-    for ass in tw.task.get(project, 'asset', ids if ids else get_id_lis(project, 'asset'), field):
+    for ass in tw.task.get(project, model, ids if ids else get_id_lis(project, model), field):
         asset_dir[ass['id']] = [ass[inf] for inf in field]
 
     return asset_dir
@@ -192,7 +194,6 @@ def get_asset_type(project, uid, model='asset'):
     """
     if type(uid) == str:
         uid = [uid]
-
     if uid.__len__() > 1:
         typ_lis = {}
         for d in tw.task.get_field_and_dir(project, model, uid, ['asset_type.entity'], ['asset_type']):
@@ -203,10 +204,10 @@ def get_asset_type(project, uid, model='asset'):
             'asset_type.entity']
 
 
-def push_file_to_teamWork(project, uid, filebox_info, local_path, model='asset', save=True):
+def push_file_to_teamWork(project, uid, filebox_info, local_path, model='asset', version=False):
     """
     将本地文件提交到cgt，官方提交方法。无论本地文件名是多少，都会以正确的文件名提交上去
-    :param save:是否保存当前场景后再上传
+    :param version: 是否迭代保存
     :param project: 数据库名
     :param uid: 提交资产阶段名（注意mod，rig这些不同的阶段为不同的id）
     :param filebox_info: 要提交的文件框标识名
@@ -215,18 +216,28 @@ def push_file_to_teamWork(project, uid, filebox_info, local_path, model='asset',
     :return: 提交是否成功（bool）
     """
     file_box_sign = tw.task.get_sign_filebox(project, model, uid, filebox_info)
-    des_path = os.path.join(file_box_sign['path'], file_box_sign['rule'][0])
+    des_path = os.path.join(file_box_sign['path'], file_box_sign['rule'][0])#服务器文件路径
 
-    if os.path.normcase(os.path.abspath(des_path)) == os.path.normcase(os.path.abspath(local_path)):
-        fileUtils.version_up(*os.path.split(des_path))
-        if save:
-            mc.file(s=True, f=True, op='v=0')
+    if os.path.normcase(os.path.abspath(des_path)) == os.path.normcase(os.path.abspath(local_path)):#当前文件就是服务器文件时
+        if version:
+            fileUtils.version_up(local_path, True)
+
+        mc.file(s=True, f=True, op='v=0')
         return True, file_box_sign['rule'][0]
     else:
+        if version:
+            path, file = os.path.split(re.sub(r'_v\d{2}', '', local_path))
+            base_name, suffix = os.path.splitext(file)
+            index = fileUtils.get_latest_version_number(path, base_name, suffix)#获取最新版本号
+
+            local_path = os.path.join(path, '{}_v{:02d}{}'.format(base_name, index + 1, suffix))
+            mc.file(rn=local_path)
+
+        mc.file(s=True, f=True, op='v=0')
+
         info_dir = {'db': project, 'module': model, 'module_type': 'task', 'task_id': uid, 'version': '',
                     'filebox_data': file_box_sign, 'file_path_list': [local_path], 'des_file_path_list': [des_path]}
-        if save:
-            mc.file(s=True, f=True, op='v=0')
+
         res = tw.send_local_http(model, project, 'filebox_bulk_upload_to_filebox', info_dir, 'get')
         return res, file_box_sign['rule'][0]
 
@@ -240,3 +251,38 @@ def set_status(project, uid, model='asset', state='Check'):
     :return: 成功则返回true
     """
     return tw.task.update_task_status(project, model, id_list=[uid], status=state)
+
+def get_filebox_info(project, uid, sign, field, model='asset'):
+    """
+    通过文件框标识和字段名获取文件框信息。
+    :param project: 数据库名称。
+    :param uid: 资产id
+    :param model: 模块名称.
+    :param sign: 文件箱标识.
+    :param field: 要从文件框信息中检索的特定字段。
+
+    :return: 包含所请求文件箱信息的字典。
+    """
+    rtn_dir = {}
+    for key, val in tw.task.get_sign_filebox(project, model, uid, sign).items():
+        if key in field:
+            rtn_dir[key] = val
+    return rtn_dir
+
+def from_id_get_stage_id(project, source_id, tag_stage, model='asset', cla='task'):
+    """
+    根据根据资产id和tag阶段获取对应的阶段id
+    :param project: 数据库名称。
+    :param source_id: 已有的任意阶段的ID.
+    :param tag_stage: 要查询的阶段.
+    :param model: 模块类型（默认为“asset”）.
+    :param cla: 任务类型（默认为“task”）.
+
+    :return: 指定ID的资产对应的指定阶段的ID。
+    """
+    source_name = get_asset_dir(project, [source_id], model=model)[source_id][1]
+    tag_ids = get_id_lis(project, model, cla, stage=tag_stage)
+
+    for tag_id, tag_name in get_asset_dir(project, ids=tag_ids).items():
+        if tag_name[1] == source_name:
+            return tag_id

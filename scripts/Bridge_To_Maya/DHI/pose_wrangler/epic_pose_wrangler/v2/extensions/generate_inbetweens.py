@@ -12,7 +12,13 @@ class GenerateInbetweens(base_extension.PoseWranglerExtension):
     def view(self):
         if self._view is not None:
             return self._view
-        from PySide2 import QtWidgets
+        import maya.cmds as cmds
+        if cmds.about(version=1) < 2024:
+            from PySide2 import QtCore, QtWidgets, QtGui
+            from shiboken2 import wrapInstance
+        else:
+            from PySide6 import QtCore, QtWidgets, QtGui
+            from shiboken6 import wrapInstance
 
         self._view = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout()

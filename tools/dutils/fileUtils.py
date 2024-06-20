@@ -35,35 +35,6 @@ def create_folder(path, folder_name=''):
 
     return folder
 
-
-def get_all_files(path, suffix='', bringSuffix=True):
-    """
-    返回文件夹下指定后缀的所有文件的绝对路径
-    :param path: 文件夹路径
-    :param suffix: 文件后缀，为空时返回所有后缀文件
-    :param bringSuffix: 返回的文件路径是否带文件后缀名
-    :return: 符合条件的文件路径名列表
-    """
-    if not os.path.exists(path):  #文件夹是否存在
-        return []
-
-    all_files = [user_file for user_file in os.listdir(path) if os.path.isfile("{}/{}".format(path, user_file))]
-    if suffix:
-        return_files = []
-        for user_file in all_files:
-            if os.path.splitext(user_file)[1] == suffix:
-                if bringSuffix:  #返回不带后缀名的文件绝对路径
-                    return_files.append(user_file)
-                else:  #返回带后缀名的文件绝对路径
-                    return_files.append(str(user_file).rpartition(suffix)[0])
-        return return_files
-    else:
-        if bringSuffix:
-            return all_files
-        else:
-            return [os.path.splitext(user_file)[0] for user_file in all_files]
-
-
 def findHighestEndNum(names, base_name):
     """
     返回提供的文件路径列表里版本最高的文件路径
@@ -88,30 +59,67 @@ def findHighestEndNum(names, base_name):
     return highest_value
 
 
-def version_up(path, user_file):
+def get_all_files(path, suffix=''):
+    """
+    返回文件夹下指定后缀的所有文件的绝对路径
+    :param path: 文件夹路径
+    :param suffix: 文件后缀，为空时返回所有后缀文件
+    :return: 符合条件的文件路径名列表
+    """
+    all_files = [user_file for user_file in os.listdir(path) if os.path.isfile("{}/{}".format(path, user_file))]
+    if suffix:
+        return_files = []
+        for user_file in all_files:
+            if os.path.splitext(user_file)[1] == suffix:
+                return_files.append(user_file)
+        return return_files
+    else:
+        return all_files
+
+
+def get_latest_version_number(history, base_name, suffix):
+    """
+    从历史记录文件中获取给定基本名称和后缀的最新版本号。
+
+    Args:
+    history (list): 表示版本历史记录的文件路径列表。
+    base_name (str): 文件的基本名称。
+    suffix (str): 文件的后缀。
+
+    Returns:
+    int: 最新版本号。
+    """
+    index = 0
+    for num in [os.path.split(h_path)[1].split('{}_v'.format(base_name))[-1] for h_path in
+                get_all_files(history, suffix) if
+                re.search(r'{}_v\d+{}'.format(base_name, suffix), os.path.split(h_path)[1])]:
+        if int(os.path.splitext(num)[0]) > index:
+            index = int(os.path.splitext(num)[0])
+
+    return index
+
+def version_up(file_path, to_history):
     """
     文件版本控制
-    :param path:文件所在路径
-    :param user_file: 文件的名字（包含后缀名）
+    :param to_history: 是否保存到history文件夹
+    :param file_path:文件所在路径
     :return:
     """
-    if os.path.exists("{}/{}".format(path, user_file)):  #场景文件所在路径，json文件名.json
-        hiy_folder = "{}/history".format(path)
-        if not os.path.exists(hiy_folder):
-            hiy_folder = create_folder(path=path, folder_name="history")  #创建历史文件夹
+    if not os.path.exists(file_path):
+        return False
 
-        file_extension = os.path.splitext(user_file)[1]  #获取文件的后缀（包含.）
-        file_base_name = "{}_v".format(str(user_file).rpartition(file_extension)[0])
+    path, file = os.path.split(file_path)
+    base_name, suffix = os.path.splitext(file)
+    history = os.path.join(path, 'history')
+    if to_history:
+        ver = get_latest_version_number(history, base_name, suffix)
+        versioned_file_name = os.path.join(history, '{}_v{:02d}{}'.format(base_name, ver + 1, suffix))
+    else:
+        ver = get_latest_version_number(path, base_name, suffix)
+        versioned_file_name = os.path.join(path, '{}_v{:02d}{}'.format(base_name, ver + 1, suffix))
 
-        files_in_old_folder = get_all_files(hiy_folder, file_extension, False)  #文件夹路径，后缀
-        if files_in_old_folder:  #获取的历史文件列表
-            latest_file_num = findHighestEndNum(files_in_old_folder, file_base_name)
-        else:
-            latest_file_num = 0
-
-        current_file_name = "{}/{}".format(path, user_file)  #文件完整路径
-        versioned_file_name = "{}/{}{:02d}{}".format(hiy_folder, file_base_name, latest_file_num + 1, file_extension)
-        shutil.copyfile(current_file_name, versioned_file_name)
+    shutil.copyfile(file_path, versioned_file_name)
+    return True
 
 
 def fromFileReadInfo(path, user_file):
@@ -196,7 +204,7 @@ def remove_readonly(func, path, _):
 
 def delete_files(path, force=True):
     """
-    删除文件
+    删除文件或文件夹
     """
     if not os.path.exists(path):
         return

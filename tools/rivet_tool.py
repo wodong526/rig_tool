@@ -67,9 +67,16 @@ class RivetWindow(QtWidgets.QDialog):
         map = mc.polyListComponentConversion(pot, tuv=True)[0]#获取模型的map集
         uv_pos = mc.polyEditUV(map, q=True)#获取选中的点在uv里的位置
 
-        folcShape_node = mc.createNode('follicle', n='folc_rivet_00#')#创建毛发节点，返回的是shape节点名
+        i = 1
+        while True:
+            if mc.objExists('folc_rivet_T_{:03d}'.format(i)):
+                i += 1
+            else:
+                nam = 'folc_rivet_T_{:03d}'.format(i)
+                break
+        folcShape_node = mc.createNode('follicle', n=nam+'_Shape')#创建毛发节点，返回的是shape节点名
         folc_node = mc.listRelatives(folcShape_node, p=True)
-        folc_node = mc.rename(folc_node, 'folc_rivet_T_00#')
+        folc_node = mc.rename(folc_node, nam)
 
         mc.connectAttr('{}.worldMatrix[0]'.format(shp), '{}.inputWorldMatrix'.format(folcShape_node))
         mc.connectAttr('{}.outMesh'.format(shp), '{}.inputMesh'.format(folcShape_node))

@@ -1274,7 +1274,7 @@ def eyeSetup(jntEye, locEye, locUIEye, locAimEye, ctrlEye, ctrlUIEye, attrAimAt,
                          worldUpType="object", worldUpObject=locAimUp)
     orientAimCon = pycore.orientConstraint(locAimEye, locEye)
 
-    # connect tool_ui loc to L/R control
+    # connect ui loc to L/R control
     pycore.setDrivenKeyframe((locUIEye + ".ry"), itt="linear", ott="linear", currentDriver=(ctrlUIEye + ".tx"),
                              driverValue=0, value=0)
     pycore.setDrivenKeyframe((locUIEye + ".ry"), itt="linear", ott="linear", currentDriver=(ctrlUIEye + ".tx"),
@@ -1289,7 +1289,7 @@ def eyeSetup(jntEye, locEye, locUIEye, locAimEye, ctrlEye, ctrlUIEye, attrAimAt,
     pycore.setDrivenKeyframe((locUIEye + ".rx"), itt="linear", ott="linear", currentDriver=(ctrlUIEye + ".ty"),
                              driverValue=-1, value=40)
 
-    # connect tool_ui loc to C control
+    # connect ui loc to C control
     pycore.setDrivenKeyframe((locUIEye + ".ry"), itt="linear", ott="linear", currentDriver=(ctrlUIEyeC + ".tx"),
                              driverValue=0, value=0)
     pycore.setDrivenKeyframe((locUIEye + ".ry"), itt="linear", ott="linear", currentDriver=(ctrlUIEyeC + ".tx"),

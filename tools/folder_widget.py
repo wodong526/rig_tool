@@ -2,10 +2,13 @@
 import stat
 import shutil
 import os
+import sys
 import subprocess
 from datetime import datetime
 from PySide2 import QtWidgets, QtGui, QtCore
 from shiboken2 import wrapInstance
+if sys.version_info.major == 3:
+    from importlib import reload
 
 import maya.cmds as mc
 import maya.mel as mm
@@ -15,24 +18,25 @@ from feedback_tool import Feedback_info as fp
 from data_path import icon_dir as ic
 from qt_widgets import SeparatorAction as menl
 from dutils import fileUtils as fu
+from userConfig import Conf
 reload(fu)
 
 def maya_main_window():
     main_window_ptr = omui.MQtUtil.mainWindow()
     return wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
 
-
+cf = Conf()
 class FolderWidget(QtWidgets.QWidget):
-    default_path = 'E:/'
-    sub_index = 5
+    default_path = cf.get_value('folder_widget_data', 'default_path', 'str')#默认上层路径
+    sub_index = cf.get_value('folder_widget_data', 'sub_index', 'int')#默认上层路径下要显示的子文件夹下标
 
     @classmethod
     def is_hidden(cls, filepath):
-        if isinstance(filepath, unicode):
-            filepath = filepath.encode('mbcs')
+        if isinstance(filepath, str):
+            filepath = filepath.encode('utf-8')
         try:
-            output = subprocess.check_output(['attrib', filepath], shell=True)
-            return ' SH ' in output
+            output = subprocess.check_output(['attrib', filepath.decode('utf-8')], shell=True)
+            return b' SH ' in output
         except subprocess.CalledProcessError:
             return False
     @classmethod
@@ -71,6 +75,7 @@ class FolderWidget(QtWidgets.QWidget):
         self.create_widget()
         self.create_layout()
         self.create_connect()
+        self.create_shortcut()
 
     def create_widget(self):
         self.tree = QtWidgets.QTreeWidget()
@@ -93,11 +98,14 @@ class FolderWidget(QtWidgets.QWidget):
 
     def create_layout(self):
         path_layout = QtWidgets.QHBoxLayout()
+        path_layout.setSpacing(5)
         path_layout.addWidget(self.lin_dir)
         path_layout.addWidget(self.cob_file)
         path_layout.addWidget(self.but_refresh)
 
         main_layout = QtWidgets.QVBoxLayout(self)
+        main_layout.setSpacing(5)
+        main_layout.setContentsMargins(5, 5, 5, 5)
         main_layout.addLayout(path_layout)
         main_layout.addWidget(self.tree)
 
@@ -108,12 +116,20 @@ class FolderWidget(QtWidgets.QWidget):
         self.tree.itemDoubleClicked.connect(self.open_file)
         self.tree.customContextMenuRequested.connect(self.create_menu)
 
+    def create_shortcut(self):
+        """
+            创建快捷键快捷方式。
+        """
+        QtWidgets.QShortcut(QtGui.QKeySequence("F2"), self, self.rename_item)
+        QtWidgets.QShortcut(QtGui.QKeySequence("delete"), self, self.delete_file)
+
     def refresh_dir(self):
         """
         刷新目录列表，并根据所选驱动器号更新文件列表。
         """
         drive_ltter = self.lin_dir.text()
-        if not os.path.exists(drive_ltter):
+        if not os.path.exists(drive_ltter) or not os.path.isdir(drive_ltter):
+            fp(u'路径{}不存在！'.format(drive_ltter), warning=True)
             return None
         self.cob_file.clear()
         for obj in self.list_folder(drive_ltter, no_hidden=True):
@@ -124,6 +140,8 @@ class FolderWidget(QtWidgets.QWidget):
         except:
             self.cob_file.setCurrentIndex(self.cob_file.count() - 1)
         self.refresh_item()
+
+        cf.set_value('folder_widget_data', 'default_path', str(drive_ltter))
 
     def find_and_scroll_to_item(self, tree, itm_body, itm_parent):
         """
@@ -182,6 +200,7 @@ class FolderWidget(QtWidgets.QWidget):
 
         if itm_body or itm_parent:
             self.find_and_scroll_to_item(self.tree, itm_body, itm_parent)
+        cf.set_value('folder_widget_data', 'sub_index', str(self.cob_file.currentIndex()))
 
     def create_sub_item(self, item, path):
         """
@@ -217,6 +236,10 @@ class FolderWidget(QtWidgets.QWidget):
         itm = self.tree.currentItem()
         if itm:
             path = itm.data(0, QtCore.Qt.UserRole)
+            if os.path.isfile(path) and os.path.splitext(path)[-1] in ['.ma', '.mb', '.fbx', '.obj']:
+                men_import_file = menu.addAction(u'导入文件')
+                men_import_file.triggered.connect(self.import_file)
+                menu.addAction(menl(p=menu))
             men_paste_file = menu.addAction(u'粘贴文件')
             men_dup_file = menu.addAction(u'复制文件夹' if os.path.isdir(path) else u'复制文件')
             men_dup_file_name = menu.addAction(u'复制文件夹名称' if os.path.isdir(path) else u'复制文件名称')
@@ -295,15 +318,15 @@ class FolderWidget(QtWidgets.QWidget):
                                             QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
         if bol == QtWidgets.QMessageBox.No:
             return None
-        map(fu.delete_files, itm_dir.values())
-        map(self.delete_item, itm_dir.keys())
+        list(map(fu.delete_files, list(itm_dir.values())))
+        list(map(self.delete_item, list(itm_dir.keys())))
 
     @obj_existence
     def duplicate_path(self, itm_dir):
         """
         复制路径
         """
-        path = itm_dir.values()[-1]
+        path = [p for p in itm_dir.values()][0]
         QtWidgets.QApplication.clipboard().setText(path)
         fp('已复制路径：{}'.format(path), info=True)
 
@@ -312,7 +335,7 @@ class FolderWidget(QtWidgets.QWidget):
         """
         复制文件名
         """
-        path = itm_dir.values()[-1]
+        path = [p for p in itm_dir.values()][0]
         QtWidgets.QApplication.clipboard().setText(os.path.basename(path))
         fp('已复制文件名：{}'.format(os.path.basename(path).encode('gbk')), info=True)
 
@@ -321,7 +344,7 @@ class FolderWidget(QtWidgets.QWidget):
         """
         复制文件
         """
-        path = itm_dir.values()[-1]
+        path = [p for p in itm_dir.values()][0]
         md = QtCore.QMimeData()
         md.setUrls([QtCore.QUrl.fromLocalFile(path)])
         QtWidgets.QApplication.clipboard().setMimeData(md)
@@ -342,7 +365,7 @@ class FolderWidget(QtWidgets.QWidget):
                 p_itm = itms[-1].parent()
             else:
                 p_itm = self.tree.invisibleRootItem()
-        elif not itms:
+        else:
             p_itm = self.tree.invisibleRootItem()
 
         if md.hasUrls():
@@ -359,7 +382,7 @@ class FolderWidget(QtWidgets.QWidget):
                     rest = mc.confirmDialog(title=u'警告', message=u'{}下已有文件\n{}\n是否替换?'.format(
                         path, os.path.basename(url.toLocalFile())), button=[u'替换', u'另存为', u'取消'])
                     if rest == u'替换':
-                        map(fu.delete_files, [tag_path])
+                        list(map(fu.delete_files, [tag_path]))
                         itm = self.query_item(tag_path)
                         self.delete_item(itm)
                     elif rest == u'另存为':
@@ -382,15 +405,17 @@ class FolderWidget(QtWidgets.QWidget):
         """
         重命名当前项
         """
-        itm = itm_dir.keys()[-1]
+        itm = [p for p in itm_dir.keys()][0]
         path = itm_dir[itm]
         base_name = os.path.basename(path)
+        name, suffix = os.path.splitext(base_name)
         new_name = QtWidgets.QInputDialog.getText(self, u'重命名窗口', u'将{}\n重命名为:'.format(base_name),
-                                                  text=os.path.splitext(base_name)[0])
+                                                  text=name)
         if new_name[1]:
-            new_path = os.path.join(os.path.dirname(path), new_name[0])
+            new_path = os.path.join(os.path.dirname(path), '{}{}'.format(new_name[0], suffix))
             os.rename(path, new_path)
-            itm.setText(0, new_name[0])
+            itm.setText(0, new_name[0]+suffix)
+            itm.setData(0, QtCore.Qt.UserRole, new_path)
             fp('已重命名为：{}'.format(new_path.encode('gbk')), info=True)
         else:
             fp('已取消重命名', info=True)
@@ -433,7 +458,9 @@ class FolderWidget(QtWidgets.QWidget):
         """
         在树视图中打开当前项的路径
         """
-        path = itm_dir.values()[-1]
+        path = ''
+        for itm in itm_dir.values():
+            path = itm
         if os.path.isfile(path) and os.path.splitext(path)[-1] in ['.ma', '.mb']:
             if mc.file(mf=True, q=True):
                 rest = mc.confirmDialog(title='警告', message='当前场景已被更改，是否保存后打开？',
@@ -452,11 +479,25 @@ class FolderWidget(QtWidgets.QWidget):
        打开包含指定项的文件夹。
 
        Args:
-           itm_dir(list)：项目列表，最后一项是要打开文件夹的项目。
+           itm_dir(dir)：项目列表，最后一项是要打开文件夹的项目。
        """
-        os.system('explorer /select, {}'.format(itm_dir.values()[-1].replace('/', '\\')))
+        os.system('explorer /select, {}'.format([p for p in itm_dir.values()][0].replace('/', '\\')))
 
-def show_window():
+    @obj_existence
+    def import_file(self, itm_dir):
+        """
+        导入选中的文件。
+        Args:
+            itm_dir(dir)：项目列表，最后一项是要打开文件夹的项目。
+        """
+        path = [p for p in itm_dir.values()][0]
+        if os.path.isfile(path) and os.path.splitext(path)[-1] in ['.ma', '.mb', '.fbx', '.obj']:
+            mc.file(path, i=True, f=True)
+        else:
+            fp('选中对象不是文件或后缀不是ma，mb，fbx，obj', error=True)
+
+
+if __name__ == '__main__':
     try:
         my_folder_window.close()
         my_folder_window.deleteLater()

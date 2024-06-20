@@ -502,7 +502,7 @@ class DHIImporterSetup:
         MayaUtil.logger.info("Shader scene path: %s" % (shaderScenePath))
         progressWindowManager.update(0, "Importing shader scene from: %s" % shaderScenePath)
         MayaUtil.importShader(shaderScenePath, MESH_SHADER_MAPPING)
-        if self.characterConfig.platform is "Windows":
+        if self.characterConfig.platform == "Windows":
             MayaUtil.resolveSceneShaderPaths(SHADERS, self.characterConfig.shadersDirPath)
         MayaUtil.resolveSceneMaskPaths(MASKS, self.characterConfig.masksDirPath)
         MayaUtil.resolveSceneMapPaths(COMMON_MAP_INFOS, self.characterConfig.headMapsPath)
@@ -525,7 +525,7 @@ class DHIImporterSetup:
 
         MayaUtil.resolveSceneMapPaths(BODY_MAP_INFOS, self.characterConfig.mapsDirPath)
 
-        if self.characterConfig.platform is "Windows":
+        if self.characterConfig.platform == "Windows":
             MayaUtil.resolveSceneShaderPaths(BODY_SHADERS, self.characterConfig.shadersDirPath)
         MayaUtil.resolveSceneMapPaths(COMMON_MAP_INFOS_BODY, self.characterConfig.headMapsPath)
 

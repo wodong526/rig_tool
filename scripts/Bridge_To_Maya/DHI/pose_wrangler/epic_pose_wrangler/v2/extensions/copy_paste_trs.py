@@ -5,6 +5,13 @@ from functools import partial
 
 from maya import cmds
 
+if cmds.about(version = 1) < 2024:
+    from PySide2 import QtCore, QtWidgets, QtGui
+    from shiboken2 import wrapInstance
+else:
+    from PySide6 import QtCore, QtWidgets, QtGui
+    from shiboken6 import wrapInstance
+
 from epic_pose_wrangler.log import LOG
 from epic_pose_wrangler.v2.model import base_extension, exceptions, pose_blender
 
@@ -16,7 +23,6 @@ class BakePosesToTimeline(base_extension.PoseWranglerExtension):
     def view(self):
         if self._view is not None:
             return self._view
-        from PySide2 import QtWidgets
 
         self._view = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout()

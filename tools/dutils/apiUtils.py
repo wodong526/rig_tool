@@ -1,9 +1,9 @@
 # coding=gbk
 import maya.cmds as mc
-import maya.OpenMaya as om
-import maya.OpenMayaAnim as omain
+import maya.api.OpenMaya as om
+import maya.api.OpenMayaAnim as omain
 
-from feedback_tool import Feedback_info as fb_print
+from feedback_tool import Feedback_info as fp
 
 
 def getApiNode(obj=None, dag=True, com=False):
@@ -14,25 +14,22 @@ def getApiNode(obj=None, dag=True, com=False):
     :param obj:(str) 要获取的对象
     :return:
     """
-    sel = om.MSelectionList()
     if obj:
-        sel.add(obj)
+        sel = om.MGlobal.getSelectionListByName(obj)
     else:
-        om.MGlobal.getActiveSelectionList(sel)
+        sel = om.MGlobal.getActiveSelectionList()
+
+    if sel.isEmpty():
+        fp('没有指定任何对象。', error=True)
+        return None
 
     if dag:
-        m_dag = om.MDagPath()
         if com:
-            component = om.MObject()
-            sel.getDagPath(0, m_dag, component)
-            return m_dag, component
+            return sel.getComponent(0)
         else:
-            sel.getDagPath(0, m_dag)
-            return m_dag
+            return sel.getDagPath(0)
     else:
-        mobject = om.MObject()
-        sel.getDependNode(0, mobject)
-        return mobject
+        return sel.getDependNode(0)
 
 
 def getMPoint(obj):
@@ -52,31 +49,33 @@ def getGeometryComponents(fn_skin):
     :param fn_skin:MFnSkinCluster节点
     :return:蒙皮节点的dagPath对象、蒙皮节点的组件节点
     """
-    fnSet = om.MFnSet(fn_skin.deformerSet())
-    members = om.MSelectionList()
-    fnSet.getMembers(members, False)
-    dagPath = om.MDagPath()
-    components = om.MObject()
-    members.getDagPath(0, dagPath, components)
+    for ii in range(fn_skin.findPlug("input", False).evaluateNumElements()):
+        # get the input shape and component for this index
+        shape_obj = fn_skin.inputShapeAtIndex(ii)
+        shape_dag_path = om.MDagPath.getAPathTo(shape_obj)
+        transform_dag_path = om.MDagPath(shape_dag_path)
+        transform_dag_path.pop()
+        component = fn_skin.getComponentAtIndex(ii)
 
-    return dagPath, components
+        return transform_dag_path, component
 
-
-def getCurrentWeights(fn_skin, dag_path, components):
+def getCurrentWeights(fn_skin, dag_path, components, influences_nam=None):
     """
     通过MFnSkinCluster对象获取该蒙皮节点的权重列表
+    :param influences_nam: 当指定关节名称时返回该关节的权重
     :param fn_skin: MFnSkinCluster节点
-    :param dag_path: 蒙皮节点的dagPath对象
-    :param components: 蒙皮节点的组件节点
+    :param dag_path: 蒙皮对象的dagPath对象
+    :param components: 蒙皮对象的组件对象
     :return:权重数组，排列依据为：第一个点的按关节顺序的权重值、第二个点的····
     """
-    weights = om.MDoubleArray()
-    util = om.MScriptUtil()
-    util.createFromInt(0)
-    pUInt = util.asUintPtr()
-    fn_skin.getWeights(dag_path, components, weights, pUInt)
-    return weights
+    if not influences_nam:
+        return fn_skin.getWeights(dag_path, components)[0]
 
+    try:
+        return fn_skin.getWeights(dag_path, components, fromSkinGetInfluence(fn_skin).index(influences_nam))
+    except ValueError:
+        fp('蒙皮关节{}不存在'.format(influences_nam), warning=True)
+        return None
 
 def setCurrentWeights(fn, weights, influences_num, dag_path, components):
     """
@@ -88,11 +87,10 @@ def setCurrentWeights(fn, weights, influences_num, dag_path, components):
     :param components: 蒙皮节点的组件节点
     :return:
     """
-    influenceIndices = om.MIntArray(influences_num)
+    influenceIndices = om.MIntArray()
     for ii in range(influences_num):
-        influenceIndices.set(ii, ii)
-    fn.setWeights(dag_path, components, influenceIndices, weights, False)
-
+        influenceIndices.insert(ii, ii)
+    fn.setWeights(dag_path, components, influenceIndices, weights)
 
 def get_skinModelName(skin_cluster_fn):
     """
@@ -102,23 +100,17 @@ def get_skinModelName(skin_cluster_fn):
     """
     if type(skin_cluster_fn) == omain.MFnSkinCluster:
         pass
-    elif mc.nodeType(skin_cluster_fn) == 'skinCluster':
-        mobject = getApiNode(skin_cluster_fn, dag=False)
-        skin_cluster_fn = omain.MFnSkinCluster(mobject)
     else:
-        fb_print('参数{}既不是MFnSkinCluster对象也不是skinCluster节点'.format(skin_cluster_fn))
+        fp('参数{}不是MFnSkinCluster对象'.format(skin_cluster_fn))
 
-    influenced_objects = om.MObjectArray()
-    skin_cluster_fn.getOutputGeometry(influenced_objects)
-
+    influenced_objects = skin_cluster_fn.getOutputGeometry()
     influenced_model_names = []
-    for i in range(influenced_objects.length()):
+    for i in range(influenced_objects.__len__()):
         influenced_model_fn = om.MFnDagNode(influenced_objects[i])
         influenced_model_name = influenced_model_fn.partialPathName()
         influenced_model_names.append(influenced_model_name)
 
     return influenced_model_names
-
 
 def get_skinModelType(skin_cluster_fn):
     """
@@ -128,21 +120,17 @@ def get_skinModelType(skin_cluster_fn):
     """
     if type(skin_cluster_fn) == omain.MFnSkinCluster:
         pass
-    elif mc.nodeType(skin_cluster_fn) == 'skinCluster':
-        mobject = getApiNode(skin_cluster_fn, dag=False)
-        skin_cluster_fn = omain.MFnSkinCluster(mobject)
     else:
-        fb_print('参数{}既不是MFnSkinCluster对象也不是skinCluster节点'.format(skin_cluster_fn))
+        fp('参数{}不是MFnSkinCluster对象'.format(skin_cluster_fn))
 
-    influenced_objects = om.MObjectArray()
-    skin_cluster_fn.getInputGeometry(influenced_objects)
-    for i in range(influenced_objects.length()):
+    influenced_objects = skin_cluster_fn.getInputGeometry()
+    for i in range(influenced_objects.__len__()):
         input_object = influenced_objects[i]
         dg_iterator = om.MItDependencyGraph(input_object, om.MFn.kInvalid, om.MItDependencyGraph.kUpstream,
                                             om.MItDependencyGraph.kDepthFirst, om.MItDependencyGraph.kPlugLevel)
 
         while not dg_iterator.isDone():
-            current_node = dg_iterator.currentItem()
+            current_node = dg_iterator.currentNode()
             if current_node.hasFn(om.MFn.kNurbsSurface):
                 return 'nurbsSurface'
             elif current_node.hasFn(om.MFn.kNurbsCurve):
@@ -170,7 +158,7 @@ def fromObjGetRigNode(obj=None, skin=True, blend_shape=False, path_name=True):
     try:
         dagNode.extendToShape()
     except RuntimeError:
-        fb_print('对象{}没有shape节点或不止一个shape节点。'.format(dagNode.partialPathName()), error=True)
+        fp('对象{}没有shape节点或不止一个shape节点。'.format(dagNode.partialPathName()), error=True)
     m_object = dagNode.node()
 
     if skin:
@@ -178,11 +166,11 @@ def fromObjGetRigNode(obj=None, skin=True, blend_shape=False, path_name=True):
     elif blend_shape:
         itDG = om.MItDependencyGraph(m_object, om.MFn.kBlendShape, om.MItDependencyGraph.kUpstream)
     else:
-        fb_print('没有指定要获取的节点对象。', error=True)
+        fp('没有指定要获取的节点对象。', error=True)
 
     ret_lis = []
     while not itDG.isDone():
-        item = itDG.currentItem()
+        item = itDG.currentNode()
 
         skin = omain.MFnSkinCluster(item) if skin else omain.MFnBlendShapeDeformer(item)
         ret_lis.append(skin)
@@ -201,7 +189,10 @@ def fromSkinGetInfluence(fn_skin):
     :param fn_skin:MFnSkinCluster对象
     :return:影响关节列表
     """
-    influencePaths = om.MDagPathArray()
-    fn_skin.influenceObjects(influencePaths)
-    return [influencePaths[i].partialPathName() for i in range(influencePaths.length()) if
-            om.MFnDagNode(influencePaths[i]).typeName() == 'joint']
+    influence_lis = []
+    dagArr = fn_skin.influenceObjects()
+    for i in range(dagArr.__len__()):
+        if om.MFnDagNode(dagArr[i]).typeName == 'joint':
+            influence_lis.append(dagArr[i].partialPathName())
+
+    return influence_lis

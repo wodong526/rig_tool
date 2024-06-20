@@ -2,7 +2,10 @@ import copy
 import json
 
 from maya import cmds
-from PySide2 import QtCore
+try:
+    from PySide2 import QtCore
+except ImportError:
+    from PySide6 import QtCore
 
 from ngSkinTools2.api import internals, plugin
 from ngSkinTools2.api.log import getLogger

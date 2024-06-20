@@ -7,7 +7,8 @@ import shutil
 import sys
 
 from feedback_tool import Feedback_info as fp
-
+if sys.version_info.major == 3:
+    from importlib import reload
 
 def reload_hot_ui():
     """

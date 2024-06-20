@@ -7,13 +7,15 @@ import sys
 from ctypes import *
 
 from feedback_tool import Feedback_info as fp
-
+if sys.version_info.major == 3:
+    from importlib import reload
 
 class ClearOutputWindow:
     def __init__(self):
         self.user32 = windll.user32
         self.EnumWindowsProc = WINFUNCTYPE(c_int, c_int, c_int)
-        self.clear()
+        if int(mc.about(version = 1)) < 2022:
+            self.clear()
 
     def get_handle(self, title, parent=None):
         """
@@ -65,6 +67,7 @@ class RIG_setUp(object):
     生成热盒
     添加meta脚本插件
     设置默认路径为工作区
+    创建防病毒等监听事件
     """
 
     def __init__(self):
@@ -74,8 +77,10 @@ class RIG_setUp(object):
             self.add_toolScript_path()
             self.create_menu()
             self.create_hotBox()
-            self.add_metaToMaya_plug()
+            self.add_meta_plug()
+            #self.add_metaToMaya_plug()
             self.set_defaultWorlkSpace()
+            self.clear_events()
         else:
             fp('找不到插件路径，请到服务器安装工具架。', error=True)
 
@@ -101,8 +106,7 @@ class RIG_setUp(object):
             if path not in os.environ["MAYA_PLUG_IN_PATH"]:
                 os.environ["MAYA_PLUG_IN_PATH"] = path + os.pathsep + os.environ.get("MAYA_PLUG_IN_PATH", "")
 
-        from rig_clear import ProtectiveTools
-        ProtectiveTools()
+
 
     @staticmethod
     def create_menu():
@@ -115,6 +119,13 @@ class RIG_setUp(object):
         import reload_tools
         reload(reload_tools)
         reload_tools.reload_hot_ui()
+
+    @classmethod
+    def add_meta_plug(cls):
+        version = str(mc.about(q=1, v=1))
+        os.environ['MAYA_PLUG_IN_PATH'] = 'C:/Rig_Tools/plug_ins/windows/' + version + os.pathsep + os.environ['MAYA_PLUG_IN_PATH']
+        if not mc.pluginInfo('embeddedRL4.mll', query=True, loaded=True):
+            mc.loadPlugin('embeddedRL4.mll')
 
     @staticmethod
     def add_metaToMaya_plug():
@@ -148,6 +159,10 @@ class RIG_setUp(object):
         document_path = mc.internalVar(uad=True)
         mc.workspace('{}projects/default'.format(document_path), o=True)
 
+    @staticmethod
+    def clear_events():
+        from rig_clear import ProtectiveTools
+        ProtectiveTools()
 
 
 mc.evalDeferred('RIG_setUp()')

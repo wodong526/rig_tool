@@ -73,6 +73,7 @@ def get_jnt_core():
         mc.delete(crv, clst)
 
         fb_print('已在选择对象的中心创建关节{}'.format(jnt), info=True)
+        return jnt
 
 
 def get_trm_rot():

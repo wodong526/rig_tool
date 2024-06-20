@@ -64,7 +64,7 @@ class UERBFAPI(RBFAPI):
     @property
     def view(self):
         """
-        :return: reference to the tool_ui QWidget
+        :return: reference to the ui QWidget
         :rtype: QtWidgets.QWidget or None
         """
         return self._view
@@ -180,7 +180,7 @@ class UERBFAPI(RBFAPI):
 
     def edit_solver(self, edit=True, solver=None):
         """
-        Edit or finish editing the specified solver. Enables pose creation/driven node changes via the tool_ui
+        Edit or finish editing the specified solver. Enables pose creation/driven node changes via the ui
 
         :param edit:  set edit mode on or off
         :type edit: bool
@@ -191,7 +191,7 @@ class UERBFAPI(RBFAPI):
         solver = solver or self._current_solver
         # Edit the solver
         solver.edit_solver(edit=edit)
-        # If we have a tool_ui, update the edit mode status
+        # If we have a ui, update the edit mode status
         if self._view:
             self._view.edit_solver(solver=solver, edit=edit)
         LOG.debug("Setting edit status: {status} for solver: {solver}".format(status=edit, solver=solver))
@@ -389,7 +389,7 @@ class UERBFAPI(RBFAPI):
         solver.edit_blendshape(pose_name, edit=edit)
         # Set the current solver
         self.current_solver = solver
-        # If we have a tool_ui, update the blendshapes status
+        # If we have a ui, update the blendshapes status
         if self._view:
             self._view.edit_blendshape(pose_name, edit=edit)
 
@@ -634,9 +634,9 @@ class UERBFAPI(RBFAPI):
 
     def get_ui_context(self):
         """
-        If the tool_ui is available, return the tool_ui context
+        If the ui is available, return the ui context
 
-        :return: tool_ui context containing the current state of the tool_ui
+        :return: ui context containing the current state of the ui
         :rtype: ui_context.PoseWranglerUIContext or None
         """
         if self._view:
@@ -692,7 +692,7 @@ class UERBFAPI(RBFAPI):
 
     def _get_valid_actions(self, ui_context):
         """
-        Gets the valid actions base on the tool_ui context
+        Gets the valid actions base on the ui context
         :param ui_context :type PoseWranglerUIContext: current selection state of the UI
         """
         if not self._view:
@@ -750,7 +750,7 @@ class UERBFAPI(RBFAPI):
         """
         if not self._view:
             return
-        # If we have a tool_ui, clear it before we load fresh data
+        # If we have a ui, clear it before we load fresh data
         self._view.clear()
         # Bool to keep track if we have a solver that has edits to it
         existing_edit = None
@@ -781,12 +781,12 @@ class UERBFAPI(RBFAPI):
     # noinspection DuplicatedCode
     def _setup_view_events(self):
         """
-        Connect up all of the tool_ui signals to their corresponding functions
+        Connect up all of the ui signals to their corresponding functions
         """
         # Only works if we have a view
         if not self._view:
             return
-        # Connect up all the tool_ui events
+        # Connect up all the ui events
         # Solver Events
         self._view.event_create_solver.connect(self.create_rbf_solver)
         self._view.event_delete_solver.connect(self.delete_rbf_solver)

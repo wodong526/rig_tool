@@ -47,7 +47,8 @@ class AboutEnv:
             "2019": [],
             "2020": [],
             "2022": [],
-            "2023": []
+            "2023": [],
+            "2024": []
         }
 
         for version, extraArgs in supportedVersions.items():

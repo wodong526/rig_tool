@@ -2,7 +2,7 @@
 import maya.cmds as mc
 import maya.mel as mm
 import maya.OpenMaya as om
-import maya.OpenMayaAnim as omain
+import maya.api.OpenMayaAnim as omain
 
 from dutils import apiUtils
 from feedback_tool import Feedback_info as fp
@@ -103,12 +103,11 @@ def inspect_weight():
         if apiUtils.get_skinModelType(fn) == 'mesh':  #检测蒙皮节点被蒙皮对象是否为模型
             dagPath, components = apiUtils.getGeometryComponents(fn)  #获取蒙皮节点蒙皮的组件信息
             weights = apiUtils.getCurrentWeights(fn, dagPath, components)  #获取权重列表（点1.关节1、点1.关节2、点2.关节1、点2关节2···）
-            influencePaths = om.MDagPathArray()
-            fn.influenceObjects(influencePaths)  #蒙皮关节对象datPath数组
+            influencePaths = fn.influenceObjects()  #蒙皮关节对象datPath数组
 
-            for i in range(0, len(weights), influencePaths.length()):  #遍历数组总长度，步长为蒙皮关节数，则每个i都是每个点的第一个蒙皮关节下标
+            for i in range(0, len(weights), influencePaths.__len__()):  #遍历数组总长度，步长为蒙皮关节数，则每个i都是每个点的第一个蒙皮关节下标
                 weight = 0.0
-                for n in range(influencePaths.length()):
+                for n in range(influencePaths.__len__()):
                     weight += weights[i + n]
 
                 if round(weight, 5) != 1.0:  #取小数点后五位精度
@@ -155,3 +154,16 @@ def clear_unknown_plug():
 
 
     return mc.unknownPlugin(q=True, l=True)
+
+def conn_custom_blendshape():
+    """
+    连接自定义bs节点的目标体权重，避免导出动画数据时该权重没有关键帧
+    :return:
+    """
+    for bs in mc.ls(typ='blendShape'):
+        for tag in mc.listAttr(bs + ".w", k=True, m=True):
+            if not mc.listConnections('{}.{}'.format(bs, tag, d=0)):
+                mc.connectAttr('{}.envelope'.format(bs), '{}.{}'.format(bs, tag))
+    else:
+        return False
+    return True

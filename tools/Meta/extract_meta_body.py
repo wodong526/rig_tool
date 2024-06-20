@@ -3,12 +3,8 @@ import maya.cmds as mc
 import maya.mel as mel
 
 import os
-import logging
 
-logging.basicConfig()
-log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
-
+from feedback_tool import Feedback_info as fp
 
 class Extract_Body(object):
     def __init__(self):
@@ -34,7 +30,7 @@ class Extract_Body(object):
                 if i < 4:
                     mc.delete('body_lod{}_grp'.format(i))
                 mc.delete('head_lod{}_grp'.format(i))
-        log.info('lod与显示层已删除。')
+        fp('lod与显示层已删除。', info=True)
 
         del_lis = ['export_geo_GRP', 'Body_joints', 'Lights', 'FacialControls',
                    'PSD', 'eyelashes_lod0_mesh']
@@ -44,7 +40,7 @@ class Extract_Body(object):
         for obj in mod_lis:
             if '_combined_' in obj:
                 mc.delete(obj)
-        log.info('多余选择集与组已删除。')
+        fp('多余选择集与组已删除。')
 
     def set_mod(self):
         mc.setAttr('root_drv.rotateX', -90)
@@ -91,16 +87,16 @@ class Extract_Body(object):
             mc.select(obj)
             mc.BakeNonDefHistory()
         mc.file(self.target_path, rr=True)
-        log.info('掰直模型并重传权重已完成。')
+        fp('掰直模型并重传权重已完成。')
 
     def del_nameSpace(self):
         mc.namespace(rm='DHIhead', mnr=1, f=1)
-        log.info('已清理空间名DHIhead。')
+        fp('已清理空间名DHIhead。')
 
     def set_heand_ctl(self):
         for ctl in ['CTRL_eyesAimFollowHead', 'CTRL_faceGUIfollowHead']:
             mc.setAttr('{}.translateY'.format(ctl), 1)
-        log.info('已拉正头部控制器。')
+        fp('已拉正头部控制器。')
 
     def set_joint(self):
         for jnt in ['DHIbody:pelvis', 'pelvis_drv']:
@@ -108,10 +104,9 @@ class Extract_Body(object):
             mc.parent(jnt, w = True)
             mc.delete(p)
         mc.setAttr('DHIbody:pelvis.visibility', False)
-        log.info('已删除原点关节。')
+        fp('已删除原点关节。')
 
     def parent_mod(self):
-        print 1111
         grp_head = mc.group(n = 'grp_head', w = True, em = True)
         grp_body = mc.group(n = 'grp_body', w=True, em=True)
         mc.parent(self.head_mod, grp_head)
@@ -119,7 +114,7 @@ class Extract_Body(object):
         for grp in ['headRig_grp', 'rig_setup_grp']:
             mc.parent(grp, w = True)
         mc.delete('rig')
-        log.info('已排布好模型。')
+        fp('已排布好模型。')
 
     def clear_scene(self):
         mc.modelEditor('modelPanel4', e=True, sdw=False)
@@ -133,4 +128,4 @@ class Extract_Body(object):
 
         if os.path.exists(self.target_path):
             os.remove(self.target_path)
-        log.info('场景清理已完成。')
+        fp('场景清理已完成。')

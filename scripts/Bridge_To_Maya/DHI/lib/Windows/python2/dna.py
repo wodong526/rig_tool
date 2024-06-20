@@ -94,7 +94,7 @@ class _SwigNonDynamicMeta(type):
 def __new_decorator(factory_func, original_new):
     @staticmethod
     def __new(cls, *args, **kwargs):
-# while this workaround solves the immediate issue with the set of classes we currently have,
+# FIXME: while this workaround solves the immediate issue with the set of classes we currently have,
 # it will fail for classes that use a factory function but need no parameters at all, in which case
 # the factory function will never be invoked, only the original __new__ function.
         if args or kwargs:

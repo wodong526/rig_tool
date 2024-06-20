@@ -148,6 +148,7 @@ class create_ctl(QtWidgets.QDialog):  # 使该窗口为控件
         self.paste_but.clicked.connect(self.past_shape)
         self.mir_but.clicked.connect(self.mirror_ctl)
         self.grp_but.clicked.connect(self.create_grp)
+        self.grp_lin.returnPressed.connect(self.create_grp)
         self.all_color_but.clicked.connect(self.get_all_color)
 
     def add_maya_widget(self, name):
@@ -253,7 +254,7 @@ class create_ctl(QtWidgets.QDialog):  # 使该窗口为控件
         if type(ctl_cv) == unicode:
             spa_n = mc.getAttr('{}.spans'.format(ctl_cv))
             deg_n = mc.getAttr('{}.degree'.format(ctl_cv))
-            cv_n = spa_n + deg_n
+            cv_n = spa_n if mc.getAttr('{}.f'.format(ctl_cv)) > 0 else spa_n + deg_n
 
             if t == 0:
                 for n in range(cv_n):
@@ -268,8 +269,7 @@ class create_ctl(QtWidgets.QDialog):  # 使该窗口为控件
 
     def copy_shape(self):
         ctl_cv = self.if_cv()
-        if type(ctl_cv) == unicode:
-            self.ctl_lin.setText(ctl_cv)
+        self.ctl_lin.setText(ctl_cv)
 
     def past_shape(self):
         ctl_cv = self.if_cv(True)

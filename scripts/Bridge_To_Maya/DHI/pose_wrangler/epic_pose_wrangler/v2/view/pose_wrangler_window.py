@@ -57,7 +57,7 @@ class PoseWranglerWindow(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
     def __init__(self):
         super(PoseWranglerWindow, self).__init__()
         # Load the UI file
-        file_path = os.path.dirname(__file__) + "/pose_wrangler_ui.tool_ui"
+        file_path = os.path.dirname(__file__) + "/pose_wrangler_ui.ui"
         if os.path.exists(file_path):
             ui_file = QtCore.QFile(file_path)
             # Attempt to open and load the UI
@@ -284,7 +284,7 @@ class PoseWranglerWindow(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
             self.win.edit_blendshape_BTN.setText("Finish Editing Blendshape")
             # Update the icon to show edit mode
             item.setIcon(QtGui.QIcon(":/fileTextureEdit.png"))
-            # Disable all the non blendshape related tool_ui elements
+            # Disable all the non blendshape related ui elements
             for element in self._blendshape_editing_context_ui_elements:
                 element.setEnabled(False)
         # If we are not editing
@@ -295,7 +295,7 @@ class PoseWranglerWindow(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
             self.win.edit_blendshape_BTN.setText("Edit Blendshape")
             # Revert the icon
             item.setIcon(QtGui.QIcon(":/blendShape.png"))
-            # Re-enable all the tool_ui elements
+            # Re-enable all the ui elements
             for element in self._blendshape_editing_context_ui_elements:
                 element.setEnabled(True)
         # Store the edit status in the item data
@@ -349,7 +349,7 @@ class PoseWranglerWindow(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         # Set the item data
         item.setData(QtCore.Qt.UserRole, item_data)
 
-        # Update the solver related tool_ui elements with the current edit status
+        # Update the solver related ui elements with the current edit status
         for element in self._solver_context_ui_elements:
             element.setEnabled(edit)
 
@@ -362,7 +362,7 @@ class PoseWranglerWindow(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
 
     def get_context(self):
         """
-        Gets the current state of the tool_ui
+        Gets the current state of the ui
         :return: PoseWranglerUIContext
         """
         return ui_context.PoseWranglerUIContext(
@@ -603,7 +603,7 @@ class PoseWranglerWindow(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
             self.event_set_current_solver.emit(item_data['solver'])
             # Get the solvers edit status
             edit = item_data.get('edit', False)
-            # Enable/disable the tool_ui elements accordingly
+            # Enable/disable the ui elements accordingly
             for element in self._solver_context_ui_elements:
                 element.setEnabled(edit)
             # If we are in edit mode

@@ -110,7 +110,8 @@ class TransformMaterial(QtWidgets.QDialog):
         :return:
         '''
         all_mat = mc.ls(mat=True)
-        all_mat.remove('particleCloud1')
+        for mat in ['particleCloud1', 'standardSurface1']:
+            if mat in all_mat: all_mat.remove(mat)
         self.set_json(all_mat)
 
     def get_mat_color(self, mat):

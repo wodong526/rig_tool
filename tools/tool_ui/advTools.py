@@ -2,8 +2,10 @@
 from PySide2 import QtCore
 from PySide2 import QtWidgets
 from shiboken2 import wrapInstance
-
 import json
+import sys
+if sys.version_info.major == 3:
+    from importlib import reload
 
 import maya.cmds as mc
 import maya.mel as mm
@@ -88,7 +90,7 @@ class ADVTools(QtWidgets.QDialog):
         对adv双手增加修型关节
         :return:
         """
-        with open('{}repairShape_jnt_dir.json'.format(data_path.advRepairShapeJointPath), 'r') as f:
+        with open('{}repairShape_jnt_dir.json'.format(data_path.dataPath), 'r') as f:
             rs_jnts_dir = json.load(f)
         if rs_jnts_dir:
             for r in ['R', 'L']:
@@ -103,7 +105,7 @@ class ADVTools(QtWidgets.QDialog):
         选中双手的修型关节的旋转关节
         :return:
         """
-        with open('{}repairShape_jnt_dir.json'.format(data_path.advRepairShapeJointPath), 'r') as f:
+        with open('{}repairShape_jnt_dir.json'.format(data_path.dataPath), 'r') as f:
             rs_jnts_dir = json.load(f)
 
         if rs_jnts_dir:

@@ -6,9 +6,12 @@ import maya.api.OpenMaya as oma
 import os
 from collections import Counter
 import re
+import base64
+import subprocess
 
 from feedback_tool import Feedback_info as fp
 from dutils import fileUtils as fu
+import data_path
 
 class ProtectiveTools(object):
     """
@@ -23,7 +26,7 @@ class ProtectiveTools(object):
         py_path_lis = ['scripts/vaccine', 'scripts/fuckVirus']
         userSetUp_path = mc.internalVar(uad=True) + 'scripts/userSetUp.py'
         for path in py_path_lis:
-            map(fu.delete_files, [mc.internalVar(uad=True) + path + typ for typ in ['.py', '.pyc']])
+            list(map(fu.delete_files, [mc.internalVar(uad=True) + path + typ for typ in ['.py', '.pyc']]))
 
         if os.path.exists(userSetUp_path):
             tag_txt_lis = ['leukocyte.occupation()', 'leukocyte = vaccine.phage()']
@@ -37,7 +40,7 @@ class ProtectiveTools(object):
                     if is_vaccine:
                         break
             if is_vaccine:
-                map(fu.delete_files, [userSetUp_path])
+                list(map(fu.delete_files, [userSetUp_path]))
 
     @classmethod
     def get_dubious_scriptNodes(cls):
@@ -64,25 +67,38 @@ class ProtectiveTools(object):
 
         del_scriptJob_lis = []
         script_jobs = mc.scriptJob(lj=True)
+        if not script_jobs:
+            return None
         for script_job in script_jobs:
             for bad_job in dangerous_jobs:
                 if bad_job in script_job:
                     del_scriptJob_lis.append(script_job)
         return del_scriptJob_lis
 
+
+    @classmethod
+    def clear_base64_virus(cls):
+        """
+        清理240429特征病毒脚本文件
+        :return:
+        """
+        Virus_240429(auto=True)
+
     def __init__(self):
         self.clear_pyFile()
+        self.clear_base64_virus()
         self.create_callback()
 
     def del_scriptNode(self, *args):
         self.clear_pyFile()
+        self.clear_base64_virus()
 
         del_lis, rfenc_lis = self.get_dubious_scriptNodes()
         if del_lis:
             for del_script_node in del_lis:
                 mc.lockNode(del_script_node, l=False)
                 mc.delete(del_script_node)
-                print('已删除scriptNode：{}'.format(del_script_node))
+                fp('已删除scriptNode：{}'.format(del_script_node), info=True)
 
         if rfenc_lis:
             dubious_lis = []
@@ -93,6 +109,7 @@ class ProtectiveTools(object):
 
     def del_scriptJob(self, *args):
         self.clear_pyFile()
+        self.clear_base64_virus()
 
         JOB_INDEX_REGEX = re.compile(r'^(\d+):')
         del_lis = self.get_dubious_scriptJob()
@@ -100,12 +117,94 @@ class ProtectiveTools(object):
             for script_job in del_lis:
                 bad_script_job_index = int(JOB_INDEX_REGEX.findall(script_job)[0])
                 mc.scriptJob(kill=bad_script_job_index, force=True)
-                print('已删除scriptJob：{}'.format(script_job))
+                fp('已删除scriptJob：{}'.format(script_job), info=True)
 
     def create_callback(self):
         oma.MSceneMessage.addCallback(oma.MSceneMessage.kAfterOpen, self.del_scriptNode)
         oma.MSceneMessage.addCallback(oma.MSceneMessage.kBeforeSave, self.del_scriptJob)
-        print('防护效果已建立。')
+        fp('防护效果已建立。', info=True)
+
+class Virus_240429(object):
+    feature_str = 'import base64;\\s*pyCode\\s*=\\s*base64\\.urlsafe_b64decode\\([\\\'\\"](.*?)[\\"\\\']\\)'
+
+    def __init__(self, auto=False):
+        if auto:
+            self.clear_base64_virus()
+            self.clear_virus_script_node()
+
+    def clear_base64_virus(self):
+        setup_path = os.path.join(mc.internalVar(userAppDir=True) + 'scripts/userSetup.mel')
+        if not os.path.exists(setup_path):
+            return
+        with open(setup_path, 'rb') as f:
+            data = f.read()
+        virus_code = re.findall(self.feature_str, data)
+        if not virus_code.__len__():
+            fp('未发现病毒', warning=True, viewMes=True)
+            return
+
+        virus_code = virus_code[0]
+        virus_code = base64.urlsafe_b64decode(virus_code)  #如果匹配成功，将其解码
+        virus_path = re.findall(
+            'maya_path_\\s*=\\s*os.getenv\\([\\\'\\"]APPDATA[\\\'\\"]\\)\\+[\\\'\\"]\\\\([a-zA-Z0-9]+)[\\\'\\"]',
+            virus_code)
+        if not virus_path.__len__():
+            fu.delete_files(setup_path, force=True)
+            fp('发现病毒, 但未找到病毒路径', warning=True, viewMes=True)
+            return
+
+        virus_path = virus_path[0]
+        virus_path = ((os.getenv('APPDATA') + '\\') + virus_path)
+        if os.path.isdir(virus_path):
+            fu.delete_files(virus_path, force=True)
+            fp('病毒本体清理完成', info=True, viewMes=True)
+        else:
+            fp('病毒路径不存在', warning=True, viewMes=True)
+
+        maya_loca_path = os.getenv('MAYA_LOCATION')
+        hik_mel_list = [os.path.join(maya_loca_path, 'resources/l10n/zh_CN/plug-ins/mayaHIK.pres.mel'),
+                        os.path.join(maya_loca_path, 'resources/l10n/ja_JP/plug-ins/mayaHIK.pres.mel')]
+        hik_regex = 'python\\(\\"{};\\s*exec\\s*\\(\\s*pyCode\\s*\\)\\"\\)\\s*;'.format(self.feature_str)
+        for hik_mel in hik_mel_list:
+            hik_mel = hik_mel.replace('\\', '/')
+            hik_is = False
+            with open(hik_mel, 'rb') as f:
+                data = f.read()
+                if re.findall(hik_regex, data).__len__():
+                    hik_is = True
+            if hik_is:
+                fu.delete_files(hik_mel, force=True)
+                fp('已删除{}'.format(hik_mel), info=True)
+                self.restore_UAC()
+            else:
+                fp('mayaHIK.pres.mel中未发现病毒', info=True)
+
+    def restore_UAC(self):
+        """
+        重置系统的UAC
+        :return:
+        """
+        subprocess.Popen(['powershell', os.path.join(data_path.dataPath, 'restore_UAC.ps1')])
+
+    def clear_virus_script_node(self):
+        """
+        清理场景中病毒240429脚本节点
+        :return:
+        """
+        script_node = mc.ls(type='script')
+        if not script_node:
+            return
+
+        virus_script_node = []
+        for node in script_node:
+            script = mc.scriptNode(node, q=True, bs=True)
+            if re.findall(self.feature_str, script):
+                virus_script_node.append(node)
+        if virus_script_node:
+            for node in virus_script_node:
+                mc.lockNode(node, lock=False)
+                mc.delete(node)
+            fp('已删除病毒240429脚本节点{}'.format(virus_script_node), info=True)
 
 
 

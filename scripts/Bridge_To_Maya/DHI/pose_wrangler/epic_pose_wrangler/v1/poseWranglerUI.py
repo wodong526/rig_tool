@@ -1,14 +1,16 @@
 # Copyright Epic Games, Inc. All Rights Reserved.
-
-from PySide2 import QtWidgets
-from PySide2 import QtCore
-from PySide2 import QtUiTools
-
 import os
 
 import maya.cmds as cmds
 import maya.OpenMaya as OpenMaya
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
+
+if cmds.about(version = 1) < 2024:
+    from PySide2 import QtCore, QtWidgets, QtGui
+    from shiboken2 import wrapInstance
+else:
+    from PySide6 import QtCore, QtWidgets, QtGui
+    from shiboken6 import wrapInstance
 
 from epic_pose_wrangler.log import LOG
 from epic_pose_wrangler.view import log_widget
@@ -65,7 +67,7 @@ class PoseWrangler(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
             raise RuntimeError("Unable to load valid RBF plugin version")
 
         # Load the UI file
-        file_path = os.path.dirname(__file__) + "/poseWranglerUI.tool_ui"
+        file_path = os.path.dirname(__file__) + "/poseWranglerUI.ui"
         if os.path.exists(file_path):
             ui_file = QtCore.QFile(file_path)
             # Attempt to open and load the UI

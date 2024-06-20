@@ -5,7 +5,7 @@ This Module :
 - Starts the LiveLink
 """
 
-import pymel.core as pm
+#import pymel.core as pm
 from LiveLink import initLiveLink
 from Megascans import Installer
 from DHI import DHIPluginLoader

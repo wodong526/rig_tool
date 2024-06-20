@@ -3,8 +3,7 @@ import maya.cmds as mc
 import maya.mel as mm
 import maya.api.OpenMaya as oma
 
-import requests
-import re
+import socket
 
 from feedback_tool import Feedback_info as fb_print
 from dutils import apiUtils
@@ -33,7 +32,7 @@ def goToADV_pose():
         mel_str = mc.getAttr('buildPose.udAttr')
         for order in mel_str.split(';'):
             if order:
-                if order.split(' ')[-1][0].isalpha() and mc.objExists(order.split(' ')[-1]):
+                if mc.objExists(order.split(' ')[-1]):
                     mm.eval(order)
         fb_print('adv控制器已回归原位。', info=True, viewMes=True)
     else:
@@ -221,12 +220,5 @@ def get_native_iP():
     获取本机ip地址
     :return: ip地址本身
     """
-    ip = ''
-    try:
-        res = requests.get('https://myip.ipip.net', timeout=5).text
-        ip = re.findall(r'(\d+\.\d+\.\d+\.\d+)', res)
-        ip = ip[0] if ip else ''
-    except Exception as e:
-        fb_print('获取本机地址失败！\n{}'.format(e), error=True)
-    finally:
-        return ip
+    return socket.gethostbyname(socket.getfqdn(socket.gethostname()))
+

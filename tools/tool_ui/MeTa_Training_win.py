@@ -11,17 +11,14 @@ import maya.OpenMayaUI as omui
 import os
 import sys
 from functools import partial
-
-from feedback_tool import Feedback_info as fb_print
-from data_path import icon_dir as ic
-from Meta import mhFaceCtrlsAnimsTool, extract_meta_head, extract_meta_body, adv_to_meta, \
-                 metaHuman_transformation_head, metaHand_to_adv
-reload(mhFaceCtrlsAnimsTool)
-
 if sys.version_info.major == 3:
     #当环境为py3时
     from importlib import reload
 
+from feedback_tool import Feedback_info as fb_print
+from data_path import icon_dir as ic
+from Meta import mhFaceCtrlsAnimsTool, extract_meta_head, extract_meta_body, adv_to_meta, metaHuman_transformation_head, metaHand_to_adv
+reload(mhFaceCtrlsAnimsTool)
 
 def maya_main_window():
     main_window_ptr = omui.MQtUtil.mainWindow()

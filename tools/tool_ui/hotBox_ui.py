@@ -3,13 +3,9 @@ import maya.cmds as mc
 import maya.mel as mm
 
 import sys
-
-from feedback_tool import Feedback_info as fb_print
-
 if sys.version_info.major == 3:
-    #当环境为py3时
     from importlib import reload
-
+from feedback_tool import Feedback_info as fb_print
 
 class Rig_HotBox(object):
     """

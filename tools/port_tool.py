@@ -1,11 +1,9 @@
 # -*- coding:GBK -*-
-from PySide2 import QtCore
-from PySide2 import QtWidgets
-from shiboken2 import wrapInstance
-
 import maya.cmds as mc
 import maya.mel as mm
 import maya.OpenMayaUI as omui
+from PySide2 import QtCore, QtWidgets, QtGui
+from shiboken2 import wrapInstance
 
 import os
 
@@ -34,6 +32,7 @@ class Export_SM(QtWidgets.QDialog):
         self.create_widgets()
         self.create_layout()
         self.create_connections()
+        self.create_shortcut()
 
     def create_widgets(self):
         self.lab_faces = QtWidgets.QLabel(u'限制面数:')
@@ -75,6 +74,12 @@ class Export_SM(QtWidgets.QDialog):
         self.lst_jnts.itemDoubleClicked.connect(self.select_jnt)
         self.lst_mods.itemDoubleClicked.connect(self.select_mod)
         self.but_export.clicked.connect(self.exportSM)
+
+    def create_shortcut(self):
+        """
+            创建快捷键快捷方式。
+        """
+        QtWidgets.QShortcut(QtGui.QKeySequence("F2"), self, self.rename_jntItem)
 
     def get_data(self):
         """
@@ -156,8 +161,10 @@ class Export_SM(QtWidgets.QDialog):
         action_addMod.triggered.connect(self.add_modItem)
         if self.lst_mods.itemAt(pos):
             action_remove = menu.addAction(u'删除该项')
+            action_clear = menu.addAction(u'删除所有项')
             action_copy = menu.addAction(u'复制模型名')
             action_remove.triggered.connect(self.remove_modItem)
+            action_clear.triggered.connect(self.clear_modItems)
             action_copy.triggered.connect(self.duplicate_modName)
 
         menu.exec_(self.lst_mods.mapToGlobal(pos))  #菜单生成的位置
@@ -217,9 +224,9 @@ class Export_SM(QtWidgets.QDialog):
                 append_lis = []
 
                 for obj in sel_lis:
-                    if mc.listRelatives(obj, ad=True, typ='mesh'):
+                    if mc.listRelatives(obj, s=True, typ='mesh'):
                     #for shape in mc.listRelatives(obj, ad=True, typ='mesh'):
-                        if obj not in self.jnt_dir[jnt] and mc.nodeType(mc.listRelatives(obj, ad=True, typ='mesh')[0]) == 'mesh':
+                        if obj not in self.jnt_dir[jnt]:
                             self.jnt_dir[jnt].append(obj)
                             append_lis.append(obj)
 
@@ -286,6 +293,17 @@ class Export_SM(QtWidgets.QDialog):
             else:
                 fb_print('模型{}不存在关节{}的导出项中'.format(mod, jnt), error=True)
 
+    def clear_modItems(self):
+        """
+        清空模型列表
+        :return:
+        """
+        jnt_item = self.lst_jnts.selectedItems()
+        if jnt_item:
+            jnt = jnt_item[0].data(QtCore.Qt.UserRole)
+            self.jnt_dir[jnt] = []
+            self.create_modItems()
+
     def exportSM(self):
         '''
         导出sm文件
@@ -304,10 +322,13 @@ class Export_SM(QtWidgets.QDialog):
                     fb_print('模型{}没有蒙皮'.format(mod), info=True)
 
             if self.jnt_dir[jnt]:
-                try:
-                    mc.parent(self.jnt_dir[jnt], w=True)
-                except Exception as e:
-                    print('该模型可能是已在世界最外层，报错内容是\n{}'.format(e))
+                for mod in self.jnt_dir[jnt]:
+                    for sub in [node for node in mc.listRelatives(mod) if mc.nodeType(node) != 'mesh']:
+                        if mc.listRelatives(sub, p=True):
+                            mc.parent(sub, mc.listRelatives(mod, p=True)[0])
+                        else:
+                            mc.parent(sub, w=True)
+                    mc.parent(mod, w=True)
                 fbx_path = os.path.split(self.scence_path)[0] + '/' + self.export_nam_dir[jnt] + '.fbx'
 
                 mc.select(self.jnt_dir[jnt])
@@ -317,8 +338,8 @@ class Export_SM(QtWidgets.QDialog):
             else:
                 fb_print('关节{}没有对应的模型可供导出'.format(jnt), warning=True)
 
-        n, path = self.write_txt(export_lis)
-        fb_print('共导出静态模型{}个，生成对应文件{}。'.format(n, path), info=True, path=True, viewMes=True)
+        path = self.write_txt(export_lis)
+        fb_print('共导出静态模型{}个，生成对应文件{}。'.format(export_lis.__len__(), path), info=True, path=True, viewMes=True)
 
     def write_txt(self, export_lis):
         '''
@@ -326,19 +347,17 @@ class Export_SM(QtWidgets.QDialog):
         :return:
         '''
         txt = ''
-        i = 0
+        mid = '---'
         for jnt in export_lis:
             sm_nam = self.export_nam_dir[jnt]
-            i += 1
-            mid = '---'
+            txt = txt + sm_nam + mid + jnt + '\n'
+        else:
+            with open(self.scence_path.replace('.ma', '.txt'), "w") as f:
+                f.write(txt)
+            fb_print('对应文件写入完毕', path=True, info=True)
 
-            txt = txt + jnt + mid + sm_nam + '\n'
-
-        with open(self.scence_path.replace('.ma', '.txt'), "w") as f:
-            f.write(txt)
-        fb_print('对应文件写入完毕', path=True, info=True)
-
-        return i, self.scence_path.replace('.ma', '.txt')
+            return self.scence_path.replace('.ma', '.txt')
+        return
 
     def rename_jntItem(self):
         '''
