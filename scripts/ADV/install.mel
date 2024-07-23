@@ -4,15 +4,14 @@ setParent $currentShelf;
 string $asInstallScriptLocation=`asInstallScriptLocation`;
 if (`gmatch $asInstallScriptLocation "*\*"`)
 	$asInstallScriptLocation=`substituteAllString $asInstallScriptLocation "\\" "/"`;
-string $scriptName="AdvancedSkeleton5";
+string $scriptName="AdvancedSkeleton";
 string $sourceFile=$asInstallScriptLocation+$scriptName+".mel";
 string $command="source \""+$sourceFile+"\";"+$scriptName+";";
-string $iconExt="png";
-if (`asMayaVersionAsFloat`<2012)
-	$iconExt="xpm";
-string $icon=$asInstallScriptLocation+"AdvancedSkeleton5Files/icons/AS5."+$iconExt;
+string $icon=$asInstallScriptLocation+"AdvancedSkeletonFiles/icons/AS.png";
 if (!`file -q -ex $sourceFile`)
 	error ("Something went wrong, can not find: \""+$sourceFile+"\"");
+if (!`file -q -ex $icon`)
+	$icon="absolute.png";
 shelfButton
 	-command $command
 	-annotation $scriptName
@@ -23,27 +22,27 @@ shelfButton
 ;
 //--installTemplate pause--//
 shelfButton
-	-command ("source \""+$asInstallScriptLocation+"AdvancedSkeleton5Files/Selector/biped.mel\";")
+	-command ("source \""+$asInstallScriptLocation+"AdvancedSkeletonFiles/Selector/biped.mel\";")
 	-annotation "Selector:biped"
 	-label "Selector:biped"
-	-image ($asInstallScriptLocation+"AdvancedSkeleton5Files/icons/asBiped."+$iconExt)
-	-image1 ($asInstallScriptLocation+"AdvancedSkeleton5Files/icons/asBiped."+$iconExt)
+	-image ($asInstallScriptLocation+"AdvancedSkeletonFiles/icons/asBiped.png")
+	-image1 ($asInstallScriptLocation+"AdvancedSkeletonFiles/icons/asBiped.png")
 	-sourceType "mel"
 ;
 shelfButton
-	-command ("source \""+$asInstallScriptLocation+"AdvancedSkeleton5Files/Selector/face.mel\";")
+	-command ("source \""+$asInstallScriptLocation+"AdvancedSkeletonFiles/Selector/face.mel\";")
 	-annotation "Selector:face"
 	-label "Selector:face"
-	-image ($asInstallScriptLocation+"AdvancedSkeleton5Files/icons/asFace."+$iconExt)
-	-image1 ($asInstallScriptLocation+"AdvancedSkeleton5Files/icons/asFace."+$iconExt)
+	-image ($asInstallScriptLocation+"AdvancedSkeletonFiles/icons/asFace.png")
+	-image1 ($asInstallScriptLocation+"AdvancedSkeletonFiles/icons/asFace.png")
 	-sourceType "mel"
 ;
 shelfButton
-	-command ("source \""+$asInstallScriptLocation+"AdvancedSkeleton5Files/picker/picker.mel\";")
+	-command ("source \""+$asInstallScriptLocation+"AdvancedSkeletonFiles/picker/picker.mel\";")
 	-annotation "picker"
 	-label "picker"
-	-image ($asInstallScriptLocation+"AdvancedSkeleton5Files/picker/pickerFiles/icons/picker."+$iconExt)
-	-image1 ($asInstallScriptLocation+"AdvancedSkeleton5Files/picker/pickerFiles/icons/picker."+$iconExt)
+	-image ($asInstallScriptLocation+"AdvancedSkeletonFiles/picker/pickerFiles/icons/picker.png")
+	-image1 ($asInstallScriptLocation+"AdvancedSkeletonFiles/picker/pickerFiles/icons/picker.png")
 	-sourceType "mel"
 ;
 //--installTemplate resume--//

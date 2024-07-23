@@ -510,6 +510,7 @@ class PushWindow(QtWidgets.QDialog):
                         res, path = cgt.push_file_to_teamWork(self.proj, uid, push_typ, mc.file(exn=True, q=True),
                                                               version=self.cbox_version.isChecked())
                         self.wid_folder.refresh_item()
+                        self.but_push.setStyleSheet("background-color: green")
                     elif push_typ == 'rig_fbx':
                         fbx_path = exportSelectToFbx() if sel_item.data(
                             QtCore.Qt.UserRole + 5) == 'CHR' else exportSelectToFbx(totpose=False)  #fbx保存的文件路径

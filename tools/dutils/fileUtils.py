@@ -149,11 +149,13 @@ def writeInfoAsFile(path, user_file, data):
     :param data:要写入文件的信息
     :return:none
     """
-    with open("{}/{}".format(path, user_file), "w") as f:
+    file_path = os.path.join(path, user_file)
+    with open(file_path, "w") as f:
         if os.path.splitext(user_file)[1] == '.json':
             json.dump(data, f, indent=2)
         else:
             f.write(data)
+    return file_path
 
 
 def saveFilePath(title='', path='', file_typ=''):
@@ -220,3 +222,6 @@ def delete_files(path, force=True):
         os.remove(path)
     fp('已删除文件：{}'.format(path.encode('gbk')), info=True)
 
+def run_file(path):
+    os.startfile(path)
+    

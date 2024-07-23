@@ -32,7 +32,137 @@ def getApiNode(obj=None, dag=True, com=False):
         return sel.getDependNode(0)
 
 
+def rename(objs=None, prefix=None, suffix=None, replace=None, lower=False, upper=False, select=False):
+    # type: ([str], str, str, list[str, str], bool, bool, bool) -> None
+    """
+    重命名对象
+    :param objs: 要重命名的对象,当有重名时，传入长名
+    :param prefix: 前缀
+    :param suffix: 后缀
+    :param replace: 替换列表
+    :param lower: 小写
+    :param upper: 大写
+    :param select: 是否只操作选中对象
+    :return:
+    """
+    if select:
+        sel = om.MGlobal.getActiveSelectionList()
+    else:
+        sel = om.MSelectionList()
+        for obj in objs:
+            sel.add(obj)
+    mit = om.MItSelectionList(sel)
+
+    while not mit.isDone():
+        node = om.MFnDependencyNode(mit.getDependNode())
+        old_name = node.name()
+
+        if prefix:
+            old_name = prefix + old_name
+        if suffix:
+            old_name = old_name + suffix
+        if replace:
+            old_name = old_name.replace(replace[0], replace[1])
+        if lower:
+            old_name = old_name.lower()
+        if upper:
+            old_name = old_name.upper()
+
+        node.setName(old_name)
+        mit.next()
+
+def create_node(node_type, name=None, dg=False):
+    # type: (str, str|None, bool|None) -> om.MObject
+    """
+    创建节点
+    :param node_type: 节点类型
+    :param name: 节点名,如果不指定则以node_type命名
+    :param dg: 创建的节点是dg节点时需要设置为true
+    :return: 节点的object对象
+    """
+    if dg:
+        mod = om.MDGModifier()
+    else:
+        mod = om.MDagModifier()
+    obj = mod.createNode(node_type)
+    mod.renameNode(obj, name if name else '{}*'.format(node_type))
+    mod.doIt()
+
+    return obj
+
+def connect_plug(sor_node, sor_attr, end_node, end_attr):
+    # type: (str, str, str, str) -> bool
+    """
+    连接两个plug
+    :param end_node: 上游节点名
+    :param sor_node: 下游节点名
+    :param sor_attr:上游属性名
+    :param end_attr:下游属性名
+    :return:
+    """
+    mod = om.MDGModifier()
+    mod.connect(get_attr(sor_node, sor_attr), get_attr(end_node, end_attr))
+    mod.doIt()
+    return True
+
+def get_attr(node, attr):
+    # type: (str, str) -> om.MPlug
+    """
+    获取节点属性的plug对象
+    :param node: 节点名
+    :param attr: 属性名
+    :return: 属性的plug对象
+    """
+    return om.MFnDependencyNode(getApiNode(node, dag=False)).findPlug(attr.split('.')[-1], False)
+
+def get_sub_plug(node, attr):
+    # type: (str, str) -> list[str]
+    """
+    获取子属性
+    :param node: 节点名
+    :param attr: 属性名
+    :return: 包含子属性名的list
+    """
+    compound_attr_obj = om.MFnDependencyNode(node).attribute(attr)
+    compound_attr = om.MFnCompoundAttribute(compound_attr_obj)
+
+    child_attrs = []
+    for i in range(compound_attr.numChildren()):
+        child_attr = om.MFnAttribute(compound_attr.child(i))
+        child_attrs.append(child_attr.name)
+
+    return child_attrs
+
+def set_attr(node, attr, value):
+    # type: (str, str, str|float|int|bool|list|tuple) -> None
+    """
+    设置对象的属性
+    :param node: 节点名
+    :param attr: 属性名
+    :param value: 属性值
+    :return:
+    """
+    if get_attr(node, attr).isCompound:
+        if isinstance(value, list) or isinstance(value, tuple):
+            for attr, val in zip(get_sub_plug(getApiNode(node, dag=False), attr), value):
+                set_attr(node, attr, val)
+        else:
+            fp('属性{}是复合属性，应传入[list|tuple]类型，实际为{}类型'.format(attr, type(value)), error=True)
+        return
+
+    if isinstance(value, str):
+        get_attr(node, attr).setString(value)
+    elif isinstance(value, float):
+        get_attr(node, attr).setFloat(value)
+    elif isinstance(value, int):
+        get_attr(node, attr).setInt(value)
+    elif isinstance(value, bool):
+        get_attr(node, attr).setBool(value)
+    else:
+        print('{}为不支持的数据类型：{}'.format(value, type(value)))
+
 def getMPoint(obj):
+    # type: (str) -> om.MPoint
     """
     获取给定对象的世界xyz坐标
     :param obj: 要获取坐标的对象
@@ -44,6 +174,7 @@ def getMPoint(obj):
 
 
 def getGeometryComponents(fn_skin):
+    # type: (omain.MFnSkinCluster) -> tuple[om.MDagPath, om.MObject]
     """
     从MFnSkinCluster类型对象获取该节点的dagPath对象和蒙皮组件对象
     :param fn_skin:MFnSkinCluster节点

@@ -1,10 +1,7 @@
 # -*- coding:gbk -*-
-try:
-    from PySide2 import QtGui
-    from PySide2 import QtCore
-except ImportError:
-    from PySide6 import QtGui
-    from PySide6 import QtCore
+
+from PySide2 import QtGui
+from PySide2 import QtCore
 import os
 
 from feedback_tool import Feedback_info as fp
@@ -46,6 +43,9 @@ rigMetaPath = '{}tools/Meta/'.format(localPath)#meta相关工具路径
 rigWindowPath = '{}tools/tool_ui/'.format(localPath)#窗口相关路径
 #################################工具架图片文件字典###############################################
 icon_dir = {}#给qt的ui用的图片字典，用图片的名字为key，绝对路径为value
-for path, _, icons in os.walk(iconPath):
-    for icon in icons:
-        icon_dir[os.path.splitext(icon)[0]] = QtGui.QIcon(os.path.join(path, icon))
+def create_icon_dict():
+    global icon_dir
+    for path, _, icons in os.walk(iconPath):
+        for icon in icons:
+            icon_dir[os.path.splitext(icon)[0]] = QtGui.QIcon(os.path.join(path, icon))
+create_icon_dict()

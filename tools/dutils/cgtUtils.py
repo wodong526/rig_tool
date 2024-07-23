@@ -286,3 +286,4 @@ def from_id_get_stage_id(project, source_id, tag_stage, model='asset', cla='task
     for tag_id, tag_name in get_asset_dir(project, ids=tag_ids).items():
         if tag_name[1] == source_name:
             return tag_id
+

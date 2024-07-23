@@ -96,16 +96,30 @@ class RIG_setUp(object):
 
     @staticmethod
     def add_toolScript_path():
-        sys_path = ['C:/Rig_Tools/tools', 'C:/cgteamwork/bin/base', 'C:/Rig_Tools/scripts/ngSkinTools/scripts']
+        #添加pythonPath路径
+        sys_path = ['C:/CgTeamWork_v7/bin/base', 'C:/Rig_Tools/scripts/ngSkinTools/scripts',
+                    'F:/fix_shape_open/source', 'F:/fix_shape_open/scripts']
         for path in sys_path:
             if path not in sys.path:
                 sys.path.append(path) if os.path.exists(path) else fp('路径{}不存在'.format(path), warning=True)
-
+        
+        #添加plug路径
         plug_path = ['C:/Rig_Tools/scripts/ngSkinTools/plug-ins/{}'.format(mc.about(v=True))]
         for path in plug_path:
             if path not in os.environ["MAYA_PLUG_IN_PATH"]:
                 os.environ["MAYA_PLUG_IN_PATH"] = path + os.pathsep + os.environ.get("MAYA_PLUG_IN_PATH", "")
-
+        
+        #添加图片路径
+        icon_path = []
+        for path in icon_path:
+            if path not in os.environ['XBMLANGPATH']:
+                os.environ["XBMLANGPATH"] = path + os.pathsep + os.environ.get("XBMLANGPATH", "")
+        
+        #添加scripts路径
+        scripts_path = []
+        for path in scripts_path:
+            if path not in os.environ['MAYA_SCRIPT_PATH']:
+                os.environ["MAYA_SCRIPT_PATH"] = path + os.pathsep + os.environ.get("MAYA_SCRIPT_PATH", "")
 
 
     @staticmethod
@@ -123,7 +137,7 @@ class RIG_setUp(object):
     @classmethod
     def add_meta_plug(cls):
         version = str(mc.about(q=1, v=1))
-        os.environ['MAYA_PLUG_IN_PATH'] = 'C:/Rig_Tools/plug_ins/windows/' + version + os.pathsep + os.environ['MAYA_PLUG_IN_PATH']
+        #os.environ['MAYA_PLUG_IN_PATH'] = 'C:/Rig_Tools/plug_ins/windows/' + version + os.pathsep + os.environ['MAYA_PLUG_IN_PATH']
         if not mc.pluginInfo('embeddedRL4.mll', query=True, loaded=True):
             mc.loadPlugin('embeddedRL4.mll')
 

@@ -1,0 +1,12 @@
+//Mel script for Mixamo MoCapMather (https://www.mixamo.com)
+//Mixamo has a joint ("Spine"). that does not Map, 
+//as in AdvancedSkeleton it is inbetween "Root" & "Spine"
+//Ensuring it still gets `ZeroOut` here:
+
+global proc MoCapZeroOut ()
+{
+print "// executing custom code for Mixamo MoCapMather ZeroOut.\n";
+
+string $nameSpaceB=`textField -q -tx asMappingUINameSpacesTextFieldB1`;
+if (`objExists ($nameSpaceB+":Spine")`) setAttr ($nameSpaceB+":Spine.r") -type float3 0 0 0;
+}

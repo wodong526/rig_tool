@@ -74,18 +74,14 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
         self.set_transformation()
 
     def get_mod(self):
-        sel_lis = mc.ls(sl=True)
-        mod_lis = []
         self.modAll_lis = []  #所有模型对象
-        for obj in sel_lis:
-            if mc.nodeType(mc.listRelatives(obj, s=True)) == 'mesh':
-                mod_lis.append(obj)
-            self.modAll_lis = self.modAll_lis + self.get_subMod(obj, mod_lis)
+        for obj in mc.listRelatives(mc.ls(sl=True)[0], ad=True):
+            if mc.nodeType(obj) == 'mesh' and mc.listRelatives(obj, p=True)[0] not in self.modAll_lis:
+                self.modAll_lis.append(mc.listRelatives(obj, p=True)[0])
 
         self.mod_parent = {}  #模型名：模型父级名
         for obj in self.modAll_lis:
-            p = mc.listRelatives(obj, p=True)
-            self.mod_parent[obj] = p[0]
+            self.mod_parent[obj] = mc.listRelatives(obj, p=True)[0]
 
         if self.modAll_lis:
             self.Mod_cbx.setChecked(True)
@@ -96,25 +92,10 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
             log.error('没有获取有效对象。')
             return False
 
-    def get_subMod(self, trs, lis):
-        trs_lis = mc.listRelatives(trs)
-        for obj in trs_lis:
-            shp = mc.listRelatives(obj, s=True)
-            if shp:
-                if mc.nodeType(shp[0]) == 'mesh':
-                    lis.append(obj)
-            if mc.listRelatives(obj):
-                self.get_subMod(obj, lis)
-        return lis
-
     def save_scene(self):
         mc.select(self.modAll_lis)
         mc.select('spine_04', add=True)
         mc.file(self.target_path, f=True, es=True, typ='mayaBinary', op='v = 1', pr=True)
-        # new_path = mc.file(q=True, exn=True)
-        # copyfile(new_path, self.target_path)
-        # mc.file(rn = self.target_path)
-        # mc.file(f = True, s = True, typ = 'mayaBinary')
 
     def set_transformation(self):
         for obj in self.modAll_lis:
@@ -122,6 +103,7 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
                 self.head_mod = obj  #头部模型的名字
                 res_mod = mc.duplicate(obj, n='reference_head')
                 mc.parent(res_mod, w=True)
+                break
         if res_mod:
             box = mc.xform(res_mod, q=True, bb=True)
             self.t = [(box[0] + box[3]) / 2, (box[1] + box[4]) / 2, box[5]]
@@ -137,6 +119,7 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
             mc.setAttr('spine_04.visibility', False)
 
     def match_transformation(self):
+
         cls_dir, cls_name_dir = self.get_dir()
         self.duplicate_joints()
 
@@ -146,7 +129,6 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
         pos = mc.xform('reference_target', t=True, q=True)
         rot = mc.xform('reference_target', ro=True, q=True)
         scl = mc.xform('reference_target', s=True, q=True)
-
         self.create_attr(pos, rot, scl)
 
         self.rot_mod(pos, rot, scl)
@@ -193,22 +175,6 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
         return jnt_lis
 
     def rot_mod(self, pos, rot, scl):
-        #使模型回到原位
-        # mc.group(n = 'grp_moveMod_001', w = True, em = True)
-        # for obj in self.modAll_lis:
-        #     mc.parent(obj, 'grp_moveMod_001')
-        #     for aix in ['X', 'Y', 'Z']:
-        #         mc.setAttr('{}.translate{}'.format(obj, aix), l=False)
-        #         mc.setAttr('{}.rotate{}'.format(obj, aix), l=False)
-        #         mc.setAttr('{}.scale{}'.format(obj, aix), l=False)
-        # mc.setAttr('grp_moveMod_001.rotateX', -90)
-        # mc.makeIdentity('grp_moveMod_001', a = True, r = True, n = False, pn = True)
-
-        # #将模型都p出来
-        # for obj in self.modAll_lis:
-        #     mc.parent(obj, w = True)
-        # mc.delete('grp_moveMod_001')
-
         #生成新的组对模型进行变换
         mc.group(n='grp_moveMod_001', w=True, em=True)
         mc.xform('grp_moveMod_001', ws=True, t=self.t)
@@ -324,7 +290,6 @@ class TRANSFORMATION_META(QtWidgets.QDialog):
                 os.remove(self.target_path)
         except:
             log.error('文档中备份蒙皮文件夹仍然存在，因为删除时出错了。')
-
 
 def transform_head():
     try:

@@ -68,7 +68,7 @@ class ADVTools(QtWidgets.QDialog):
         """
         if (not mc.dockControl('AdvancedSkeletonDockControl', q=1, ex=1) or
                 not mc.window('AdvancedSkeletonDockControl', p=1, ex=1)):
-            mm.eval('source \"C:/Rig_Tools/scripts/ADV/AdvancedSkeleton5.mel\";AdvancedSkeleton5;')
+            mm.eval('source \"C:/Rig_Tools/scripts/ADV/AdvancedSkeleton.mel\";AdvancedSkeleton;')
         mm.eval('asFitSkeletonImport;')
         # mm.eval('''if (`exists dockControl`)if (`exists dockControl`)
         #            if (`dockControl -q -ex AdvancedSkeletonDockControl`)
