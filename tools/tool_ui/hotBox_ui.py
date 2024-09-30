@@ -36,8 +36,8 @@ class Rig_HotBox(object):
         get_menu = mc.menuItem(p=menu, l='获取', rp='SW', sm=1)
         self.menu_get(get_menu)
 
-        skin_menu = mc.menuItem(p=menu, l='蒙皮', rp='SE', sm=1)
-        self.menu_skin(skin_menu)
+        tool_menu = mc.menuItem(p=menu, l='工具', rp='SE', sm=1)
+        self.menu_tool(tool_menu)
 
         mc.menuItem(p=menu, l='刷新热盒', c='import reload_tools;reload(reload_tools);'
                                             'reload_tools.reload_hot_ui()')
@@ -103,8 +103,11 @@ class Rig_HotBox(object):
         mc.menuItem(p=parent, l='创建定位到目标并匹配旋转', rp='NW', c='import rig_location;reload(rig_location);'
                                                                     'rig_location.get_trm_rot()')
 
-    def menu_skin(self, parent):
+    def menu_tool(self, parent):
         mc.menuItem(p=parent, l='brsmooth工具', rp='NE', c='import rig_tool;reload(rig_tool);'
                                                            'rig_tool.brSmoothTool()')
         mc.menuItem(p=parent, l='ngSkinTool工具', rp='SE', c='import ngSkinTools2;reload(ngSkinTools2);'
                                                              'ngSkinTools2.open_ui()')
+        mc.menuItem(p=parent, l='MuscleJointSystem工具', rp='E', c='import MuscleJointSystem;reload(MuscleJointSystem);'
+                                                             'MuscleJointSystem.show_muscle_joint_system()')
+        mc.menuItem(p=parent, l='雕刻工具', rp='S', c=lambda _: mm.eval("SHAPESBrushToolCtx;"))

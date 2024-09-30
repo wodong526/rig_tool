@@ -268,7 +268,7 @@ class PoseWrangler(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
             # self.win.edit_pose_BTN.setEnabled(True)
             self.load_poses()
         else:
-            cmds.warning('PoseWrangler: You must enter a pose name to add a pose.')
+            cmds.error('PoseWrangler: You must enter a pose name to add a pose.')
 
     def edit_pose(self):
         """updates the current pose"""
@@ -474,7 +474,7 @@ class PoseWrangler(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
             if selected_pose in solver.pose_dict.keys():
                 solver.assume_pose(selected_pose)
             else:
-                cmds.warning('Pose ' + selected_pose + ' not found in pose dictionary')
+                cmds.error('Pose ' + selected_pose + ' not found in pose dictionary')
         self.refresh_ui_state()
 
     def load_drivers(self, selected=None):
@@ -533,7 +533,7 @@ class PoseWrangler(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
                         solver.name, pose=selected_pose
                     )
                 else:
-                    cmds.warning('Pose ' + selected_pose + ' not found in pose dictionary')
+                    cmds.error('Pose ' + selected_pose + ' not found in pose dictionary')
 
     def mirror_driver(self):
         """mirrors all poses for the selected drivers"""

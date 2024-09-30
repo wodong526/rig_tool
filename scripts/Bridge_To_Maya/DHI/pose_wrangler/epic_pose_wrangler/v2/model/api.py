@@ -385,7 +385,7 @@ class RBFNode(object):
             matching_driver = cmds.ls(existing_driver, long=True)
             # If the driver doesn't exist, warn and continue
             if not matching_driver:
-                LOG.warning(
+                LOG.error(
                     "Could not find driver: {existing_driver} in the scene".format(
                         existing_driver=existing_driver
                     )
@@ -1646,7 +1646,7 @@ class RBFNode(object):
                 plugs=True
             ) or []
             if blendshape_plug not in blendshape_mesh_plugs:
-                LOG.warning(
+                LOG.error(
                     "Could not find connection between mesh: {mesh} and blendshape: {blendshape}".format(
                         mesh=blendshape_mesh,
                         blendshape=blendshape
@@ -1665,7 +1665,7 @@ class RBFNode(object):
             blendshape_mesh_orig_plug = "{blendshape_mesh}.meshOrig".format(blendshape_mesh=blendshape_mesh)
 
             if blendshape_mesh_orig_plug not in orig_mesh_plugs:
-                LOG.warning(
+                LOG.error(
                     "Could not find connection between mesh: {mesh} and blendshape mesh: {blendshape}".format(
                         mesh=orig_mesh,
                         blendshape=blendshape_mesh

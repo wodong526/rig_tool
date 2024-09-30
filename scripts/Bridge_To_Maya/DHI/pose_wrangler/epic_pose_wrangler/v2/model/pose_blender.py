@@ -370,7 +370,7 @@ class UEPoseBlenderNode(object):
         # Find the next index if no index is specified
         if index < 0:
             if pose_name:
-                LOG.warning("Set Pose has not been implemented to support a pose name. FIXME")
+                LOG.error("Set Pose has not been implemented to support a pose name. FIXME")
                 return
             else:
                 # If the index is less than 0 find the next available index

@@ -66,7 +66,8 @@ class Rig_Menu(object):
         mc.menuItem(to=True, p=p_menu, l=u'控制器生成器', i='ctl_tool.png', c='import controller_tool;'
                                                                               'reload(controller_tool);')
         mc.menuItem(to=True, p=p_menu, l=u'跨文件传递材质', i='moveShelfDown.png', c='import transfer_material;'
-                                                                                     'reload(transfer_material);')
+                                                                                   'reload(transfer_material);'
+                                                                                   'transfer_material.show_material_main_window()')
         mc.menuItem(to=True, p=p_menu, l=u'Meta调教器', i='MS_Logo.png', c='from tool_ui import MeTa_Training_win;'
                                                                            'reload(MeTa_Training_win);')
         mc.menuItem(to=True, p=p_menu, l=u'打铆钉', i='follicle.png', c='import rivet_tool;'

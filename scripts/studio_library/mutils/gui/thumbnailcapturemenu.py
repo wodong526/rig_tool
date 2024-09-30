@@ -79,7 +79,7 @@ class ThumbnailCaptureMenu(QtWidgets.QMenu):
                u"确认拍摄新图像并删除上一个" \
                u"缩略图?"
 
-        clickedButton = studiolibrary.widgets.MessageBox.warning(
+        clickedButton = studiolibrary.widgets.MessageBox.error(
             self.parent(),
             title=title,
             text=text,

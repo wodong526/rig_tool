@@ -164,7 +164,7 @@ class RBFNodeExporter(object):
                     else:
                         raise RuntimeError('No influences found for "{}"'.format(skin_cluster))
                 else:
-                    cmds.warning('No skinCluster found for "{}"'.format(mesh))
+                    cmds.error('No skinCluster found for "{}"'.format(mesh))
 
             root_joints = find_top_joints(skeleton)
 

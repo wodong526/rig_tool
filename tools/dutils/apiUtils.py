@@ -1,4 +1,6 @@
 # coding=gbk
+import re
+
 import maya.cmds as mc
 import maya.api.OpenMaya as om
 import maya.api.OpenMayaAnim as omain
@@ -90,18 +92,36 @@ def create_node(node_type, name=None, dg=False):
 
     return obj
 
-def connect_plug(sor_node, sor_attr, end_node, end_attr):
-    # type: (str, str, str, str) -> bool
+def connect_plug(sor_node, sor_attr, end_node, end_attr, force=False):
+    # type: (str, str, str, str, bool) -> bool
     """
     连接两个plug
     :param end_node: 上游节点名
     :param sor_node: 下游节点名
     :param sor_attr:上游属性名
     :param end_attr:下游属性名
+    :param force: 是否强制连接
     :return:
     """
     mod = om.MDGModifier()
-    mod.connect(get_attr(sor_node, sor_attr), get_attr(end_node, end_attr))
+    sor_result = re.match(r'(\w+)\[(\d+)]', sor_attr)
+    end_result = re.match(r'(\w+)\[(\d+)]', end_attr)
+    if sor_result:
+        sor_attr, sor_index = sor_result.group(1), int(sor_result.group(2))
+        sor = get_attr(sor_node, sor_attr).elementByLogicalIndex(sor_index)
+    else:
+        sor = get_attr(sor_node, sor_attr)
+    if end_result:
+        end_attr, end_index = end_result.group(1), int(end_result.group(2))
+        end = get_attr(end_node, end_attr).elementByLogicalIndex(end_index)
+    else:
+        end = get_attr(end_node, end_attr)
+
+    if force and not end.isNull:
+        conn_plug = end.source()
+        if not conn_plug.isNull:
+            mod.disconnect(sor, end)
+    mod.connect(sor, end)
     mod.doIt()
     return True
 
@@ -142,24 +162,47 @@ def set_attr(node, attr, value):
     :param value: 属性值
     :return:
     """
-    if get_attr(node, attr).isCompound:
-        if isinstance(value, list) or isinstance(value, tuple):
-            for attr, val in zip(get_sub_plug(getApiNode(node, dag=False), attr), value):
-                set_attr(node, attr, val)
-        else:
-            fp('属性{}是复合属性，应传入[list|tuple]类型，实际为{}类型'.format(attr, type(value)), error=True)
+    result = re.match(r'(\w+)\[(\d+)]', attr)
+    if result:
+        attr, index = result.group(1), int(result.group(2))
+
+    if get_attr(node, attr).isCompound and (isinstance(value, list) or isinstance(value, tuple)):
+        for attr, val in zip(get_sub_plug(getApiNode(node, dag=False), attr), value):
+            set_attr(node, attr, val)
         return
 
     if isinstance(value, str):
         get_attr(node, attr).setString(value)
-    elif isinstance(value, float):
-        get_attr(node, attr).setFloat(value)
     elif isinstance(value, int):
         get_attr(node, attr).setInt(value)
     elif isinstance(value, bool):
         get_attr(node, attr).setBool(value)
+    elif isinstance(value, float):
+        if get_plug_type(node, attr) == 'kDoubleAngleAttribute':
+            get_attr(node, attr).setMAngle(om.MAngle(value, om.MAngle.kDegrees))
+        else:
+            get_attr(node, attr).setFloat(value)
+    elif isinstance(value, list) or isinstance(value, tuple):
+        api_type = get_plug_type(node, attr)
+        if api_type == 'kMatrixAttribute':
+            matrix_data = om.MFnMatrixData()
+            matrix_data.create(om.MMatrix(value))
+            if 'index' in locals() or 'index' in globals():
+                get_attr(node, attr).elementByLogicalIndex(index).setMObject(matrix_data.object())
+            else:
+                get_attr(node, attr).setMObject(matrix_data.object())
     else:
-        print('{}为不支持的数据类型：{}'.format(value, type(value)))
+        om.MGlobal.displayError('{}为不支持的数据类型：{}'.format(value, type(value)))
+
+def get_plug_type(node, attr):
+    # type: (str, str) -> str
+    """
+    获取plug的类型
+    :param node: 节点名
+    :param attr: 属性名
+    :return:
+    """
+    return om.MFnDependencyNode(getApiNode(node, dag=False)).attribute(attr).apiTypeStr
 
 def getMPoint(obj):
     # type: (str) -> om.MPoint
@@ -172,6 +215,59 @@ def getMPoint(obj):
 
     return om.MPoint(pos[0], pos[1], pos[2], 1.0)
 
+def get_plug_value(node, attr):
+    # type: (str, str) -> list
+    """
+    获取plug具体的值
+    :param node: 节点名
+    :param attr: 属性名
+    :return:
+    """
+    plug_obj = get_attr(node, attr)
+    node_obj = getApiNode(node, dag=False)
+    fn_dep = om.MFnDependencyNode(node_obj)
+    attr_obj = fn_dep.attribute(attr)
+
+    ret_lis = []
+    if plug_obj.isCompound:
+        fn_attr = om.MFnCompoundAttribute(attr_obj)
+        for i in range(fn_attr.numChildren()):
+            child_obj = fn_attr.child(i)
+            ret_lis.append(get_plug_value(node, om.MPlug(node_obj, child_obj).name().split('.')[-1])[0])
+    else:
+        api_type = get_plug_type(node, attr)
+        if api_type == 'kDoubleLinearAttribute':  #float
+            ret_lis.append(plug_obj.asDouble())
+        elif api_type == 'kEnumAttribute':        #enum
+            ret_lis.append(plug_obj.asInt())
+        elif api_type == 'kDoubleAngleAttribute':
+            ret_lis.append(plug_obj.asMAngle().asDegrees())
+        elif api_type == 'kMatrixAttribute':
+            mMatrix = plug_obj.asMDataHandle().asMatrix()
+            ret_lis.extend([mMatrix.getElement(row, col) for row in range(4) for col in range(4)])
+        elif api_type == 'kTypedAttribute':
+            attr_fn = om.MFnTypedAttribute(attr_obj)
+            if attr_fn.attrType() == om.MFnData.kString:
+                ret_lis.append(plug_obj.asString())
+            elif attr_fn.attrType() == om.MFnData.kMatrix:
+                mMatrix = om.MFnMatrixData(plug_obj.asMObject()).matrix()
+                ret_lis.extend([mMatrix.getElement(row, col) for row in range(4) for col in range(4)])
+            else:
+                om.MGlobal.displayError('未知属性类型：{}'.format(attr_fn.attrType()))
+        elif api_type == 'kNumericAttribute':
+            fn_num_type = om.MFnNumericAttribute(fn_dep.attribute(attr)).numericType()
+            if fn_num_type == 7:    #int
+                ret_lis.append(plug_obj.asInt())
+            elif fn_num_type == 1:  #bool
+                ret_lis.append(plug_obj.asBool())
+            elif fn_num_type in [14, 11]:
+                ret_lis.append(plug_obj.asDouble())
+            else:
+                om.MGlobal.displayError('不支持的数字属性类型：{}'.format(fn_num_type))
+        else:
+            om.MGlobal.displayError('不支持的属性类型：{}'.format(api_type))
+
+    return ret_lis
 
 def getGeometryComponents(fn_skin):
     # type: (omain.MFnSkinCluster) -> tuple[om.MDagPath, om.MObject]

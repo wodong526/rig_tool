@@ -47,7 +47,7 @@ class UE4PoseDriver(object):
             node, att = attr.split('.')
             return cmds.attributeQuery(att, node=node, ex=1)
         else:
-            cmds.warning('attrExists: No attr passed in: ' + attr)
+            cmds.error('attrExists: No attr passed in: ' + attr)
             return False
 
     def msgConnect(self, attribFrom, attribTo, debug=0):
@@ -62,7 +62,7 @@ class UE4PoseDriver(object):
             # check that both atts, if existing are msg atts
         for a in (attribTo, attribFrom):
             if cmds.getAttr(a, type=1) != 'message':
-                cmds.warning('msgConnect: Attr, ' + a + ' is not a message attribute. CONNECTION ABORTED.')
+                cmds.error('msgConnect: Attr, ' + a + ' is not a message attribute. CONNECTION ABORTED.')
                 return False
         try:
             return cmds.connectAttr(attribFrom, attribTo, f=True)

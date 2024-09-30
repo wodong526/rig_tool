@@ -127,7 +127,7 @@ class importerSetup():
         elif self.Renderer == "MayaSoftware":
             Renderers.Arnold()
         else:
-            mc.warning(self.Renderer + " was not found, please make sure it's installed.")
+            mc.error(self.Renderer + " was not found, please make sure it's installed.")
 
         self.ScatterAssetSetup()
 

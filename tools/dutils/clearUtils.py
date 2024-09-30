@@ -167,3 +167,11 @@ def conn_custom_blendshape():
     else:
         return False
     return True
+
+def clear_unused_node():
+    """
+    清理无用节点
+    :return: 清理后场景中的无用节点
+    """
+    mm.eval('MLdeleteUnused;')
+    return True

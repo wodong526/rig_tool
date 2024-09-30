@@ -86,12 +86,11 @@ class ProtectiveTools(object):
 
     def __init__(self):
         self.clear_pyFile()
-        self.clear_base64_virus()
+        #self.clear_base64_virus()
         self.create_callback()
 
     def del_scriptNode(self, *args):
         self.clear_pyFile()
-        self.clear_base64_virus()
 
         del_lis, rfenc_lis = self.get_dubious_scriptNodes()
         if del_lis:
@@ -109,7 +108,6 @@ class ProtectiveTools(object):
 
     def del_scriptJob(self, *args):
         self.clear_pyFile()
-        self.clear_base64_virus()
 
         JOB_INDEX_REGEX = re.compile(r'^(\d+):')
         del_lis = self.get_dubious_scriptJob()

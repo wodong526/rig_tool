@@ -144,9 +144,9 @@ class PushWindow(QtWidgets.QDialog):
         clear_layout = QtWidgets.QVBoxLayout(self.wdg_clear_lis)
         clear_layout.setContentsMargins(2, 2, 2, 2)
         for fun in zip(['clear_name', 'clear_nameSpace', 'clear_key', 'clear_hik', 'clear_animLayer', 'inspect_weight',
-                        'clear_unknown_node', 'clear_unknown_plug', 'conn_custom_blendshape'],
+                        'clear_unknown_node', 'clear_unknown_plug', 'clear_unused_node', 'conn_custom_blendshape'],
                        [u'查询场景重名', u'清理空间名称', u'清理关键帧', u'清理humanIK', u'清理动画层', u'检查权重总量',
-                        u'清理未知节点', u'清理未知插件', u'链接自定义目标体']):
+                        u'清理未知节点', u'清理未知插件', u'清理无用节点', u'链接自定义目标体']):
             wdg = ClearItem(fun[0], fun[1], parent=self.area_clear_lis)
             self.clearWgt_lis.append(wdg)
             clear_layout.addWidget(wdg)

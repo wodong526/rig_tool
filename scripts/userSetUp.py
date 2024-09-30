@@ -98,7 +98,7 @@ class RIG_setUp(object):
     def add_toolScript_path():
         #添加pythonPath路径
         sys_path = ['C:/CgTeamWork_v7/bin/base', 'C:/Rig_Tools/scripts/ngSkinTools/scripts',
-                    'F:/fix_shape_open/source', 'F:/fix_shape_open/scripts']
+                    'F:/fix_shape_open/src']
         for path in sys_path:
             if path not in sys.path:
                 sys.path.append(path) if os.path.exists(path) else fp('路径{}不存在'.format(path), warning=True)

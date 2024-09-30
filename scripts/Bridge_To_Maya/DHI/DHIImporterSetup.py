@@ -521,7 +521,7 @@ class DHIImporterSetup:
                 pycore.select(resolvedMeshName, replace=True)
                 pycore.mel.eval("sets -e -forceElement shader_body_shaderSG")
             except (pycore.MayaNodeError, ValueError):
-                MayaUtil.logger.warning("Skipped adding shader for body mesh %s." % lodLvl)
+                MayaUtil.logger.error("Skipped adding shader for body mesh %s." % lodLvl)
 
         MayaUtil.resolveSceneMapPaths(BODY_MAP_INFOS, self.characterConfig.mapsDirPath)
 

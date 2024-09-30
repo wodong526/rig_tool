@@ -1,21 +1,22 @@
 + MAYAVERSION:2018 Rig_Tools any C:/Rig_Tools
-PYTHONPATH +:= /scripts/
-plug-ins: tools/plug_ins/
+PYTHONPATH +:= scripts
+PYTHONPATH +:= tools/
+MAYA_PLUG_IN_PATH +:= plug_ins/windows/2018
+MAYA_PLUG_IN_PATH +:= plug_ins/
 [r] icons: icons
 
 + MAYAVERSION:2020 Rig_Tools any C:/Rig_Tools
-PYTHONPATH +:= /scripts
-plug-ins: tools/plug_ins
+PYTHONPATH +:= scripts
+PYTHONPATH +:= tools/
+MAYA_PLUG_IN_PATH +:= plug_ins/windows/2020
+MAYA_PLUG_IN_PATH +:= plug_ins/
 [r] icons: icons
 
 + MAYAVERSION:2022 Rig_Tools any C:/Rig_Tools
-PYTHONPATH +:= /scripts
-plug-ins: tools/plug_ins
-[r] icons: icons
-
-+ MAYAVERSION:2024 Rig_Tools any C:/Rig_Tools
-PYTHONPATH +:= /scripts
-plug-ins: tools/plug_ins
+PYTHONPATH +:= scripts
+PYTHONPATH +:= tools/
+MAYA_PLUG_IN_PATH +:= plug_ins/windows/2022
+MAYA_PLUG_IN_PATH +:= plug_ins/
 [r] icons: icons
 
 + MAYAVERSION:2017 brSmoothWeights any C:/Rig_Tools/scripts/brSmoothWeights

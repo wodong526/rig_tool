@@ -672,7 +672,7 @@ class PoseWranglerWindow(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         # Get current pose
         poses = self._get_selected_poses()
         if not solver or not poses:
-            LOG.warning("Unable to add blendshape, please select a solver and a pose and try again")
+            LOG.error("Unable to add blendshape, please select a solver and a pose and try again")
             return
         self.event_add_blendshape.emit(poses[-1], "", "", solver[-1])
 
@@ -685,7 +685,7 @@ class PoseWranglerWindow(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
         # Get current pose
         poses = self._get_selected_poses()
         if not solver or not poses:
-            LOG.warning("Unable to create blendshape, please select a solver and a pose and try again")
+            LOG.error("Unable to create blendshape, please select a solver and a pose and try again")
             return
         # Create a blendshape for the last pose selected, with the current mesh selection, in edit mode enabled and
         # for the last solver selected
@@ -886,7 +886,7 @@ class PoseWranglerWindow(MayaQWidgetDockableMixin, QtWidgets.QMainWindow):
             target_solvers = self._get_selected_solvers()
             # If no solvers found, skip export
             if not target_solvers:
-                LOG.warning("Unable to export. No solvers selected")
+                LOG.error("Unable to export. No solvers selected")
                 return
 
         # Export drivers

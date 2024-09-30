@@ -387,11 +387,12 @@ class ReplaceMaterialTool(QMainWindow):
         preferences.exec_()
 
 
-try:
-    _material_main_window.close()
-    _material_main_window.deleteLater()
-except:
-    pass
-finally:
-    _material_main_window = ReplaceMaterialTool()
-    _material_main_window.show()
+def show_material_main_window():
+    try:
+        _material_main_window.close()
+        _material_main_window.deleteLater()
+    except:
+        pass
+    finally:
+        _material_main_window = ReplaceMaterialTool()
+        _material_main_window.show()

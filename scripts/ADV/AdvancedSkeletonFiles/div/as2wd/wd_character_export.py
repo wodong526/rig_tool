@@ -107,12 +107,12 @@ def export_meshes(export_dir):
     if rig_selection:
         cmds.select(rig_selection, add=True)
     else:
-        cmds.warning('>>> No rig found. Make sure it\'s attached to the mesh.')
+        cmds.error('>>> No rig found. Make sure it\'s attached to the mesh.')
 
     if blendshapes_selection:
         cmds.select(blendshapes_selection, add=True)
     else:
-        cmds.warning('>>> No blendshapes found.')
+        cmds.error('>>> No blendshapes found.')
 
     export_path = os.path.join(export_dir, 'character.fbx').replace('\\', '/')
 
@@ -442,7 +442,7 @@ def export_textures(export_dir):
 
                             else:
 
-                                cmds.warning(
+                                cmds.error(
                                     '>>> Node "{}" has no incoming connection. Skipping.'.format(connection_node)
                                 )
 
@@ -496,11 +496,11 @@ def export_textures(export_dir):
 
                 else:
 
-                    cmds.warning('>>> Displacement shader:', displacement, ',has no input connection. Skipping.')
+                    cmds.error('>>> Displacement shader:', displacement, ',has no input connection. Skipping.')
 
             else:
 
-                cmds.warning('>>> Unsupported displacement shader used with material:', material)
+                cmds.error('>>> Unsupported displacement shader used with material:', material)
 
     # Export json
     json_export_path = os.path.join(export_dir, 'material_settings.json').replace('\\', '/')
@@ -631,7 +631,7 @@ def export_groom(export_dir):
 
     else:
 
-        cmds.warning('>>> No interactive grooms for export.')
+        cmds.error('>>> No interactive grooms for export.')
 
 
 # ----------------------------------------------------------------------------------------------
@@ -676,7 +676,7 @@ def check_groom_materials():
 
             if material_type != 'aiStandardHair':
 
-                cmds.warning(
+                cmds.error(
                     '>>> Material "{}" is not supported. Only "aiStandardHair" materials are suppored'.format(
                         material[0]
                     )
@@ -686,7 +686,7 @@ def check_groom_materials():
                     abort_message.append('invalid mat')
         else:
 
-            cmds.warning(
+            cmds.error(
                 '>>> "{}" has no material assigned. Make sure that all xGen descriptions have "aiStandardHair" assigned to them."'.format(
                     groom_name
                 )
@@ -925,7 +925,7 @@ def check_missing_files():
 
         for mf in missing_files:
 
-            cmds.warning('>>> Missing texture: ' + mf)
+            cmds.error('>>> Missing texture: ' + mf)
 
         mel.eval('FilePathEditor')
         user_return = cmds.confirmDialog(
@@ -945,7 +945,7 @@ def check_missing_files():
 
         for file in not_linked_files:
 
-            cmds.warning('>>> File node "{}" is empty.'.format(file))
+            cmds.error('>>> File node "{}" is empty.'.format(file))
 
         user_return = cmds.confirmDialog(
             title='Error!', message='Some file nodes are empty.', button=['Abort', 'Fix', 'Help']
@@ -1031,7 +1031,7 @@ def check_materials():
                             not_suppored_materials[material] = material_type
                 else:
 
-                    cmds.warning(
+                    cmds.error(
                         '>>> Mesh "{m}" with the shading group "{sg}" has no material assinged.'.format(
                             m=mesh, sg=shading_group
                         )
@@ -1039,13 +1039,13 @@ def check_materials():
 
             else:
 
-                cmds.warning('>>> Mesh "{}" is missing a shading group.'.format(mesh))
+                cmds.error('>>> Mesh "{}" is missing a shading group.'.format(mesh))
 
     if not_suppored_materials:
 
         for k, v in not_suppored_materials.items():
 
-            cmds.warning('>>> Material {mat} is of type {type} which is not supported.'.format(mat=k, type=v))
+            cmds.error('>>> Material {mat} is of type {type} which is not supported.'.format(mat=k, type=v))
 
         user_return = cmds.confirmDialog(
             title='Error!',

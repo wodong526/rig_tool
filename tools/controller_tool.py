@@ -176,13 +176,11 @@ class create_ctl(QtWidgets.QDialog):  # 使该窗口为控件
                 mc.setAttr('{}.overrideRGBColors'.format(cv_shape), 1)
                 mc.setAttr('{}.overrideColorRGB'.format(cv_shape), color[0], color[1], color[2])
                 mc.colorSliderGrp(self.sliderGrp, rgb=color, e=True)
-            elif type(color) == unicode:
+            else:
                 ctl_rgb = mc.colorSliderGrp(self.sliderGrp, q=True, rgb=True)
                 mc.setAttr('{}.overrideEnabled'.format(cv_shape), 1)
                 mc.setAttr('{}.overrideRGBColors'.format(cv_shape), 1)
                 mc.setAttr('{}.overrideColorRGB'.format(cv_shape), ctl_rgb[0], ctl_rgb[1], ctl_rgb[2])
-            else:
-                pass
         else:
             pass
 
@@ -251,21 +249,20 @@ class create_ctl(QtWidgets.QDialog):  # 使该窗口为控件
 
     def for_mir(self, t, i):
         ctl_cv = self.if_cv()
-        if type(ctl_cv) == unicode:
-            spa_n = mc.getAttr('{}.spans'.format(ctl_cv))
-            deg_n = mc.getAttr('{}.degree'.format(ctl_cv))
-            cv_n = spa_n if mc.getAttr('{}.f'.format(ctl_cv)) > 0 else spa_n + deg_n
+        spa_n = mc.getAttr('{}.spans'.format(ctl_cv))
+        deg_n = mc.getAttr('{}.degree'.format(ctl_cv))
+        cv_n = spa_n if mc.getAttr('{}.f'.format(ctl_cv)) > 0 else spa_n + deg_n
 
-            if t == 0:
-                for n in range(cv_n):
-                    old_pos = mc.xform('{}.cv[{}]'.format(ctl_cv, n), os=True, q=True, t=True)
-                    old_pos[i] = old_pos[i] * -1
-                    mc.xform('{}.cv[{}]'.format(ctl_cv, n), os=True, t=old_pos)
-            elif t == 1:
-                for n in range(cv_n):
-                    old_pos = mc.xform('{}.cv[{}]'.format(ctl_cv, n), ws=True, q=True, t=True)
-                    old_pos[i] = old_pos[i] * -1
-                    mc.xform('{}.cv[{}]'.format(ctl_cv, n), ws=True, t=old_pos)
+        if t == 0:
+            for n in range(cv_n):
+                old_pos = mc.xform('{}.cv[{}]'.format(ctl_cv, n), os=True, q=True, t=True)
+                old_pos[i] = old_pos[i] * -1
+                mc.xform('{}.cv[{}]'.format(ctl_cv, n), os=True, t=old_pos)
+        elif t == 1:
+            for n in range(cv_n):
+                old_pos = mc.xform('{}.cv[{}]'.format(ctl_cv, n), ws=True, q=True, t=True)
+                old_pos[i] = old_pos[i] * -1
+                mc.xform('{}.cv[{}]'.format(ctl_cv, n), ws=True, t=old_pos)
 
     def copy_shape(self):
         ctl_cv = self.if_cv()

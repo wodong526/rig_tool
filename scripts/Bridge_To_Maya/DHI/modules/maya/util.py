@@ -168,7 +168,7 @@ class MayaUtil(object):
                     progressWindowManager.update(progressIncrementVal, "Added shader for mesh %s." % resolvedMeshName)
                     MayaUtil.logger.info("Added shader for mesh %s." % resolvedMeshName)
                 except (pycore.MayaNodeError, ValueError, TypeError):
-                    MayaUtil.logger.warning("Skipped adding shader for mesh %s." % meshName)
+                    MayaUtil.logger.error("Skipped adding shader for mesh %s." % meshName)
 
     @staticmethod
     def resolveSceneMapPaths(mapInfos, folderName):
@@ -539,11 +539,11 @@ class MayaUtil(object):
             if len(meshNode.vtx) == len(defaultMeshNode.vtx):
                 return (True, meshNode.name())
             else:
-                MayaUtil.logger.warning("Selected mesh doesn't have the expected topology.")
+                MayaUtil.logger.error("Selected mesh doesn't have the expected topology.")
                 pycore.warning("Selected mesh doesn't have the expected topology.")
                 return (False, "")
 
-        MayaUtil.logger.warning("Selected node is not a mesh.")
+        MayaUtil.logger.error("Selected node is not a mesh.")
         pycore.warning("Selected node is not a mesh.")
         return (False, "")
 
@@ -585,8 +585,8 @@ class MayaUtil(object):
         if nrOfMeshes == 1:
             res = selectedMesh[0].name()
         elif nrOfMeshes == 0:
-            MayaUtil.logger.warning("Warning: No mesh is selected!")
+            MayaUtil.logger.error("Warning: No mesh is selected!")
         else:
-            MayaUtil.logger.warning("Warning: Multiple meshes selected!")
+            MayaUtil.logger.error("Warning: Multiple meshes selected!")
 
         return res

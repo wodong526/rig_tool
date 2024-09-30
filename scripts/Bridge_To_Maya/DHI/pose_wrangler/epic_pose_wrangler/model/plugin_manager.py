@@ -88,7 +88,7 @@ class PluginManager:
         loaded_nodes = PluginManager.load_plugin()
         # If the recommended solver is not loaded, fall back to the original pose wrangler implementation
         if PluginManager.RECOMMENDED_SOLVER not in loaded_nodes:
-            LOG.warning("You are currently using an outdated plugin. Certain functionality may be limited.")
+            LOG.error("You are currently using an outdated plugin. Certain functionality may be limited.")
             from epic_pose_wrangler.v1 import main
             return main.UE4RBFAPI(view=view, parent=parent)
         # Bool to keep track of importing the newest api version
